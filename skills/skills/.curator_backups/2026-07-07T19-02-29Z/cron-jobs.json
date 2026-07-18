@@ -1,0 +1,518 @@
+{
+  "jobs": [
+    {
+      "id": "a66a650a340c",
+      "name": "daily-backup-cleanup",
+      "prompt": "Run the system backup and cleanup script: bash ~/.hermes/scripts/system-backup.sh. Report the backup result and disk usage.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 0 * * *",
+        "display": "0 0 * * *"
+      },
+      "schedule_display": "0 0 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 84
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-04-14T17:31:34.972540+08:00",
+      "next_run_at": "2026-07-09T00:00:00+08:00",
+      "last_run_at": "2026-07-08T00:05:55.727387+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "local",
+      "origin": null,
+      "fire_claim": null
+    },
+    {
+      "id": "1f77390e2ec0",
+      "name": "guangzhou_daily_weather",
+      "prompt": "Fetch current weather for Guangzhou using simple wttr.in text format:\n```bash\ncurl -s \"https://wttr.in/Guangzhou?format=%C+%t+%h+%w\"\n```\nThis returns: \"Rain Shower +29\u00b0C 84% 21km/h\" (condition, temp, humidity, wind).\nIf that fails (exit code != 0 or empty output), fallback to weather.com.cn HTTP API:\n```bash\ncurl -sL -H \"User-Agent: Mozilla/5.0\" -H \"Referer: http://www.weather.com.cn/\" \"http://d1.weather.com.cn/sk_2d/101280101.html\"\n```\nParse the JSON from `var dataSK={...}` and output: \"\u5e7f\u5dde: [weather] [temp]\u00b0C [humidity] [wind]\".\nDeliver the result via Telegram.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 7 * * *",
+        "display": "0 7 * * *"
+      },
+      "schedule_display": "0 7 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 87
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-04-15T10:16:18.450948+08:00",
+      "next_run_at": "2026-07-08T07:00:00+08:00",
+      "last_run_at": "2026-07-07T07:07:27.620709+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "telegram",
+      "origin": null
+    },
+    {
+      "id": "b231e16a2ec3",
+      "name": "signal-pop-weekly-news",
+      "prompt": "Run the Signal Pop weekly news pipeline:\n\n```bash\nbash /home/kan/signal_pop/scripts/generate_audio_only.sh --mode weekly\n```\n\nThis script will:\n1. Fetch latest news from RSS feeds\n2. Filter to 12 news items (domestic 5, international 5, tech 2)\n3. Translate any English articles to Chinese\n4. Generate a broadcast script with 12 news items\n5. Generate a personal opinion paragraph\n6. Synthesize male voice audio (yunyang voice_id)\n7. Deliver the audio to origin\n\nThe weekly news should have 12 items (not 5), all content must be in Chinese, and the voice must be male (yunyang).",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 9 * * 6",
+        "display": "0 9 * * 6"
+      },
+      "schedule_display": "0 9 * * 6",
+      "repeat": {
+        "times": 2147483647,
+        "completed": 3
+      },
+      "enabled": false,
+      "state": "paused",
+      "paused_at": "2026-06-25T00:57:06.297037+08:00",
+      "paused_reason": null,
+      "created_at": "2026-05-13T00:20:17.681053+08:00",
+      "next_run_at": "2026-06-27T09:00:00+08:00",
+      "last_run_at": "2026-05-30T09:00:29.852930+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "-1003790311439",
+        "chat_name": "\u867e\u4e4b\u5c4b",
+        "thread_id": "285"
+      },
+      "enabled_toolsets": null,
+      "workdir": null
+    },
+    {
+      "id": "3886d8e1da50",
+      "name": "daily-gateway-restart",
+      "prompt": "",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "restart-gateways.sh",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 9 * * *",
+        "display": "0 9 * * *"
+      },
+      "schedule_display": "0 9 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 3
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-03T11:43:21.826596+08:00",
+      "next_run_at": "2026-07-08T09:00:00+08:00",
+      "last_run_at": "2026-07-07T09:00:37.543385+08:00",
+      "last_status": "error",
+      "last_error": "Script exited with code 1\nstdout:\n=== Tue Jul  7 09:00:28 AM CST 2026: \u91cd\u542f\u7f51\u5173\u670d\u52a1 ===\n--- OpenClaw gateway ---\nopenclaw-gateway \u91cd\u542f\u5b8c\u6210 (exit: 0)\n\n--- Hermes gateway ---\n\u2717 Refusing to restart the gateway from inside the gateway process.\nThis command was blocked to prevent restart loops.\nUse `hermes gateway restart` from a shell outside the running gateway.",
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "-1003790311439",
+        "chat_name": "\u867e\u4e4b\u5c4b\u00ae\ufe0f",
+        "thread_id": "2730"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "profile": null
+    },
+    {
+      "id": "02d2c8d722bb",
+      "name": "signal-pop-daily-news",
+      "prompt": "Run the Signal Pop daily news pipeline:\n\n```bash\nbash /home/kan/signal_pop/scripts/generate_audio_only.sh daily\n```\n\nOutput goes to output/daily/. Deliver to origin.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "30 8 * * 1,3,5",
+        "display": "30 8 * * 1,3,5"
+      },
+      "schedule_display": "30 8 * * 1,3,5",
+      "repeat": {
+        "times": null,
+        "completed": 2
+      },
+      "enabled": false,
+      "state": "paused",
+      "paused_at": "2026-06-25T00:57:05.284863+08:00",
+      "paused_reason": null,
+      "created_at": "2026-06-21T20:44:37.149930+08:00",
+      "next_run_at": "2026-06-26T08:30:00+08:00",
+      "last_run_at": "2026-06-24T08:32:45.054275+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "-1003790311439",
+        "chat_name": "\u867e\u4e4b\u5c4b\u00ae\ufe0f",
+        "thread_id": "285"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "profile": null
+    },
+    {
+      "id": "d065a67164a0",
+      "name": "signal-pop-daily-check",
+      "prompt": "Check if signal-pop-daily-news job ran successfully today. Look at its last_run_at and last_status. If it didn't run or failed, send a notification to the user.",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 9 * * 1,3,5",
+        "display": "0 9 * * 1,3,5"
+      },
+      "schedule_display": "0 9 * * 1,3,5",
+      "repeat": {
+        "times": null,
+        "completed": 2
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-21T20:50:17.650594+08:00",
+      "next_run_at": "2026-07-08T09:00:00+08:00",
+      "last_run_at": "2026-07-06T09:01:40.589164+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "-1003790311439",
+        "chat_name": "\u867e\u4e4b\u5c4b\u00ae\ufe0f",
+        "thread_id": "285"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "profile": null
+    },
+    {
+      "id": "9967e8b8c86f",
+      "name": "signal-pop-monitor",
+      "prompt": "Run Signal Pop monitor pipeline to check for new filtered_news.json in /home/kan/shared/signal_pop/ and process through generate_script.py \u2192 tts_mimo.py (female + male) \u2192 archive. The monitor script is at /home/kan/signal_pop/src/monitor_pipeline.py",
+      "skills": [
+        "signal-pop-pipeline",
+        "signal-pop-pipeline-fix"
+      ],
+      "skill": "signal-pop-pipeline",
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "*/10 * * * *",
+        "display": "*/10 * * * *"
+      },
+      "schedule_display": "*/10 * * * *",
+      "repeat": {
+        "times": null,
+        "completed": 292
+      },
+      "enabled": false,
+      "state": "paused",
+      "paused_at": "2026-06-25T00:57:07.303213+08:00",
+      "paused_reason": null,
+      "created_at": "2026-06-22T23:05:32.292888+08:00",
+      "next_run_at": "2026-06-25T01:00:00+08:00",
+      "last_run_at": "2026-06-25T00:51:37.181175+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "-1003790311439",
+        "chat_name": "\u867e\u4e4b\u5c4b\u00ae\ufe0f",
+        "thread_id": "285"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "profile": null
+    },
+    {
+      "id": "7968abe94f69",
+      "name": "signal-pop-weekly",
+      "prompt": "Generate weekly Signal Pop broadcast. Uses /home/kan/signal_pop/data/filtered_news.json (should have 12+ items), runs generate_script.py weekly to produce script with opinion segment, then tts_mimo.py for female + male audio. Output to /home/kan/signal_pop/output/weekly/",
+      "skills": [
+        "signal-pop-pipeline",
+        "signal-pop-pipeline-fix"
+      ],
+      "skill": "signal-pop-pipeline",
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 9 * * 6",
+        "display": "0 9 * * 6"
+      },
+      "schedule_display": "0 9 * * 6",
+      "repeat": {
+        "times": null,
+        "completed": 0
+      },
+      "enabled": false,
+      "state": "paused",
+      "paused_at": "2026-06-25T00:57:08.310257+08:00",
+      "paused_reason": null,
+      "created_at": "2026-06-22T23:08:30.358486+08:00",
+      "next_run_at": "2026-06-27T09:00:00+08:00",
+      "last_run_at": null,
+      "last_status": null,
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "-1003790311439",
+        "chat_name": "\u867e\u4e4b\u5c4b\u00ae\ufe0f",
+        "thread_id": "285"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "profile": null
+    },
+    {
+      "id": "f385599bd747",
+      "name": "disk-cleanup",
+      "prompt": "",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "disk-cleanup.sh",
+      "no_agent": true,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 3 * * *",
+        "display": "0 3 * * *"
+      },
+      "schedule_display": "0 3 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 14
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-24T18:57:33.025942+08:00",
+      "next_run_at": "2026-07-09T03:00:00+08:00",
+      "last_run_at": "2026-07-08T03:00:50.684287+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": "delivery error: Telegram send failed: httpx.ConnectError: All connection attempts failed",
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "-1003790311439",
+        "chat_name": "\u867e\u4e4b\u5c4b\u00ae\ufe0f",
+        "thread_id": "2730"
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "profile": null,
+      "fire_claim": null
+    },
+    {
+      "id": "cbef28c8adaa",
+      "name": "\u76d1\u63a7\u9a6c\u5c0fv\u89c6\u9891\u8f93\u51fa",
+      "prompt": "\u68c0\u67e5 /home/kan/shared/her2home/ \u76ee\u5f55\u4e0b\u9a6c\u5c0fv\u751f\u6210\u7684**\u5f53\u5929**\u89c6\u9891\u548c\u5c01\u9762\u56fe\u7247\u3002\n\n\u5173\u952e\u89c4\u5219\uff1a\u53ea\u68c0\u67e5\u65e5\u671f\u4e3a\u4eca\u5929\uff08$(date +%Y%m%d)\uff09\u7684\u6587\u4ef6\uff0c\u5ffd\u7565\u6240\u6709\u5386\u53f2\u6b8b\u7559\u6587\u4ef6\u3002\n\n\u7528\u8fd9\u4e2a\u547d\u4ee4\u83b7\u53d6\u4eca\u5929\u65e5\u671f\uff1a\n```bash\nTODAY=$(date +%Y%m%d)\n```\n\n\u53ea\u641c\u7d22\u5305\u542b $TODAY \u7684\u6587\u4ef6\uff1a\n- `cover_${TODAY}.png`\n- `video_${TODAY}.mp4`\n- \u6839\u76ee\u5f55\u6216\u5b50\u76ee\u5f55\u4e0b\u7684\u89c6\u9891\u6587\u4ef6\n\n\u5982\u679c\u4eca\u5929\u6ca1\u6709\u65b0\u6587\u4ef6\uff0c\u76f4\u63a5\u8f93\u51fa\"\u65e0\u65b0\u6587\u4ef6\"\uff0c\u4e0d\u8981\u63a8\u9001\u5386\u53f2\u6587\u4ef6\u3002\n\n\u68c0\u67e5\u9879\uff1a\n1. \u89c6\u9891\u6587\u4ef6\u662f\u5426\u5b8c\u6574\uff08\u5927\u5c0f>1MB\uff0c\u80fd\u64ad\u653e\uff09\n2. \u5c01\u9762\u56fe\u7247\u662f\u5426\u5b58\u5728\u4e14\u5339\u914d\u65e5\u671f\n3. \u8f93\u51fa\u8def\u5f84\u662f\u5426\u6b63\u786e\n4. \u5982\u7f3a\u6587\u4ef6\uff0c\u53ea\u62a5\u544a\u4eca\u5929\u7f3a\u5931\u9879\n\n\u8fc7\u671f\u6587\u4ef6\u4e00\u5f8b\u5ffd\u7565\uff0c\u7edd\u4e0d\u63a8\u9001\u3002",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "30 10 * * 0,2,4,5",
+        "display": "30 10 * * 0,2,4,5"
+      },
+      "schedule_display": "30 10 * * 0,2,4,5",
+      "repeat": {
+        "times": null,
+        "completed": 16
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-28T10:28:20.081797+08:00",
+      "next_run_at": "2026-07-09T10:30:00+08:00",
+      "last_run_at": "2026-07-07T10:32:39.852750+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "-1003790311439",
+        "chat_name": "\u867e\u4e4b\u5c4b\u00ae\ufe0f",
+        "thread_id": "285"
+      },
+      "enabled_toolsets": [
+        "terminal",
+        "file"
+      ],
+      "workdir": null,
+      "profile": null
+    },
+    {
+      "id": "48d0d0f155f1",
+      "name": "Signal Pop \u81ea\u52a8\u5206\u53d1\u5230\u591a\u5e73\u53f0",
+      "prompt": "\u8fd0\u884c /home/kan/shared/social-auto-upload/auto_publish.py \u81ea\u52a8\u68c0\u6d4b /home/kan/shared/her2home/ \u76ee\u5f55\u4e0b\u7684\u65b0\u89c6\u9891\u5e76\u5206\u53d1\u5230\u6296\u97f3\u3001B\u7ad9\u3001\u5c0f\u7ea2\u4e66\u3001\u5feb\u624b\u3002\u811a\u672c\u4f1a\uff1a\n1. \u626b\u63cf *.mp4 \u89c6\u9891\u6587\u4ef6\n2. \u5339\u914d\u540c\u540d\u5c01\u9762 (*.png/*.jpg) \u548c\u5143\u6570\u636e (*.json)\n3. \u5e76\u884c\u4e0a\u4f20\u5230 4 \u4e2a\u5e73\u53f0\uff08\u542b\u5b9a\u65f6\u53d1\u5e03\uff09\n4. \u8bb0\u5f55\u53d1\u5e03\u72b6\u6001\u907f\u514d\u91cd\u590d\n\n\u6709\u65b0\u89c6\u9891\u53d1\u5e03\u6210\u529f/\u5931\u8d25\u4f1a\u6c47\u62a5\uff1b\u65e0\u65b0\u89c6\u9891\u9759\u9ed8\u901a\u8fc7\u3002",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "once",
+        "run_at": "2026-07-06T08:00:00+08:00",
+        "display": "once at 2026-07-06 08:00"
+      },
+      "schedule_display": "once at 2026-07-06 08:00",
+      "repeat": {
+        "times": null,
+        "completed": 15
+      },
+      "enabled": false,
+      "state": "completed",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-06-28T10:47:15.129525+08:00",
+      "next_run_at": null,
+      "last_run_at": "2026-07-06T08:48:24.966045+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "-1003790311439",
+        "chat_name": "\u867e\u4e4b\u5c4b\u00ae\ufe0f",
+        "thread_id": "285"
+      },
+      "enabled_toolsets": [
+        "terminal",
+        "file"
+      ],
+      "workdir": null,
+      "profile": null
+    },
+    {
+      "id": "92ef826414c5",
+      "name": "signal-pop-daily-images",
+      "prompt": "\u6bcf\u5468\u65e5/\u4e8c/\u56db/\u516d 09:30 \u8fd0\u884c\u65b0\u95fb\u914d\u56fe\u751f\u6210\u811a\u672c\u3002\n\n```bash\npython3 /home/kan/shared/signal_pop/scripts/gen_news_images.py\n```\n\n\u811a\u672c\u4f1a\u81ea\u52a8\uff1a\n1. \u67e5\u627e /home/kan/shared/signal_pop/archive/signal_pop_daily_YYYYMMDD.txt \u548c signal_pop_weekly_YYYYMMDD.txt\n2. \u89e3\u6790\u65b0\u95fb\u6807\u9898\uff08\u6bcf\u592910\u6761\u6216\u6bcf\u54685\u6761\uff09\n3. \u7528 Pollinations AI \u4e3a\u6bcf\u6761\u65b0\u95fb\u751f\u62101280\u00d7720\u914d\u56fe\n4. \u4fdd\u5b58\u5230 /home/kan/shared/signal_pop/archive/img_YYYYMMDD/\n\n\u5982\u679c\u811a\u672c\u6210\u529f\u8fd0\u884c\uff0c\u62a5\u544a\u7ed3\u679c\u3002\u5982\u679c\u65b0\u95fb\u7a3f\u6587\u4ef6\u4e0d\u5b58\u5728\uff0c\u9759\u9ed8\u8df3\u8fc7\u3002",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "30 9 * * 0,2,4,5",
+        "display": "30 9 * * 0,2,4,5"
+      },
+      "schedule_display": "30 9 * * 0,2,4,5",
+      "repeat": {
+        "times": null,
+        "completed": 3
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-07-04T21:50:39.600280+08:00",
+      "next_run_at": "2026-07-09T09:30:00+08:00",
+      "last_run_at": "2026-07-07T12:13:28.131392+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "telegram",
+        "chat_id": "-1003790311439",
+        "chat_name": "\u867e\u4e4b\u5c4b\u00ae\ufe0f",
+        "thread_id": "285"
+      },
+      "enabled_toolsets": [
+        "terminal",
+        "file"
+      ],
+      "workdir": null,
+      "profile": null,
+      "fire_claim": null
+    }
+  ],
+  "updated_at": "2026-07-08T03:00:50.685412+08:00"
+}

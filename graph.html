@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>graphify - /tmp/graphify-test/graphify-out/graph.html</title>
+<script src="https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"
+        integrity="sha384-Ux6phic9PEHJ38YtrijhkzyJ8yQlH8i/+buBR8s3mAZOJrP1gwyvAcIYl3GWtpX1"
+        crossorigin="anonymous"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f0f1a; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display: flex; height: 100vh; overflow: hidden; }
+  #graph { flex: 1; }
+  #sidebar { width: 280px; background: #1a1a2e; border-left: 1px solid #2a2a4e; display: flex; flex-direction: column; overflow: hidden; }
+  #search-wrap { padding: 12px; border-bottom: 1px solid #2a2a4e; }
+  #search { width: 100%; background: #0f0f1a; border: 1px solid #3a3a5e; color: #e0e0e0; padding: 7px 10px; border-radius: 6px; font-size: 13px; outline: none; }
+  #search:focus { border-color: #4E79A7; }
+  #search-results { max-height: 140px; overflow-y: auto; padding: 4px 12px; border-bottom: 1px solid #2a2a4e; display: none; }
+  .search-item { padding: 4px 6px; cursor: pointer; border-radius: 4px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .search-item:hover { background: #2a2a4e; }
+  #info-panel { padding: 14px; border-bottom: 1px solid #2a2a4e; min-height: 140px; }
+  #info-panel h3 { font-size: 13px; color: #aaa; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  #info-content { font-size: 13px; color: #ccc; line-height: 1.6; }
+  #info-content .field { margin-bottom: 5px; }
+  #info-content .field b { color: #e0e0e0; }
+  #info-content .empty { color: #555; font-style: italic; }
+  .neighbor-link { display: block; padding: 2px 6px; margin: 2px 0; border-radius: 3px; cursor: pointer; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 3px solid #333; }
+  .neighbor-link:hover { background: #2a2a4e; }
+  #neighbors-list { max-height: 160px; overflow-y: auto; margin-top: 4px; }
+  #legend-wrap { flex: 1; overflow-y: auto; padding: 12px; }
+  #legend-wrap h3 { font-size: 13px; color: #aaa; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .legend-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; border-radius: 4px; font-size: 12px; }
+  .legend-item:hover { background: #2a2a4e; padding-left: 4px; }
+  .legend-item.dimmed { opacity: 0.35; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .legend-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .legend-count { color: #666; font-size: 11px; }
+  #stats { padding: 10px 14px; border-top: 1px solid #2a2a4e; font-size: 11px; color: #555; }
+  #legend-controls { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 4px 0; }
+  #legend-controls label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; color: #aaa; user-select: none; }
+  #legend-controls label:hover { color: #e0e0e0; }
+  .legend-cb, #select-all-cb { appearance: none; -webkit-appearance: none; width: 14px; height: 14px; border: 1.5px solid #3a3a5e; border-radius: 3px; background: #0f0f1a; cursor: pointer; position: relative; flex-shrink: 0; }
+  .legend-cb:checked, #select-all-cb:checked { background: #4E79A7; border-color: #4E79A7; }
+  .legend-cb:checked::after, #select-all-cb:checked::after { content: ''; position: absolute; left: 3.5px; top: 1px; width: 4px; height: 7px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+  #select-all-cb:indeterminate { background: #4E79A7; border-color: #4E79A7; }
+  #select-all-cb:indeterminate::after { content: ''; position: absolute; left: 2px; top: 5px; width: 8px; height: 2px; background: #fff; border: none; transform: none; }
+</style>
+</head>
+<body>
+<div id="graph"></div>
+<div id="sidebar">
+  <div id="search-wrap">
+    <input id="search" type="text" placeholder="Search nodes..." autocomplete="off">
+    <div id="search-results"></div>
+  </div>
+  <div id="info-panel">
+    <h3>Node Info</h3>
+    <div id="info-content"><span class="empty">Click a node to inspect it</span></div>
+  </div>
+  <div id="legend-wrap">
+    <h3>Communities</h3>
+    <div id="legend-controls">
+      <label><input type="checkbox" id="select-all-cb" checked onchange="toggleAllCommunities(!this.checked)">Select All</label>
+    </div>
+    <div id="legend"></div>
+  </div>
+  <div id="stats">61 nodes &middot; 65 edges &middot; 14 communities</div>
+</div>
+<script>
+const RAW_NODES = [{"id": "home_kan_signal_pop_tools_add_ticker_py", "label": "add_ticker.py", "color": {"background": "#B07AA1", "border": "#B07AA1", "highlight": {"background": "#ffffff", "border": "#B07AA1"}}, "size": 22.9, "font": {"size": 12, "color": "#ffffff"}, "title": "add_ticker.py", "community": 6, "community_name": "SRT Ticker Generation", "source_file": "add_ticker.py", "file_type": "code", "degree": 3}, {"id": "home_kan_signal_pop_tools_add_ticker_build_srt", "label": "build_srt()", "color": {"background": "#B07AA1", "border": "#B07AA1", "highlight": {"background": "#ffffff", "border": "#B07AA1"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "build_srt()", "community": 6, "community_name": "SRT Ticker Generation", "source_file": "add_ticker.py", "file_type": "code", "degree": 1}, {"id": "home_kan_signal_pop_tools_add_ticker_build_srt_proper", "label": "build_srt_proper()", "color": {"background": "#B07AA1", "border": "#B07AA1", "highlight": {"background": "#ffffff", "border": "#B07AA1"}}, "size": 18.6, "font": {"size": 12, "color": "#ffffff"}, "title": "build_srt_proper()", "community": 6, "community_name": "SRT Ticker Generation", "source_file": "add_ticker.py", "file_type": "code", "degree": 2}, {"id": "home_kan_signal_pop_tools_add_ticker_main", "label": "main()", "color": {"background": "#B07AA1", "border": "#B07AA1", "highlight": {"background": "#ffffff", "border": "#B07AA1"}}, "size": 18.6, "font": {"size": 12, "color": "#ffffff"}, "title": "main()", "community": 6, "community_name": "SRT Ticker Generation", "source_file": "add_ticker.py", "file_type": "code", "degree": 2}, {"id": "home_kan_signal_pop_tools_batch_gen_images_py", "label": "batch_gen_images.py", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 27.1, "font": {"size": 12, "color": "#ffffff"}, "title": "batch_gen_images.py", "community": 1, "community_name": "Prompt File Processing", "source_file": "batch_gen_images.py", "file_type": "code", "degree": 4}, {"id": "home_kan_signal_pop_tools_batch_gen_images_find_prompts_file", "label": "find_prompts_file()", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 22.9, "font": {"size": 12, "color": "#ffffff"}, "title": "find_prompts_file()", "community": 1, "community_name": "Prompt File Processing", "source_file": "batch_gen_images.py", "file_type": "code", "degree": 3}, {"id": "home_kan_signal_pop_tools_batch_gen_images_short_prompt", "label": "short_prompt()", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 22.9, "font": {"size": 12, "color": "#ffffff"}, "title": "short_prompt()", "community": 1, "community_name": "Prompt File Processing", "source_file": "batch_gen_images.py", "file_type": "code", "degree": 3}, {"id": "home_kan_signal_pop_tools_batch_gen_images_download_with_retry", "label": "download_with_retry()", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 18.6, "font": {"size": 12, "color": "#ffffff"}, "title": "download_with_retry()", "community": 1, "community_name": "Prompt File Processing", "source_file": "batch_gen_images.py", "file_type": "code", "degree": 2}, {"id": "home_kan_signal_pop_tools_batch_gen_images_main", "label": "main()", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 27.1, "font": {"size": 12, "color": "#ffffff"}, "title": "main()", "community": 1, "community_name": "Prompt File Processing", "source_file": "batch_gen_images.py", "file_type": "code", "degree": 4}, {"id": "home_kan_signal_pop_tools_batch_gen_images_rationale_23", "label": "\u6839\u636e\u8f93\u5165\u627e\u5230 visual_prompts \u6587\u4ef6", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "\u6839\u636e\u8f93\u5165\u627e\u5230 visual_prompts \u6587\u4ef6", "community": 1, "community_name": "Prompt File Processing", "source_file": "batch_gen_images.py", "file_type": "rationale", "degree": 1}, {"id": "home_kan_signal_pop_tools_batch_gen_images_rationale_39", "label": "\u4ece prompt \u6216 title \u7f29\u7565\u51fa\u9002\u5408 API \u7684\u6587\u672c", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "\u4ece prompt \u6216 title \u7f29\u7565\u51fa\u9002\u5408 API \u7684\u6587\u672c", "community": 1, "community_name": "Prompt File Processing", "source_file": "batch_gen_images.py", "file_type": "rationale", "degree": 1}, {"id": "home_kan_signal_pop_tools_composite_video_py", "label": "composite_video.py", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 27.1, "font": {"size": 12, "color": "#ffffff"}, "title": "composite_video.py", "community": 2, "community_name": "Video Timeline Composition", "source_file": "composite_video.py", "file_type": "code", "degree": 4}, {"id": "home_kan_signal_pop_tools_composite_video_create_text_bg", "label": "create_text_bg()", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 27.1, "font": {"size": 12, "color": "#ffffff"}, "title": "create_text_bg()", "community": 2, "community_name": "Video Timeline Composition", "source_file": "composite_video.py", "file_type": "code", "degree": 4}, {"id": "home_kan_signal_pop_tools_composite_video_find_chinese_font", "label": "find_chinese_font()", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 18.6, "font": {"size": 12, "color": "#ffffff"}, "title": "find_chinese_font()", "community": 2, "community_name": "Video Timeline Composition", "source_file": "composite_video.py", "file_type": "code", "degree": 2}, {"id": "home_kan_signal_pop_tools_composite_video_build_timeline_from_script", "label": "build_timeline_from_script()", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 18.6, "font": {"size": 12, "color": "#ffffff"}, "title": "build_timeline_from_script()", "community": 2, "community_name": "Video Timeline Composition", "source_file": "composite_video.py", "file_type": "code", "degree": 2}, {"id": "home_kan_signal_pop_tools_composite_video_main", "label": "main()", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 18.6, "font": {"size": 12, "color": "#ffffff"}, "title": "main()", "community": 2, "community_name": "Video Timeline Composition", "source_file": "composite_video.py", "file_type": "code", "degree": 2}, {"id": "home_kan_signal_pop_tools_composite_video_rationale_21", "label": "\u7528 ffmpeg drawtext \u751f\u6210\u6587\u5b57\u80cc\u666f\u56fe\uff08\u5360\u4f4d\u7528\uff0c\u65e0\u56fe\u65f6 fallback\uff09", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "\u7528 ffmpeg drawtext \u751f\u6210\u6587\u5b57\u80cc\u666f\u56fe\uff08\u5360\u4f4d\u7528\uff0c\u65e0\u56fe\u65f6 fallback\uff09", "community": 2, "community_name": "Video Timeline Composition", "source_file": "composite_video.py", "file_type": "rationale", "degree": 1}, {"id": "home_kan_signal_pop_tools_composite_video_rationale_63", "label": "\u4ece\u64ad\u62a5\u811a\u672c\u548c visual_prompts \u81ea\u52a8\u6784\u5efa\u65f6\u95f4\u7ebf\uff08\u4f30\u7b97\u65f6\u957f\uff09", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "\u4ece\u64ad\u62a5\u811a\u672c\u548c visual_prompts \u81ea\u52a8\u6784\u5efa\u65f6\u95f4\u7ebf\uff08\u4f30\u7b97\u65f6\u957f\uff09", "community": 2, "community_name": "Video Timeline Composition", "source_file": "composite_video.py", "file_type": "rationale", "degree": 1}, {"id": "home_kan_signal_pop_tools_gen_cover_py", "label": "gen_cover.py", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 40.0, "font": {"size": 12, "color": "#ffffff"}, "title": "gen_cover.py", "community": 0, "community_name": "Cover Image Generation", "source_file": "gen_cover.py", "file_type": "code", "degree": 7}, {"id": "home_kan_signal_pop_tools_gen_cover_lerp", "label": "lerp()", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 18.6, "font": {"size": 12, "color": "#ffffff"}, "title": "lerp()", "community": 0, "community_name": "Cover Image Generation", "source_file": "gen_cover.py", "file_type": "code", "degree": 2}, {"id": "home_kan_signal_pop_tools_gen_cover_build_bg", "label": "build_bg()", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 27.1, "font": {"size": 12, "color": "#ffffff"}, "title": "build_bg()", "community": 0, "community_name": "Cover Image Generation", "source_file": "gen_cover.py", "file_type": "code", "degree": 4}, {"id": "home_kan_signal_pop_tools_gen_cover_neon_text", "label": "neon_text()", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 18.6, "font": {"size": 12, "color": "#ffffff"}, "title": "neon_text()", "community": 0, "community_name": "Cover Image Generation", "source_file": "gen_cover.py", "file_type": "code", "degree": 2}, {"id": "home_kan_signal_pop_tools_gen_cover_corner_brackets", "label": "corner_brackets()", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 18.6, "font": {"size": 12, "color": "#ffffff"}, "title": "corner_brackets()", "community": 0, "community_name": "Cover Image Generation", "source_file": "gen_cover.py", "file_type": "code", "degree": 2}, {"id": "home_kan_signal_pop_tools_gen_cover_get_anchor", "label": "get_anchor()", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 18.6, "font": {"size": 12, "color": "#ffffff"}, "title": "get_anchor()", "community": 0, "community_name": "Cover Image Generation", "source_file": "gen_cover.py", "file_type": "code", "degree": 2}, {"id": "home_kan_signal_pop_tools_gen_cover_build_anchor_masked", "label": "build_anchor_masked()", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 22.9, "font": {"size": 12, "color": "#ffffff"}, "title": "build_anchor_masked()", "community": 0, "community_name": "Cover Image Generation", "source_file": "gen_cover.py", "file_type": "code", "degree": 3}, {"id": "home_kan_signal_pop_tools_gen_cover_make_cover", "label": "make_cover()", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 35.7, "font": {"size": 12, "color": "#ffffff"}, "title": "make_cover()", "community": 0, "community_name": "Cover Image Generation", "source_file": "gen_cover.py", "file_type": "code", "degree": 6}, {"id": "home_kan_signal_pop_tools_gen_cover_rationale_41", "label": "\u94f6\u7070\u2192\u767d\u5f84\u5411\u6e10\u53d8\u80cc\u666f\uff08\u4e2d\u5fc3\u9ad8\u5149\uff0c\u56db\u5468\u5fae\u6697\uff09", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "\u94f6\u7070\u2192\u767d\u5f84\u5411\u6e10\u53d8\u80cc\u666f\uff08\u4e2d\u5fc3\u9ad8\u5149\uff0c\u56db\u5468\u5fae\u6697\uff09", "community": 0, "community_name": "Cover Image Generation", "source_file": "gen_cover.py", "file_type": "rationale", "degree": 1}, {"id": "home_kan_signal_pop_tools_gen_cover_rationale_127", "label": "\u53f3\u4fa7\u53e0\u52a0\u5e74\u8f7b\u5973\u6027\u5f62\u8c61\uff08\u4eae\u80cc\u666f\u9002\u914d\u7248\uff1a\u8138\u90e8\u6e05\u6670\uff0c\u4ec5\u6700\u8fb9\u7f18\u7fbd\u5316\uff09", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "\u53f3\u4fa7\u53e0\u52a0\u5e74\u8f7b\u5973\u6027\u5f62\u8c61\uff08\u4eae\u80cc\u666f\u9002\u914d\u7248\uff1a\u8138\u90e8\u6e05\u6670\uff0c\u4ec5\u6700\u8fb9\u7f18\u7fbd\u5316\uff09", "community": 0, "community_name": "Cover Image Generation", "source_file": "gen_cover.py", "file_type": "rationale", "degree": 1}, {"id": "home_kan_signal_pop_tools_gen_cover_local_py", "label": "gen_cover_local.py", "color": {"background": "#FF9DA7", "border": "#FF9DA7", "highlight": {"background": "#ffffff", "border": "#FF9DA7"}}, "size": 22.9, "font": {"size": 12, "color": "#ffffff"}, "title": "gen_cover_local.py", "community": 7, "community_name": "Local Cover Generation", "source_file": "gen_cover_local.py", "file_type": "code", "degree": 3}, {"id": "home_kan_signal_pop_tools_gen_cover_local_neon_text", "label": "neon_text()", "color": {"background": "#FF9DA7", "border": "#FF9DA7", "highlight": {"background": "#ffffff", "border": "#FF9DA7"}}, "size": 18.6, "font": {"size": 12, "color": "#ffffff"}, "title": "neon_text()", "community": 7, "community_name": "Local Cover Generation", "source_file": "gen_cover_local.py", "file_type": "code", "degree": 2}, {"id": "home_kan_signal_pop_tools_gen_cover_local_build_bg", "label": "build_bg()", "color": {"background": "#FF9DA7", "border": "#FF9DA7", "highlight": {"background": "#ffffff", "border": "#FF9DA7"}}, "size": 18.6, "font": {"size": 12, "color": "#ffffff"}, "title": "build_bg()", "community": 7, "community_name": "Local Cover Generation", "source_file": "gen_cover_local.py", "file_type": "code", "degree": 2}, {"id": "home_kan_signal_pop_tools_gen_cover_local_make_cover", "label": "make_cover()", "color": {"background": "#FF9DA7", "border": "#FF9DA7", "highlight": {"background": "#ffffff", "border": "#FF9DA7"}}, "size": 22.9, "font": {"size": 12, "color": "#ffffff"}, "title": "make_cover()", "community": 7, "community_name": "Local Cover Generation", "source_file": "gen_cover_local.py", "file_type": "code", "degree": 3}, {"id": "home_kan_signal_pop_tools_gen_hyperframes_html_py", "label": "gen_hyperframes_html.py", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 22.9, "font": {"size": 12, "color": "#ffffff"}, "title": "gen_hyperframes_html.py", "community": 3, "community_name": "SRT Parsing and HTML", "source_file": "gen_hyperframes_html.py", "file_type": "code", "degree": 3}, {"id": "home_kan_signal_pop_tools_gen_hyperframes_html_parse_srt", "label": "parse_srt()", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "parse_srt()", "community": 3, "community_name": "SRT Parsing and HTML", "source_file": "gen_hyperframes_html.py", "file_type": "code", "degree": 1}, {"id": "home_kan_signal_pop_tools_gen_hyperframes_html_find_news_time_ranges", "label": "find_news_time_ranges()", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "find_news_time_ranges()", "community": 3, "community_name": "SRT Parsing and HTML", "source_file": "gen_hyperframes_html.py", "file_type": "code", "degree": 1}, {"id": "home_kan_signal_pop_tools_gen_hyperframes_html_esc", "label": "esc()", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 18.6, "font": {"size": 12, "color": "#ffffff"}, "title": "esc()", "community": 3, "community_name": "SRT Parsing and HTML", "source_file": "gen_hyperframes_html.py", "file_type": "code", "degree": 2}, {"id": "home_kan_signal_pop_tools_gen_hyperframes_html_rationale_129", "label": "Escape special chars for JS", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "Escape special chars for JS", "community": 3, "community_name": "SRT Parsing and HTML", "source_file": "gen_hyperframes_html.py", "file_type": "rationale", "degree": 1}, {"id": "home_kan_signal_pop_tools_gen_missing_images_py", "label": "gen_missing_images.py", "color": {"background": "#BAB0AC", "border": "#BAB0AC", "highlight": {"background": "#ffffff", "border": "#BAB0AC"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "gen_missing_images.py", "community": 9, "community_name": "Missing Image Generation", "source_file": "gen_missing_images.py", "file_type": "code", "degree": 1}, {"id": "home_kan_signal_pop_tools_gen_missing_images_gen", "label": "gen()", "color": {"background": "#BAB0AC", "border": "#BAB0AC", "highlight": {"background": "#ffffff", "border": "#BAB0AC"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "gen()", "community": 9, "community_name": "Missing Image Generation", "source_file": "gen_missing_images.py", "file_type": "code", "degree": 1}, {"id": "home_kan_signal_pop_tools_gen_scene_images_py", "label": "gen_scene_images.py", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "gen_scene_images.py", "community": 10, "community_name": "Scene Image Generation", "source_file": "gen_scene_images.py", "file_type": "code", "degree": 1}, {"id": "home_kan_signal_pop_tools_gen_scene_images_gen_image", "label": "gen_image()", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "gen_image()", "community": 10, "community_name": "Scene Image Generation", "source_file": "gen_scene_images.py", "file_type": "code", "degree": 1}, {"id": "home_kan_signal_pop_tools_gen_scene_images_lorem_py", "label": "gen_scene_images_lorem.py", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 18.6, "font": {"size": 12, "color": "#ffffff"}, "title": "gen_scene_images_lorem.py", "community": 4, "community_name": "LoremFlickr Image Downloader", "source_file": "gen_scene_images_lorem.py", "file_type": "code", "degree": 2}, {"id": "home_kan_signal_pop_tools_gen_scene_images_lorem_download_loremflickr", "label": "download_loremflickr()", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 22.9, "font": {"size": 12, "color": "#ffffff"}, "title": "download_loremflickr()", "community": 4, "community_name": "LoremFlickr Image Downloader", "source_file": "gen_scene_images_lorem.py", "file_type": "code", "degree": 3}, {"id": "home_kan_signal_pop_tools_gen_scene_images_lorem_gen_unique", "label": "gen_unique()", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 22.9, "font": {"size": 12, "color": "#ffffff"}, "title": "gen_unique()", "community": 4, "community_name": "LoremFlickr Image Downloader", "source_file": "gen_scene_images_lorem.py", "file_type": "code", "degree": 3}, {"id": "home_kan_signal_pop_tools_gen_scene_images_lorem_rationale_26", "label": "Fetch from loremflickr with redirect handling", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "Fetch from loremflickr with redirect handling", "community": 4, "community_name": "LoremFlickr Image Downloader", "source_file": "gen_scene_images_lorem.py", "file_type": "rationale", "degree": 1}, {"id": "home_kan_signal_pop_tools_gen_scene_images_lorem_rationale_46", "label": "Get unique image >= 100KB", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "Get unique image &gt;= 100KB", "community": 4, "community_name": "LoremFlickr Image Downloader", "source_file": "gen_scene_images_lorem.py", "file_type": "rationale", "degree": 1}, {"id": "home_kan_signal_pop_tools_gen_scene_images_unsplash_py", "label": "gen_scene_images_unsplash.py", "color": {"background": "#EDC948", "border": "#EDC948", "highlight": {"background": "#ffffff", "border": "#EDC948"}}, "size": 18.6, "font": {"size": 12, "color": "#ffffff"}, "title": "gen_scene_images_unsplash.py", "community": 5, "community_name": "Unsplash Image Downloader", "source_file": "gen_scene_images_unsplash.py", "file_type": "code", "degree": 2}, {"id": "home_kan_signal_pop_tools_gen_scene_images_unsplash_download_unsplash", "label": "download_unsplash()", "color": {"background": "#EDC948", "border": "#EDC948", "highlight": {"background": "#ffffff", "border": "#EDC948"}}, "size": 22.9, "font": {"size": 12, "color": "#ffffff"}, "title": "download_unsplash()", "community": 5, "community_name": "Unsplash Image Downloader", "source_file": "gen_scene_images_unsplash.py", "file_type": "code", "degree": 3}, {"id": "home_kan_signal_pop_tools_gen_scene_images_unsplash_gen_unique", "label": "gen_unique()", "color": {"background": "#EDC948", "border": "#EDC948", "highlight": {"background": "#ffffff", "border": "#EDC948"}}, "size": 22.9, "font": {"size": 12, "color": "#ffffff"}, "title": "gen_unique()", "community": 5, "community_name": "Unsplash Image Downloader", "source_file": "gen_scene_images_unsplash.py", "file_type": "code", "degree": 3}, {"id": "home_kan_signal_pop_tools_gen_scene_images_unsplash_rationale_27", "label": "Fetch from Unsplash Source API with redirect handling", "color": {"background": "#EDC948", "border": "#EDC948", "highlight": {"background": "#ffffff", "border": "#EDC948"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "Fetch from Unsplash Source API with redirect handling", "community": 5, "community_name": "Unsplash Image Downloader", "source_file": "gen_scene_images_unsplash.py", "file_type": "rationale", "degree": 1}, {"id": "home_kan_signal_pop_tools_gen_scene_images_unsplash_rationale_53", "label": "Get unique image >= 100KB", "color": {"background": "#EDC948", "border": "#EDC948", "highlight": {"background": "#ffffff", "border": "#EDC948"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "Get unique image &gt;= 100KB", "community": 5, "community_name": "Unsplash Image Downloader", "source_file": "gen_scene_images_unsplash.py", "file_type": "rationale", "degree": 1}, {"id": "home_kan_signal_pop_tools_gen_scene_images_v2_py", "label": "gen_scene_images_v2.py", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "gen_scene_images_v2.py", "community": 11, "community_name": "Scene Image Generation V2", "source_file": "gen_scene_images_v2.py", "file_type": "code", "degree": 1}, {"id": "home_kan_signal_pop_tools_gen_scene_images_v2_gen", "label": "gen()", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "gen()", "community": 11, "community_name": "Scene Image Generation V2", "source_file": "gen_scene_images_v2.py", "file_type": "code", "degree": 1}, {"id": "home_kan_signal_pop_tools_gen_scene_images_v3_py", "label": "gen_scene_images_v3.py", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "gen_scene_images_v3.py", "community": 12, "community_name": "Scene Image Generation V3", "source_file": "gen_scene_images_v3.py", "file_type": "code", "degree": 1}, {"id": "home_kan_signal_pop_tools_gen_scene_images_v3_gen", "label": "gen()", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "gen()", "community": 12, "community_name": "Scene Image Generation V3", "source_file": "gen_scene_images_v3.py", "file_type": "code", "degree": 1}, {"id": "home_kan_signal_pop_tools_gen_timeline_py", "label": "gen_timeline.py", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "gen_timeline.py", "community": 13, "community_name": "Timeline Generation", "source_file": "gen_timeline.py", "file_type": "code", "degree": 1}, {"id": "home_kan_signal_pop_tools_gen_timeline_main", "label": "main()", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 14.3, "font": {"size": 0, "color": "#ffffff"}, "title": "main()", "community": 13, "community_name": "Timeline Generation", "source_file": "gen_timeline.py", "file_type": "code", "degree": 1}, {"id": "home_kan_signal_pop_tools_render_daily_video_py", "label": "render_daily_video.py", "color": {"background": "#9C755F", "border": "#9C755F", "highlight": {"background": "#ffffff", "border": "#9C755F"}}, "size": 22.9, "font": {"size": 12, "color": "#ffffff"}, "title": "render_daily_video.py", "community": 8, "community_name": "Daily Video Rendering", "source_file": "render_daily_video.py", "file_type": "code", "degree": 3}, {"id": "home_kan_signal_pop_tools_render_daily_video_main", "label": "main()", "color": {"background": "#9C755F", "border": "#9C755F", "highlight": {"background": "#ffffff", "border": "#9C755F"}}, "size": 22.9, "font": {"size": 12, "color": "#ffffff"}, "title": "main()", "community": 8, "community_name": "Daily Video Rendering", "source_file": "render_daily_video.py", "file_type": "code", "degree": 3}, {"id": "home_kan_signal_pop_tools_render_daily_video_parse_script", "label": "parse_script()", "color": {"background": "#9C755F", "border": "#9C755F", "highlight": {"background": "#ffffff", "border": "#9C755F"}}, "size": 18.6, "font": {"size": 12, "color": "#ffffff"}, "title": "parse_script()", "community": 8, "community_name": "Daily Video Rendering", "source_file": "render_daily_video.py", "file_type": "code", "degree": 2}, {"id": "home_kan_signal_pop_tools_render_daily_video_wrap_text", "label": "wrap_text()", "color": {"background": "#9C755F", "border": "#9C755F", "highlight": {"background": "#ffffff", "border": "#9C755F"}}, "size": 18.6, "font": {"size": 12, "color": "#ffffff"}, "title": "wrap_text()", "community": 8, "community_name": "Daily Video Rendering", "source_file": "render_daily_video.py", "file_type": "code", "degree": 2}];
+const RAW_EDGES = [{"from": "home_kan_signal_pop_tools_add_ticker_py", "to": "home_kan_signal_pop_tools_add_ticker_build_srt", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_add_ticker_py", "to": "home_kan_signal_pop_tools_add_ticker_build_srt_proper", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_add_ticker_py", "to": "home_kan_signal_pop_tools_add_ticker_main", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_add_ticker_main", "to": "home_kan_signal_pop_tools_add_ticker_build_srt_proper", "label": "calls", "title": "calls [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_batch_gen_images_py", "to": "home_kan_signal_pop_tools_batch_gen_images_download_with_retry", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_batch_gen_images_py", "to": "home_kan_signal_pop_tools_batch_gen_images_find_prompts_file", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_batch_gen_images_py", "to": "home_kan_signal_pop_tools_batch_gen_images_main", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_batch_gen_images_py", "to": "home_kan_signal_pop_tools_batch_gen_images_short_prompt", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_batch_gen_images_main", "to": "home_kan_signal_pop_tools_batch_gen_images_find_prompts_file", "label": "calls", "title": "calls [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_batch_gen_images_rationale_23", "to": "home_kan_signal_pop_tools_batch_gen_images_find_prompts_file", "label": "rationale_for", "title": "rationale_for [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_batch_gen_images_main", "to": "home_kan_signal_pop_tools_batch_gen_images_short_prompt", "label": "calls", "title": "calls [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_batch_gen_images_rationale_39", "to": "home_kan_signal_pop_tools_batch_gen_images_short_prompt", "label": "rationale_for", "title": "rationale_for [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_batch_gen_images_main", "to": "home_kan_signal_pop_tools_batch_gen_images_download_with_retry", "label": "calls", "title": "calls [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_composite_video_py", "to": "home_kan_signal_pop_tools_composite_video_build_timeline_from_script", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_composite_video_py", "to": "home_kan_signal_pop_tools_composite_video_create_text_bg", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_composite_video_py", "to": "home_kan_signal_pop_tools_composite_video_find_chinese_font", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_composite_video_py", "to": "home_kan_signal_pop_tools_composite_video_main", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_composite_video_create_text_bg", "to": "home_kan_signal_pop_tools_composite_video_find_chinese_font", "label": "calls", "title": "calls [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_composite_video_main", "to": "home_kan_signal_pop_tools_composite_video_create_text_bg", "label": "calls", "title": "calls [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_composite_video_rationale_21", "to": "home_kan_signal_pop_tools_composite_video_create_text_bg", "label": "rationale_for", "title": "rationale_for [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_composite_video_rationale_63", "to": "home_kan_signal_pop_tools_composite_video_build_timeline_from_script", "label": "rationale_for", "title": "rationale_for [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_cover_py", "to": "home_kan_signal_pop_tools_gen_cover_build_anchor_masked", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_cover_py", "to": "home_kan_signal_pop_tools_gen_cover_build_bg", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_cover_py", "to": "home_kan_signal_pop_tools_gen_cover_corner_brackets", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_cover_py", "to": "home_kan_signal_pop_tools_gen_cover_get_anchor", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_cover_py", "to": "home_kan_signal_pop_tools_gen_cover_lerp", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_cover_py", "to": "home_kan_signal_pop_tools_gen_cover_make_cover", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_cover_py", "to": "home_kan_signal_pop_tools_gen_cover_neon_text", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_cover_build_bg", "to": "home_kan_signal_pop_tools_gen_cover_lerp", "label": "calls", "title": "calls [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_cover_make_cover", "to": "home_kan_signal_pop_tools_gen_cover_build_bg", "label": "calls", "title": "calls [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_cover_rationale_41", "to": "home_kan_signal_pop_tools_gen_cover_build_bg", "label": "rationale_for", "title": "rationale_for [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_cover_make_cover", "to": "home_kan_signal_pop_tools_gen_cover_neon_text", "label": "calls", "title": "calls [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_cover_make_cover", "to": "home_kan_signal_pop_tools_gen_cover_corner_brackets", "label": "calls", "title": "calls [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_cover_make_cover", "to": "home_kan_signal_pop_tools_gen_cover_get_anchor", "label": "calls", "title": "calls [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_cover_make_cover", "to": "home_kan_signal_pop_tools_gen_cover_build_anchor_masked", "label": "calls", "title": "calls [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_cover_rationale_127", "to": "home_kan_signal_pop_tools_gen_cover_build_anchor_masked", "label": "rationale_for", "title": "rationale_for [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_cover_local_py", "to": "home_kan_signal_pop_tools_gen_cover_local_build_bg", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_cover_local_py", "to": "home_kan_signal_pop_tools_gen_cover_local_make_cover", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_cover_local_py", "to": "home_kan_signal_pop_tools_gen_cover_local_neon_text", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_cover_local_make_cover", "to": "home_kan_signal_pop_tools_gen_cover_local_neon_text", "label": "calls", "title": "calls [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_cover_local_make_cover", "to": "home_kan_signal_pop_tools_gen_cover_local_build_bg", "label": "calls", "title": "calls [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_hyperframes_html_py", "to": "home_kan_signal_pop_tools_gen_hyperframes_html_esc", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_hyperframes_html_py", "to": "home_kan_signal_pop_tools_gen_hyperframes_html_find_news_time_ranges", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_hyperframes_html_py", "to": "home_kan_signal_pop_tools_gen_hyperframes_html_parse_srt", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_hyperframes_html_rationale_129", "to": "home_kan_signal_pop_tools_gen_hyperframes_html_esc", "label": "rationale_for", "title": "rationale_for [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_missing_images_py", "to": "home_kan_signal_pop_tools_gen_missing_images_gen", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_scene_images_py", "to": "home_kan_signal_pop_tools_gen_scene_images_gen_image", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_scene_images_lorem_py", "to": "home_kan_signal_pop_tools_gen_scene_images_lorem_download_loremflickr", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_scene_images_lorem_py", "to": "home_kan_signal_pop_tools_gen_scene_images_lorem_gen_unique", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_scene_images_lorem_gen_unique", "to": "home_kan_signal_pop_tools_gen_scene_images_lorem_download_loremflickr", "label": "calls", "title": "calls [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_scene_images_lorem_rationale_26", "to": "home_kan_signal_pop_tools_gen_scene_images_lorem_download_loremflickr", "label": "rationale_for", "title": "rationale_for [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_scene_images_lorem_rationale_46", "to": "home_kan_signal_pop_tools_gen_scene_images_lorem_gen_unique", "label": "rationale_for", "title": "rationale_for [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_scene_images_unsplash_py", "to": "home_kan_signal_pop_tools_gen_scene_images_unsplash_download_unsplash", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_scene_images_unsplash_py", "to": "home_kan_signal_pop_tools_gen_scene_images_unsplash_gen_unique", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_scene_images_unsplash_gen_unique", "to": "home_kan_signal_pop_tools_gen_scene_images_unsplash_download_unsplash", "label": "calls", "title": "calls [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_scene_images_unsplash_rationale_27", "to": "home_kan_signal_pop_tools_gen_scene_images_unsplash_download_unsplash", "label": "rationale_for", "title": "rationale_for [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_scene_images_unsplash_rationale_53", "to": "home_kan_signal_pop_tools_gen_scene_images_unsplash_gen_unique", "label": "rationale_for", "title": "rationale_for [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_scene_images_v2_py", "to": "home_kan_signal_pop_tools_gen_scene_images_v2_gen", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_scene_images_v3_py", "to": "home_kan_signal_pop_tools_gen_scene_images_v3_gen", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_gen_timeline_py", "to": "home_kan_signal_pop_tools_gen_timeline_main", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_render_daily_video_py", "to": "home_kan_signal_pop_tools_render_daily_video_main", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_render_daily_video_py", "to": "home_kan_signal_pop_tools_render_daily_video_parse_script", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_render_daily_video_py", "to": "home_kan_signal_pop_tools_render_daily_video_wrap_text", "label": "contains", "title": "contains [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_render_daily_video_main", "to": "home_kan_signal_pop_tools_render_daily_video_parse_script", "label": "calls", "title": "calls [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_kan_signal_pop_tools_render_daily_video_main", "to": "home_kan_signal_pop_tools_render_daily_video_wrap_text", "label": "calls", "title": "calls [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}];
+const LEGEND = [{"cid": 0, "color": "#4E79A7", "label": "Cover Image Generation", "count": 10}, {"cid": 1, "color": "#F28E2B", "label": "Prompt File Processing", "count": 7}, {"cid": 2, "color": "#E15759", "label": "Video Timeline Composition", "count": 7}, {"cid": 3, "color": "#76B7B2", "label": "SRT Parsing and HTML", "count": 5}, {"cid": 4, "color": "#59A14F", "label": "LoremFlickr Image Downloader", "count": 5}, {"cid": 5, "color": "#EDC948", "label": "Unsplash Image Downloader", "count": 5}, {"cid": 6, "color": "#B07AA1", "label": "SRT Ticker Generation", "count": 4}, {"cid": 7, "color": "#FF9DA7", "label": "Local Cover Generation", "count": 4}, {"cid": 8, "color": "#9C755F", "label": "Daily Video Rendering", "count": 4}, {"cid": 9, "color": "#BAB0AC", "label": "Missing Image Generation", "count": 2}, {"cid": 10, "color": "#4E79A7", "label": "Scene Image Generation", "count": 2}, {"cid": 11, "color": "#F28E2B", "label": "Scene Image Generation V2", "count": 2}, {"cid": 12, "color": "#E15759", "label": "Scene Image Generation V3", "count": 2}, {"cid": 13, "color": "#76B7B2", "label": "Timeline Generation", "count": 2}];
+
+// HTML-escape helper — prevents XSS when injecting graph data into innerHTML
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// Build vis datasets
+const nodesDS = new vis.DataSet(RAW_NODES.map(n => ({
+  id: n.id, label: n.label, color: n.color, size: n.size,
+  font: n.font, title: n.title,
+  _community: n.community, _community_name: n.community_name,
+  _source_file: n.source_file, _file_type: n.file_type, _degree: n.degree,
+})));
+
+const edgesDS = new vis.DataSet(RAW_EDGES.map((e, i) => ({
+  id: i, from: e.from, to: e.to,
+  label: '',
+  title: e.title,
+  dashes: e.dashes,
+  width: e.width,
+  color: e.color,
+  arrows: { to: { enabled: true, scaleFactor: 0.5 } },
+})));
+
+const container = document.getElementById('graph');
+const network = new vis.Network(container, { nodes: nodesDS, edges: edgesDS }, {
+  physics: {
+    enabled: true,
+    solver: 'forceAtlas2Based',
+    forceAtlas2Based: {
+      gravitationalConstant: -60,
+      centralGravity: 0.005,
+      springLength: 120,
+      springConstant: 0.08,
+      damping: 0.4,
+      avoidOverlap: 0.8,
+    },
+    stabilization: { iterations: 200, fit: true },
+  },
+  interaction: {
+    hover: true,
+    tooltipDelay: 100,
+    hideEdgesOnDrag: true,
+    navigationButtons: false,
+    keyboard: false,
+  },
+  nodes: { shape: 'dot', borderWidth: 1.5 },
+  edges: { smooth: { type: 'continuous', roundness: 0.2 }, selectionWidth: 3 },
+});
+
+network.once('stabilizationIterationsDone', () => {
+  network.setOptions({ physics: { enabled: false } });
+});
+
+function showInfo(nodeId) {
+  const n = nodesDS.get(nodeId);
+  if (!n) return;
+  const neighborIds = network.getConnectedNodes(nodeId);
+  const neighborItems = neighborIds.map(nid => {
+    const nb = nodesDS.get(nid);
+    const color = nb ? nb.color.background : '#555';
+    return `<span class="neighbor-link" style="border-left-color:${esc(color)}" onclick="focusNode(${JSON.stringify(nid)})">${esc(nb ? nb.label : nid)}</span>`;
+  }).join('');
+  document.getElementById('info-content').innerHTML = `
+    <div class="field"><b>${esc(n.label)}</b></div>
+    <div class="field">Type: ${esc(n._file_type || 'unknown')}</div>
+    <div class="field">Community: ${esc(n._community_name)}</div>
+    <div class="field">Source: ${esc(n._source_file || '-')}</div>
+    <div class="field">Degree: ${n._degree}</div>
+    ${neighborIds.length ? `<div class="field" style="margin-top:8px;color:#aaa;font-size:11px">Neighbors (${neighborIds.length})</div><div id="neighbors-list">${neighborItems}</div>` : ''}
+  `;
+}
+
+function focusNode(nodeId) {
+  network.focus(nodeId, { scale: 1.4, animation: true });
+  network.selectNodes([nodeId]);
+  showInfo(nodeId);
+}
+
+// Track hovered node — hover detection is more reliable than click params
+let hoveredNodeId = null;
+network.on('hoverNode', params => {
+  hoveredNodeId = params.node;
+  container.style.cursor = 'pointer';
+});
+network.on('blurNode', () => {
+  hoveredNodeId = null;
+  container.style.cursor = 'default';
+});
+container.addEventListener('click', () => {
+  if (hoveredNodeId !== null) {
+    showInfo(hoveredNodeId);
+    network.selectNodes([hoveredNodeId]);
+  }
+});
+network.on('click', params => {
+  if (params.nodes.length > 0) {
+    showInfo(params.nodes[0]);
+  } else if (hoveredNodeId === null) {
+    document.getElementById('info-content').innerHTML = '<span class="empty">Click a node to inspect it</span>';
+  }
+});
+
+const searchInput = document.getElementById('search');
+const searchResults = document.getElementById('search-results');
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.toLowerCase().trim();
+  searchResults.innerHTML = '';
+  if (!q) { searchResults.style.display = 'none'; return; }
+  const matches = RAW_NODES.filter(n => n.label.toLowerCase().includes(q)).slice(0, 20);
+  if (!matches.length) { searchResults.style.display = 'none'; return; }
+  searchResults.style.display = 'block';
+  matches.forEach(n => {
+    const el = document.createElement('div');
+    el.className = 'search-item';
+    el.textContent = n.label;
+    el.style.borderLeft = `3px solid ${n.color.background}`;
+    el.style.paddingLeft = '8px';
+    el.onclick = () => {
+      network.focus(n.id, { scale: 1.5, animation: true });
+      network.selectNodes([n.id]);
+      showInfo(n.id);
+      searchResults.style.display = 'none';
+      searchInput.value = '';
+    };
+    searchResults.appendChild(el);
+  });
+});
+document.addEventListener('click', e => {
+  if (!searchResults.contains(e.target) && e.target !== searchInput)
+    searchResults.style.display = 'none';
+});
+
+const hiddenCommunities = new Set();
+
+const selectAllCb = document.getElementById('select-all-cb');
+
+function updateSelectAllState() {
+  const total = LEGEND.length;
+  const hidden = hiddenCommunities.size;
+  selectAllCb.checked = hidden === 0;
+  selectAllCb.indeterminate = hidden > 0 && hidden < total;
+}
+
+function toggleAllCommunities(hide) {
+  document.querySelectorAll('.legend-item').forEach(item => {
+    hide ? item.classList.add('dimmed') : item.classList.remove('dimmed');
+  });
+  document.querySelectorAll('.legend-cb').forEach(cb => {
+    cb.checked = !hide;
+  });
+  LEGEND.forEach(c => {
+    if (hide) hiddenCommunities.add(c.cid); else hiddenCommunities.delete(c.cid);
+  });
+  const updates = RAW_NODES.map(n => ({ id: n.id, hidden: hide }));
+  nodesDS.update(updates);
+  updateSelectAllState();
+}
+
+const legendEl = document.getElementById('legend');
+LEGEND.forEach(c => {
+  const item = document.createElement('div');
+  item.className = 'legend-item';
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.className = 'legend-cb';
+  cb.checked = true;
+  cb.addEventListener('change', (e) => {
+    e.stopPropagation();
+    if (cb.checked) {
+      hiddenCommunities.delete(c.cid);
+      item.classList.remove('dimmed');
+    } else {
+      hiddenCommunities.add(c.cid);
+      item.classList.add('dimmed');
+    }
+    const updates = RAW_NODES
+      .filter(n => n.community === c.cid)
+      .map(n => ({ id: n.id, hidden: !cb.checked }));
+    nodesDS.update(updates);
+    updateSelectAllState();
+  });
+  item.innerHTML = `<div class="legend-dot" style="background:${c.color}"></div>
+    <span class="legend-label">${c.label}</span>
+    <span class="legend-count">${c.count}</span>`;
+  item.prepend(cb);
+  item.onclick = (e) => {
+    if (e.target === cb) return;
+    cb.checked = !cb.checked;
+    cb.dispatchEvent(new Event('change'));
+  };
+  legendEl.appendChild(item);
+});
+</script>
+<script>
+// Render hyperedges as shaded regions
+const hyperedges = [];
+// afterDrawing passes ctx already transformed to network coordinate space.
+// Draw node positions raw — no manual pan/zoom/DPR math needed.
+network.on('afterDrawing', function(ctx) {
+    hyperedges.forEach(h => {
+        const positions = h.nodes
+            .map(nid => network.getPositions([nid])[nid])
+            .filter(p => p !== undefined);
+        if (positions.length < 2) return;
+        ctx.save();
+        ctx.globalAlpha = 0.12;
+        ctx.fillStyle = '#6366f1';
+        ctx.strokeStyle = '#6366f1';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        // Centroid and expanded hull in network coordinates
+        const cx = positions.reduce((s, p) => s + p.x, 0) / positions.length;
+        const cy = positions.reduce((s, p) => s + p.y, 0) / positions.length;
+        const expanded = positions.map(p => ({
+            x: cx + (p.x - cx) * 1.15,
+            y: cy + (p.y - cy) * 1.15
+        }));
+        ctx.moveTo(expanded[0].x, expanded[0].y);
+        expanded.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 0.4;
+        ctx.stroke();
+        // Label
+        ctx.globalAlpha = 0.8;
+        ctx.fillStyle = '#4f46e5';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(h.label, cx, cy - 5);
+        ctx.restore();
+    });
+});
+</script>
+</body>
+</html>

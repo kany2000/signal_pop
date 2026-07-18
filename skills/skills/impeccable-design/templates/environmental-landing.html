@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Perennial — 在地球还来得及的时候</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@200..800&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* ========== RESET ========== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+img{max-width:100%;display:block}
+
+/* ========== CUSTOM PROPERTIES ========== */
+:root{
+  --clr-ground: oklch(0.25 0.08 160);
+  --clr-living: oklch(0.55 0.18 145);
+  --clr-sky: oklch(0.985 0.002 0);
+  --clr-soil: oklch(0.5 0.09 60);
+  --clr-ink: oklch(0.15 0.01 160);
+  --clr-muted: oklch(0.65 0.02 160);
+  --clr-surface: oklch(0.97 0.005 0);
+  --font-display: 'Sora', system-ui, sans-serif;
+  --font-body: 'Spectral', Georgia, serif;
+  --space-xs: clamp(0.5rem, 1vw, 0.75rem);
+  --space-sm: clamp(0.75rem, 1.5vw, 1.25rem);
+  --space-md: clamp(1.25rem, 2.5vw, 2rem);
+  --space-lg: clamp(2rem, 5vw, 4rem);
+  --space-xl: clamp(3rem, 8vw, 6rem);
+  --space-2xl: clamp(4rem, 12vw, 9rem);
+  --content-max: 72rem;
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important}
+}
+
+/* ========== BASE ========== */
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-body);
+  font-weight:400;
+  font-size:clamp(1rem, 1.15vw, 1.125rem);
+  line-height:1.7;
+  color:var(--clr-ink);
+  background:var(--clr-sky);
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{font-family:var(--font-display);font-weight:600;line-height:1.2;text-wrap:balance}
+h1{font-size:clamp(2.5rem, 6vw, 5rem);letter-spacing:-0.03em}
+h2{font-size:clamp(1.75rem, 4vw, 3rem);letter-spacing:-0.02em}
+h3{font-size:clamp(1.25rem, 2.5vw, 1.75rem);letter-spacing:-0.01em}
+p{max-width:68ch;text-wrap:pretty}
+a{color:var(--clr-living)}
+.container{width:100%;max-width:var(--content-max);margin:0 auto;padding:0 var(--space-md)}
+
+/* ========== HERO ========== */
+.hero{
+  min-height:100dvh;
+  background:var(--clr-ground);
+  color:var(--clr-sky);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:var(--space-xl) var(--space-md);
+  position:relative;
+  overflow:hidden;
+}
+.hero::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:radial-gradient(ellipse 80% 60% at 30% 40%, oklch(0.35 0.12 150 / 0.25), transparent 70%),
+              radial-gradient(ellipse 60% 50% at 70% 70%, oklch(0.2 0.06 140 / 0.4), transparent);
+  pointer-events:none;
+}
+.hero-content{position:relative;z-index:1;max-width:var(--content-max);margin:0 auto;width:100%}
+.hero h1{
+  max-width:16ch;
+  animation:fadeUp 1s ease-out;
+}
+.hero h1 em{
+  font-style:normal;
+  color:oklch(0.7 0.2 145);
+}
+.hero p{
+  font-family:var(--font-body);
+  font-size:clamp(1.1rem, 1.5vw, 1.35rem);
+  line-height:1.6;
+  margin-top:var(--space-md);
+  max-width:52ch;
+  color:oklch(0.8 0.03 150);
+  animation:fadeUp 1s ease-out 0.15s both;
+}
+.hero-cta{
+  margin-top:var(--space-lg);
+  display:inline-flex;
+  align-items:center;
+  gap:var(--space-sm);
+  animation:fadeUp 1s ease-out 0.3s both;
+}
+.btn{
+  font-family:var(--font-display);
+  font-weight:600;
+  font-size:1rem;
+  padding:0.9em 2em;
+  border:none;
+  border-radius:0;
+  cursor:pointer;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  gap:0.5em;
+  transition:all 0.2s ease-out;
+}
+.btn-primary{
+  background:var(--clr-living);
+  color:var(--clr-ink);
+}
+.btn-primary:hover{background:oklch(0.6 0.2 145);transform:translateY(-2px)}
+.btn-outline{
+  background:transparent;
+  color:var(--clr-sky);
+  border:1.5px solid oklch(0.7 0.04 150 / 0.4);
+}
+.btn-outline:hover{background:oklch(1 0 0 / 0.08);border-color:oklch(0.7 0.04 150 / 0.7)}
+.hero-scroll{
+  position:absolute;
+  bottom:var(--space-lg);
+  left:50%;
+  translate:-50%;
+  font-family:var(--font-display);
+  font-size:0.75rem;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  color:oklch(0.7 0.03 150 / 0.5);
+  animation:float 3s ease-in-out infinite;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(1.5rem)}to{opacity:1;transform:translateY(0)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-0.5rem)}}
+
+/* ========== SECTION BASE ========== */
+section{padding:var(--space-2xl) var(--space-md)}
+.section-label{
+  font-family:var(--font-display);
+  font-size:0.75rem;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--clr-muted);
+  margin-bottom:var(--space-sm);
+}
+.section-title{margin-bottom:var(--space-sm)}
+.section-intro{
+  font-size:clamp(1.05rem, 1.3vw, 1.2rem);
+  color:oklch(0.4 0.02 160);
+  margin-bottom:var(--space-xl);
+  max-width:60ch;
+}
+
+/* ========== WEIGHT (data section) ========== */
+#weight{
+  background:var(--clr-surface);
+  padding-top:var(--space-2xl);
+  padding-bottom:var(--space-2xl);
+}
+.weight-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:var(--space-lg);
+}
+.weight-item{
+  border-top:1.5px solid oklch(0.85 0.01 0);
+  padding-top:var(--space-md);
+  display:grid;
+  grid-template-columns:1fr 2fr;
+  gap:var(--space-lg);
+  align-items:start;
+}
+.weight-figure{
+  font-family:var(--font-display);
+  font-size:clamp(3rem, 6vw, 5rem);
+  font-weight:700;
+  line-height:1;
+  letter-spacing:-0.04em;
+  color:var(--clr-ground);
+}
+.weight-figure span{
+  font-size:clamp(1rem, 1.5vw, 1.25rem);
+  font-weight:400;
+  color:var(--clr-muted);
+  display:block;
+  letter-spacing:0;
+  margin-top:var(--space-xs);
+}
+.weight-body h3{
+  font-size:clamp(1.1rem, 1.3vw, 1.4rem);
+  font-weight:600;
+  margin-bottom:var(--space-xs);
+}
+.weight-body p{font-size:clamp(0.95rem, 1.05vw, 1.05rem);color:oklch(0.4 0.02 160)}
+
+/* ========== THRIVES (hope section) ========== */
+#thrives{background:var(--clr-sky)}
+.thrives-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
+  gap:var(--space-md);
+}
+.thrives-card{
+  background:var(--clr-surface);
+  padding:var(--space-lg);
+  position:relative;
+}
+.thrives-card::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:3px;
+  background:var(--clr-living);
+}
+.thrives-card:nth-child(2)::before{background:var(--clr-soil)}
+.thrives-card:nth-child(3)::before{background:oklch(0.55 0.15 220)}
+.thrives-icon{
+  font-size:2rem;
+  margin-bottom:var(--space-sm);
+  display:block;
+}
+.thrives-card h3{margin-bottom:var(--space-xs);font-weight:600}
+.thrives-card p{font-size:clamp(0.9rem, 1vw, 1rem);color:oklch(0.4 0.02 160);max-width:none}
+
+/* ========== HANDS (CTA section, dark bg) ========== */
+#hands{
+  background:var(--clr-ground);
+  color:var(--clr-sky);
+}
+#hands .section-label{color:oklch(0.7 0.1 145 / 0.6)}
+#hands .section-title{color:var(--clr-sky)}
+#hands .section-intro{color:oklch(0.75 0.03 150)}
+.hands-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+  gap:var(--space-md);
+}
+.hands-step{
+  padding:var(--space-lg);
+  position:relative;
+  border:1.5px solid oklch(0.6 0.05 150 / 0.25);
+  transition:border-color 0.3s ease-out;
+}
+.hands-step:hover{border-color:oklch(0.6 0.05 150 / 0.5)}
+.hands-num{
+  font-family:var(--font-display);
+  font-size:3rem;
+  font-weight:200;
+  line-height:1;
+  color:oklch(0.5 0.12 145 / 0.35);
+  margin-bottom:var(--space-sm);
+}
+.hands-step h3{font-weight:600;margin-bottom:var(--space-xs)}
+.hands-step p{font-size:clamp(0.9rem, 1vw, 1rem);color:oklch(0.75 0.03 150);max-width:none}
+.hands-step a{
+  display:inline-flex;
+  align-items:center;
+  gap:0.35em;
+  margin-top:var(--space-sm);
+  font-family:var(--font-display);
+  font-weight:600;
+  font-size:0.9rem;
+  color:var(--clr-living);
+  text-decoration:none;
+}
+.hands-step a:hover{text-decoration:underline}
+
+/* ========== FOOTER ========== */
+footer{
+  background:oklch(0.12 0.01 160);
+  color:oklch(0.6 0.02 150);
+  padding:var(--space-lg) var(--space-md);
+  text-align:center;
+  font-size:0.85rem;
+  font-family:var(--font-display);
+}
+footer a{color:oklch(0.65 0.15 145)}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 640px){
+  .weight-item{grid-template-columns:1fr;gap:var(--space-sm)}
+  .weight-figure{font-size:clamp(2.5rem, 10vw, 3.5rem)}
+  .hero h1{font-size:clamp(2rem, 8vw, 2.75rem)}
+  section{padding:var(--space-xl) var(--space-md)}
+}
+</style>
+</head>
+<body>
+
+<!-- ====== HERO ====== -->
+<section class="hero" id="top">
+  <div class="hero-content">
+    <h1>The ground beneath us<br><em>is still here.</em></h1>
+    <p>不是末日预言，不是道德绑架。是人类给自己的一次坦诚对话——关于我们正在失去的，以及仍然来得及挽回的。</p>
+    <div class="hero-cta">
+      <a href="#thrives" class="btn btn-primary">看看还在生长的 →</a>
+      <a href="#hands" class="btn btn-outline">我能做什么</a>
+    </div>
+  </div>
+  <div class="hero-scroll">向下滚动</div>
+</section>
+
+<!-- ====== WEIGHT ====== -->
+<section id="weight">
+  <div class="container">
+    <p class="section-label">正在发生的事</p>
+    <h2 class="section-title">这不是未来，是此刻。</h2>
+    <p class="section-intro">数据不是用来吓人的。是用来让我们停止假装无事发生。</p>
+    <div class="weight-grid">
+
+      <div class="weight-item">
+        <div class="weight-figure">
+          69%
+          <span>的野生动物种群<br>已消失</span>
+        </div>
+        <div class="weight-body">
+          <h3>Living Planet Index, WWF 2024</h3>
+          <p>自1970年以来，全球监测的哺乳动物、鸟类、两栖动物、爬行动物和鱼类种群平均规模下降了69%。淡水物种的下降幅度最大——83%。这不是自然的周期律，而是人类世正在书写的篇章。</p>
+        </div>
+      </div>
+
+      <div class="weight-item">
+        <div class="weight-figure">
+          2.5B
+          <span>吨<br>二氧化碳/年</span>
+        </div>
+        <div class="weight-body">
+          <h3>森林砍伐的碳排放</h3>
+          <p>热带森林砍伐每年向大气释放约25亿吨二氧化碳——相当于全球所有汽车和卡车的排放总和。每消失一片雨林，我们就失去一个对抗气候危机最重要的天然盟友。</p>
+        </div>
+      </div>
+
+      <div class="weight-item">
+        <div class="weight-figure">
+          1M+
+          <span>物种<br>面临灭绝威胁</span>
+        </div>
+        <div class="weight-body">
+          <h3>IPBES 全球评估报告</h3>
+          <p>全球约一百万动植物物种面临灭绝威胁，其中许多将在几十年内消失。这是人类历史上第一次，一个单一物种的活动正在决定数百万其他物种的命运。</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ====== THRIVES ====== -->
+<section id="thrives">
+  <div class="container">
+    <p class="section-label">依然在发生</p>
+    <h2 class="section-title">希望不是错觉，是事实。</h2>
+    <p class="section-intro">每一条坏消息的背后，都有人在做对的事。而且这些事正在起作用。</p>
+    <div class="thrives-grid">
+
+      <div class="thrives-card">
+        <span class="thrives-icon">🌱</span>
+        <h3>全球森林正以意想不到的速度恢复</h3>
+        <p>南大西洋沿岸的巴西大西洋森林，经过数十年的保护与再种植，面积已经恢复超过26%。哥斯达黎加的森林覆盖率从1983年的26%回升到了2024年的超过57%。恢复是可能的，而且正在发生。</p>
+      </div>
+
+      <div class="thrives-card">
+        <span class="thrives-icon">⚡</span>
+        <h3>可再生能源已经超越煤炭</h3>
+        <p>2023年，全球可再生能源装机容量创下历史新高——510吉瓦。在中国，可再生能源发电量首次超过了煤电。太阳能和风能现在是最便宜的电力来源，经济学的天平已经倾斜。</p>
+      </div>
+
+      <div class="thrives-card">
+        <span class="thrives-icon">🌊</span>
+        <h3>海洋保护区的有效面积翻了三倍</h3>
+        <p>全球海洋保护区的覆盖面积在2020年至2024年间从7.4%增长到了超过12%。公海生物多样性条约在2023年终于通过——这是保护公海生态系统的第一个国际法律框架。</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ====== HANDS ====== -->
+<section id="hands">
+  <div class="container">
+    <p class="section-label">从你开始</p>
+    <h2 class="section-title">你的手比你以为的更有力。</h2>
+    <p class="section-intro">改变不需要你成为一个完全不同的人。只需要你做几件小事，然后坚持下去。</p>
+    <div class="hands-grid">
+
+      <div class="hands-step">
+        <div class="hands-num">01</div>
+        <h3>换掉一个习惯</h3>
+        <p>不用全部推翻。选一个最容易的：带自己的袋子去超市，或者把空调调高一度。重复21天，它就不再是"环保"，而是"你"了。</p>
+        <a href="#">了解更多 →</a>
+      </div>
+
+      <div class="hands-step">
+        <div class="hands-num">02</div>
+        <h3>让钱为地球工作</h3>
+        <p>你的每一笔消费都是一次投票。试试把银行账户转到拒绝投资化石燃料的银行，或者每个月拿出收入的1%支持一个环保组织。比例小，影响不小。</p>
+        <a href="#">选一个组织 →</a>
+      </div>
+
+      <div class="hands-step">
+        <div class="hands-num">03</div>
+        <h3>开始一个对话</h3>
+        <p>最有效的环保行动是被低估的：和你的朋友聊这件事。研究表明，当人们知道自己的社交圈在乎环境时，改变的速度会翻倍。你不需要成为一个活动家——成为一个分享者就够了。</p>
+        <a href="#">对话指南 →</a>
+      </div>
+
+      <div class="hands-step">
+        <div class="hands-num">04</div>
+        <h3>把你的声音放大</h3>
+        <p>写信给你当地的人大代表，或者支持一个推动环保立法的组织。系统的改变需要制度的推力。一个有学识的选民的声音，比一百条社交媒体转发更有分量。</p>
+        <a href="#">找到你的代表 →</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ====== FOOTER ====== -->
+<footer>
+  <div class="container">
+    <p>The Perennial · 在地球还来得及的时候</p>
+    <p style="margin-top:var(--space-xs);font-size:0.8rem;color:oklch(0.45 0.02 150)">灵感来源于这个世界仍在坚持的每一个普通人。</p>
+    <p style="margin-top:var(--space-xs);font-size:0.75rem;color:oklch(0.35 0.02 150)">Design guided by <a href="https://github.com/pbakaus/impeccable" target="_blank">Impeccable</a>.</p>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,77 @@
+# Pollinations AI — Free Text-to-Image
+
+## Quick Reference
+
+Zero-key, zero-registration image generation via HTTP.
+
+```
+https://image.pollinations.ai/prompt/{URL_ENCODED_PROMPT}?width=1280&height=720&nologo=true
+```
+
+## Required Headers (Critical — 403 without them)
+
+```python
+headers = {
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
+    "Referer": "https://pollinations.ai/"
+}
+req = urllib.request.Request(url, headers=headers)
+```
+
+Without these, server returns **403 Forbidden**. This is not a bug — it's their bot-protection layer.
+
+## Usage Pattern (Python)
+
+```python
+import urllib.request, urllib.parse, os
+
+def generate_image(prompt, output_path, width=1280, height=720):
+    q = urllib.parse.quote(prompt)
+    url = f"https://image.pollinations.ai/prompt/{q}?width={width}&height={height}&nologo=true"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
+        "Referer": "https://pollinations.ai/"
+    }
+    req = urllib.request.Request(url, headers=headers)
+    with urllib.request.urlopen(req, timeout=120) as r:
+        with open(output_path, "wb") as f:
+            f.write(r.read())
+```
+
+## Supported Parameters
+
+| Param | Default | Notes |
+|-------|---------|-------|
+| width | 1024 | Max tested: 1920 |
+| height | 1024 | Max tested: 1080 |
+| nologo | true | Strips watermark (recommended) |
+| seed | (random) | For reproducibility |
+| model | (auto) | Underlying SD variant |
+
+## Free Tier Limits
+
+- No API key required
+- No account needed
+- No documented rate limit (tested: 10 sequential requests fine)
+- ~5-15 seconds per image
+- Output format: JPEG
+
+## Known Gotchas
+
+1. **Spaces in prompt** → must URL-encode with `urllib.parse.quote()`. Raw spaces in URL cause 403 or malformed request.
+2. **No User-Agent/Referer** → 403. Always include both.
+3. **Slow response** → 120s timeout recommended; some prompts take 20-30s.
+4. **Inconsistent quality** — free SD model, no control over style. Best for news illustrations, not photorealism.
+5. **Chinese characters in prompt** → works, but English prompts tend to produce more coherent results.
+
+## News Image Generation for Signal Pop
+
+Full script: `/home/kan/shared/signal_pop/scripts/gen_news_images.py`
+
+Workflow:
+1. Parse `signal_pop_daily_YYYYMMDD.txt` for "第N条：[分类] 标题"
+2. Match title keywords against a prompt template map
+3. Generate 1280×720 image per news item
+4. Save to `archive/img_YYYYMMDD/`
+
+Cron job `signal-pop-daily-images` runs at 09:00 Mon/Wed/Fri (after daily news generation).
