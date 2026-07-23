@@ -141,6 +141,95 @@ def make_cover():
     return bg.convert("RGB")
 
 
+def make_cover_portrait():
+    """3:4 竖版封面 1080x1440，适合手机屏幕"""
+    PW, PH = 1080, 1440
+    print(f"Building portrait cover @ {PW}x{PH}...")
+
+    # 深色背景
+    arr = np.zeros((PH, PW, 3), dtype=np.uint8)
+    cx, cy = PW // 3, PH // 3
+    max_d = (PW**2 + PH**2) ** 0.5
+    for y in range(PH):
+        for x in range(PW):
+            dist = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
+            t = max(0, 1 - dist / max_d)
+            arr[y, x] = [int(10 + t * 35), int(15 + t * 30), int(35 + t * 45)]
+    bg = Image.fromarray(arr)
+    draw = ImageDraw.Draw(bg)
+    step = 60
+    for x in range(0, PW, step):
+        draw.line([(x, 0), (x, PH)], fill=(25, 35, 60), width=1)
+    for y in range(0, PH, step):
+        draw.line([(0, y), (PW, y)], fill=(25, 35, 60), width=1)
+
+    # 主播（上半部分，稍小）
+    anchor = get_anchor()
+    aw, ah = anchor.size
+    crop = (aw // 5, 0, aw - aw // 5, ah)
+    ac = anchor.crop(crop)
+    scale = PW * 0.55 / aw
+    nw, nh = int(aw * scale), int(ah * scale)
+    ac = ac.resize((nw, nh), Image.LANCZOS)
+    mask = Image.new("L", (nw, nh), 255)
+    md = ImageDraw.Draw(mask)
+    edge = min(nw, nh) // 5
+    for i in range(edge):
+        a = int(255 * (i / edge) ** 2)
+        md.rectangle([i, i, nw - 1 - i, nh - 1 - i], outline=a)
+    mask = mask.filter(ImageFilter.GaussianBlur(18))
+    ac.putalpha(mask)
+    ax = (PW - nw) // 2 + 60
+    ay = 40
+    bg.paste(ac, (ax, ay), ac)
+
+    # 底部渐变遮罩（文字区）
+    overlay = Image.new("RGBA", (PW, PH), (0, 0, 0, 0))
+    od = ImageDraw.Draw(overlay)
+    for y in range(PH // 2, PH):
+        a = int(200 * (1 - (PH - y) / (PH // 2)))
+        a = max(0, min(255, a))
+        od.rectangle([(0, y), (PW, y)], fill=(0, 0, 0, a))
+    bg = Image.alpha_composite(bg.convert("RGBA"), overlay)
+
+    # HUD 角标
+    draw = ImageDraw.Draw(bg)
+    for cx, cy, dx, dy in [(25, 25, 1, 1), (PW-25, 25, -1, 1), (25, PH-25, 1, -1), (PW-25, PH-25, -1, -1)]:
+        draw.line([(cx, cy), (cx + dx * 60, cy)], fill=CYAN, width=2)
+        draw.line([(cx, cy), (cx, cy + dy * 60)], fill=CYAN, width=2)
+
+    # 标签
+    draw.text((60, 50), "新闻 · 科技 · 财经", fill=(0, 200, 255), font=ImageFont.truetype(FONT_BOLD if True else FONT_REG, 24))
+
+    # 文字区域
+    tx = 80
+    title_font = ImageFont.truetype(FONT_BOLD, 72)
+    draw.text((tx, 700), "隔天信号弹", fill=WHITE, font=title_font)
+    for ox, oy in [(2, 2), (-2, 2), (2, -2), (-2, -2)]:
+        draw.text((tx + ox, 700 + oy), "隔天信号弹", fill=(0, 200, 255, 80), font=title_font)
+
+    sub_font = ImageFont.truetype(FONT_REG, 34)
+    draw.text((tx, 790), "每日新闻播报", fill=(100, 220, 255), font=sub_font)
+    for ox, oy in [(1, 1), (-1, 1)]:
+        draw.text((tx + ox, 790 + oy), "每日新闻播报", fill=(0, 100, 150, 60), font=sub_font)
+
+    mark_font = ImageFont.truetype(FONT_BOLD, 36)
+    draw.text((tx, 860), "MARK哥的创想引擎", fill=GOLD, font=mark_font)
+    for ox, oy in [(1, 1), (-1, 1)]:
+        draw.text((tx + ox, 860 + oy), "MARK哥的创想引擎", fill=(150, 100, 0, 60), font=mark_font)
+
+    # 日期
+    date_font = ImageFont.truetype(FONT_REG, 28)
+    draw.text((tx, 950), PUB_DATE_FMT, fill=(180, 190, 200), font=date_font)
+
+    # 底部
+    ft = ImageFont.truetype(FONT_REG, 22)
+    draw.text((60, PH - 45), f"隔天信号弹 · {PUB_DATE_SHORT}", fill=(100, 120, 150), font=ft)
+    draw.text((PW - 60, PH - 45), "10条核心新闻", fill=(100, 120, 150), font=ft, anchor="rt")
+
+    return bg.convert("RGB")
+
+
 def make_4x3(cover):
     cw, ch = 1440, 1080
     canvas = Image.new('RGB', (cw, ch), (10, 15, 35))
@@ -151,6 +240,22 @@ def make_4x3(cover):
         draw.line([(0, y), (cw, y)], fill=(25, 35, 60), width=1)
     src = cover.resize((cw, int(1080 * cw / 1920)), Image.LANCZOS)
     top = (ch - src.height) // 2
+    canvas.paste(src, (0, top))
+    return canvas
+
+
+def make_3x4(cover):
+    """16:9 -> 1080x1440 (3:4 portrait), 深色画布上下扩展"""
+    pw, ph = 1080, 1440
+    canvas = Image.new('RGB', (pw, ph), (10, 15, 35))
+    draw = ImageDraw.Draw(canvas)
+    for x in range(0, pw, 60):
+        draw.line([(x, 0), (x, ph)], fill=(25, 35, 60), width=1)
+    for y in range(0, ph, 60):
+        draw.line([(0, y), (pw, y)], fill=(25, 35, 60), width=1)
+    # Scale 16:9 to fit width 1080, then center vertically
+    src = cover.resize((pw, int(1080 * pw / 1920)), Image.LANCZOS)
+    top = (ph - src.height) // 2
     canvas.paste(src, (0, top))
     return canvas
 
@@ -170,6 +275,11 @@ def main():
     p43_path = os.path.join(OUT_DIR, f"cover_{PUB_DATE}_4x3.png")
     p43.save(p43_path)
     print(f"4:3 -> {p43_path}")
+
+    p34 = make_cover_portrait()
+    p34_path = os.path.join(OUT_DIR, f"cover_{PUB_DATE}_3x4.png")
+    p34.save(p34_path)
+    print(f"3:4 -> {p34_path}")
     print("Done.")
 
 
