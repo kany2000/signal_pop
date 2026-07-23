@@ -5,8 +5,8 @@ from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont
 
 # ========== CONFIG ==========
-SCRIPT_FILE = "E:/projects/signal_pop/archive/signal_pop_daily_20260721.txt"
-DATE = "20260722"
+SCRIPT_FILE = "E:/projects/signal_pop/archive/signal_pop_daily_20260724.txt"
+DATE = "20260724"
 OUTPUT_BASE = "E:/projects/signal_pop/output"
 
 SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)))
@@ -62,7 +62,7 @@ SCENE_PROMPTS = {
     "英国": "10 Downing Street, UK Parliament, British politics, economic data" + NO_TEXT,
     "AI": "Artificial intelligence concept, neural network, data center, futuristic technology" + NO_TEXT,
     "新能源": "Wind turbines and solar panels, renewable energy landscape, green energy" + NO_TEXT,
-    "美国": "United States, White House, American flag, Washington DC" + NO_TEXT,
+    "美国": "United States, Washington DC, diplomatic building, government district, modern cityscape" + NO_TEXT,
 }
 DEFAULT_SCENE = "news event scene, documentary photography" + NO_TEXT
 
