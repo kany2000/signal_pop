@@ -137,7 +137,7 @@ sau kuaishou login --account <account_name> --headless
 
 ### 平台特殊处理（内置在 auto_publish.py）
 
-| 平台 | `--schedule` | 失败处理 |\n|------|-------------|----------|\n| B站 | 支持 | 正常上传 |\n| 快手 | 支持 + `--headless` | 浏览器缺失时 symlink 系统 Chrome |\n| 视频号 | 支持 | 见下方「视频号登录排错」和「视频号登录代码修复」 |\n| YouTube | ❌ 不支持 | 自动降级为 `--visibility private`，手动改公开 |\n| 抖音/小红书 | 待接入 | 需先登录，cookies 路径待统一 |
+| 平台 | `--schedule` | 失败处理 |\n|------|-------------|----------|\n| B站 | 支持 | 正常上传 |\n| 快手 | 支持 + `--headless` | 浏览器缺失时 symlink 系统 Chrome |\n| 视频号 | 支持 | 见下方「视频号登录排错」和「视频号登录代码修复」 |\n| YouTube | ❌ 不支持 | 自动降级为 `--visibility private`，手动改公开 |\n| 抖音/小红书 | 待接入 | 需先登录，cookies 路径待统一 |\n\n**Signal Pop 定时规则：所有平台 `--schedule` 必须设为出稿日+1天 08:30。** 例：出稿日07/24 → 定时07/25 08:30。YouTube 不支持 schedule，降级为 private 手动改。
 
 ### 微信视频号（WeChat Channels / Tencent）
 
