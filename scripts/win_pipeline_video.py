@@ -155,23 +155,24 @@ def draw_slide(bg_path, item, idx, total, pub_short):
 
 def draw_ending(bg_path, pub_date_fmt):
     bg = Image.open(bg_path).convert('RGB').resize((WIDTH, HEIGHT), Image.LANCZOS)
-    drk = dark_overlay(WIDTH, HEIGHT, 180)
-    bf = bottom_fade(WIDTH, HEIGHT, 180)
-    bg = Image.alpha_composite(bg.convert('RGBA'), drk)
-    bg = Image.alpha_composite(bg, bf).convert('RGB')
+    drk = Image.new('RGBA', (WIDTH, HEIGHT), (0, 0, 0, 140))
+    bg = Image.alpha_composite(bg.convert('RGBA'), drk).convert('RGB')
     d = ImageDraw.Draw(bg)
 
+    # Gold lines
     for x in range(200, 1720):
         d.rectangle([x, 85, x + 1, 90], fill=GOLD)
     cx, cy = 960, 145
     d.ellipse([cx - 18, cy - 18, cx + 18, cy + 18], outline=GOLD, width=3)
     d.ellipse([cx - 5, cy - 5, cx + 5, cy + 5], fill=GOLD)
+    # Brand + date
     draw_shadow(d, 960, 210, "隔天信号弹", fnt(64, True), GOLD)
     draw_shadow(d, 960, 295, "下期见", fnt(36), WHITE)
     draw_shadow(d, 960, 350, pub_date_fmt, fnt(28), LIGHT_GREY)
-    draw_shadow(d, 960, 650, "今天主播：图图", fnt(28), LIGHT_GREY)
-    draw_shadow(d, 960, 690, "互动话题：您最关注哪条新闻？欢迎在评论区留言讨论！", fnt(26), WHITE)
-    draw_shadow(d, 960, 730, "感谢您的关注，我们下期见~", fnt(28), LIGHT_GREY)
+    # Interactive text
+    draw_shadow(d, 960, 600, "今天主播：图图", fnt(28), LIGHT_GREY)
+    draw_shadow(d, 960, 640, "互动话题：您最关注哪条新闻？欢迎在评论区留言讨论！", fnt(26), WHITE)
+    draw_shadow(d, 960, 680, "感谢您的关注，我们下期见~", fnt(28), LIGHT_GREY)
     return bg
 
 

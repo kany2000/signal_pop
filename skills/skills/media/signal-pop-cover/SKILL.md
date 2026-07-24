@@ -28,17 +28,38 @@ trigger: 用户说"做封面"/"出封面"/"封面图"
 
 ## 生成脚本
 
-位置：`E:/projects/signal_pop/scripts/run_cover.py`
+### 每日封面（Windows 版）
+
+位置：`E:/projects/signal_pop/scripts/run_daily_cover.py`
 
 ```bash
-cd E:/projects/signal_pop && python3 scripts/run_cover.py
+cd E:/projects/signal_pop && python3 scripts/run_daily_cover.py
 ```
 
-一次运行自动产出两张：`cover_{PUB_DATE}_16x9.png` + `cover_{PUB_DATE}_4x3.png`。
+一次运行自动产出三张：`cover_{PUB_DATE}_16x9.png` + `cover_{PUB_DATE}_4x3.png` + `cover_{PUB_DATE}_3x4.png`。
 
-## Unsplash 女主播池
+### 周末特别版封面（Windows 版）
+
+位置：`E:/projects/signal_pop/scripts/gen_weekend_cover.py`
+
+```bash
+cd E:/projects/signal_pop && python3 scripts/gen_weekend_cover.py
+```
+
+与每日封面区别：副标题为"周末特别版"，底部显示"15条核心新闻"，女主播用 Pollinations AI 实时生成（种子基于日期 hash 确保唯一，避免面孔重复）。
+
+## Unsplash 女主播池（每日封面用）
 
 共 17 张确认年轻女性 Unsplash 照片，每期用 MD5(日期) 散列种子轮替，确保每期不同人物。
+
+## 周末封面女主播（AI 生成）
+
+周末版封面改用 Pollinations AI 生成主播头像，无需 Unsplash 池。种子 = MD5(日期 + "_v3") 散列，确保同一天不同版本的封面也生成不同面孔。
+
+```python
+seed = int(hashlib.md5((DATE + "_v3").encode()).hexdigest()[:8], 16) % 99999
+url = f"https://image.pollinations.ai/prompt/...&seed={seed}"
+```
 
 ```python
 ANCHOR_POOL = [

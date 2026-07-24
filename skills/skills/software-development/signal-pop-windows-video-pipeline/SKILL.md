@@ -94,6 +94,31 @@ results = await asyncio.gather(*tasks)
 
 **修复:** 改用 `re.search`。
 
+### 6. TTS DNS 解析失败 (Windows)
+
+**问题:** edge-tts 在 Windows 上偶发 `Could not contact DNS servers` 错误。
+
+**修复:** 使用 `aiohttp.TCPConnector(resolver=aiohttp.resolver.ThreadedResolver())` 替代默认 c-ares 解析器。
+
+```python
+conn = aiohttp.TCPConnector(
+    resolver=aiohttp.resolver.ThreadedResolver(),
+)
+communicate = edge_tts.Communicate(text, voice, connector=conn, connect_timeout=30, receive_timeout=120)
+```
+
+### 7. 主播观点字段前缀 `*` 残留
+
+**问题:** 来源文本 `👉 *[主播观点]*：评论内容` → 解析后 opinion 字段以 `*：` 开头。
+
+**修复:** `win_pipeline_parse.py` 中 `opinion_text.lstrip('*：: ')` 去除标点前缀。
+
+### 8. 封面图女主播面孔重复
+
+**问题:** Unsplash 固定池中照片轮替完会重复出现。
+
+**修复:** 改用 Pollinations AI 实时生成主播头像，每次不同 seed 确保不重复。见 `scripts/gen_weekend_cover.py`。
+
 ## 一键运行
 
 ```bash

@@ -13,7 +13,7 @@ POLLINATIONS_TPL = "https://image.pollinations.ai/prompt/{q}?width=1216&height=8
 # Pre-defined prompts for each news item (index starts at 0 for opening_bg)
 NEWS_PROMPTS = {
     "opening": "Chinese news broadcasting studio, professional television studio, blue and gold lighting, large LED screen showing world map, modern broadcast desk, cinematic, professional photography, 8K",
-    "ending": "Chinese news broadcasting studio, warm lighting, professional television studio, wide shot, elegant, cinematic, professional photography",
+    "ending": "blurred city skyline at night with bokeh lights, dark blue gradient, abstract background, no text, no words, no letters, no writing, no signs, no labels, clean abstract background",
 }
 
 NO_TEXT = ", no text, no words, no labels, no captions, no UI, clean image without any writing"
@@ -34,6 +34,16 @@ SCENE_PROMPTS = {
     "ABB": "Industrial automation factory, robotic arms on assembly line, precision manufacturing" + NO_TEXT,
     "本田": "Honda dealer showroom with electric SUV on display, automotive, clean commercial photography" + NO_TEXT,
     "美国对伊朗": "Persian Gulf coast, Strait of Hormuz aerial view, naval ships, geopolitical tension" + NO_TEXT,
+    # 周末版 20260724 定制提示词
+    "DeepSeek": "Chinese AI startup DeepSeek office, futuristic data center with blue neon lights, server racks glowing, artificial intelligence research laboratory, technology innovation" + NO_TEXT,
+    "智能外骨骼": "Smart exoskeleton suit on display, futuristic wearable technology, augmented reality smart glasses, consumer electronics show, innovative tech products" + NO_TEXT,
+    "智能眼镜": "Smart augmented reality glasses on modern desk, future wearable technology, digital display interface, consumer electronics innovation" + NO_TEXT,
+    "中际旭创": "Fiber optic cable with glowing light signals, high-speed data transmission technology, optical communication equipment, modern telecommunications infrastructure, professional photography" + NO_TEXT,
+    "旭创": "Optical transceiver module close-up, fiber optic technology, data center connectivity, high-speed internet infrastructure, clean tech photography" + NO_TEXT,
+    "AI取代": "Professional office worker standing next to AI robot, human and artificial intelligence collaboration, modern workplace, futuristic office environment, technology concept" + NO_TEXT,
+    "AI Agents": "Digital AI agent interface on holographic screen, artificial intelligence automation, virtual assistant concept, futuristic technology, glowing data streams" + NO_TEXT,
+    "OPEC": "OPEC headquarters building Vienna, oil barrels and petroleum refinery, OPEC flag and member country flags, global energy summit, oil industry photography" + NO_TEXT,
+    "OPEC+": "World oil map with petroleum pipelines, oil drilling rigs at sunset, OPEC energy ministers meeting, global oil production concept, industrial photography" + NO_TEXT,
 }
 DEFAULT_SCENE = "news event scene, documentary photography" + NO_TEXT
 

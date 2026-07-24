@@ -18,28 +18,33 @@ def build_segments(items, pub_date_fmt, pub_weekday):
     return segs
 
 
-async def gen_one_segment(idx, label, text, voice, sem):
+async def gen_one_segment(idx, label, text, voice, sem, audio_dir):
     """Generate one segment with semaphore control."""
-    import edge_tts
+    import edge_tts, aiohttp
     async with sem:
         print(f"  [{label}] {len(text)}c...", end="", flush=True)
-        # edge-tts saves as MP3
-        mp3 = os.path.join(os.path.dirname(__file__), '..', 'output', 'weekly_20260717', 'audio', f'_s{idx:03d}.mp3')
-        communicate = edge_tts.Communicate(text, voice)
+        mp3 = os.path.join(audio_dir, f'_s{idx:03d}.mp3')
+        conn = aiohttp.TCPConnector(
+            resolver=aiohttp.resolver.ThreadedResolver(),
+        )
+        communicate = edge_tts.Communicate(text, voice, connector=conn, connect_timeout=30, receive_timeout=120)
         await communicate.save(mp3)
         return (idx, label, mp3)
 
 
-async def gen_tts(items_path, output_wav):
+async def gen_tts(items_path, output_wav, pub_date_fmt="2026年07月25日", pub_weekday="星期六"):
     with open(items_path, 'r', encoding='utf-8') as f:
         items = json.load(f)
 
-    segs = build_segments(items, "2026年07月18日", "星期六")
+    segs = build_segments(items, pub_date_fmt, pub_weekday)
     print(f"Per-segment TTS: {len(segs)} segments")
+
+    audio_dir = os.path.dirname(output_wav)
+    os.makedirs(audio_dir, exist_ok=True)
 
     # Run all segments concurrently with semaphore (max 3 concurrent)
     sem = asyncio.Semaphore(3)
-    tasks = [gen_one_segment(i, l, t, VOICE, sem) for i, (l, t) in enumerate(segs)]
+    tasks = [gen_one_segment(i, l, t, VOICE, sem, audio_dir) for i, (l, t) in enumerate(segs)]
     results = await asyncio.gather(*tasks)
 
     # Sort by index, convert to WAV, trim silence

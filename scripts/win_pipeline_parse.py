@@ -44,8 +44,7 @@ def parse_script(text):
         opinion_match = re.search(r'\[主播观点\]', line_stripped)
         if opinion_match and items:
             opinion_text = line_stripped.split(']', 1)[-1].strip()
-            if opinion_text.startswith('：'):
-                opinion_text = opinion_text[1:].strip()
+            opinion_text = opinion_text.lstrip('*：: ')
             items[-1]["opinion"] = opinion_text
             continue
 
