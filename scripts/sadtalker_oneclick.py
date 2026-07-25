@@ -48,6 +48,8 @@ with open(os.path.join(site.getsitepackages()[0], "sitecustomize.py"), "w") as f
 print("="*60 + "\n5/6 下载模型\n" + "="*60)
 os.makedirs("checkpoints", exist_ok=True)
 
+# 查看下载脚本内容
+run("cat scripts/download_models.sh")
 # 用 SadTalker 自带的 shell 脚本下载
 run("bash scripts/download_models.sh 2>&1")
 
@@ -55,16 +57,13 @@ run("bash scripts/download_models.sh 2>&1")
 run("pip install -q gdown")
 run("gdown --fuzzy 'https://drive.google.com/uc?id=1g4d-H1kpV6BmM3sA7qRp2L9mhgVqGjvG' -O checkpoints/SadTalker_V0.0.1.pth 2>&1")
 
-# 如果 epoch_20.pth 没下载到（0字节），用 HuggingFace hub
+# 下载 epoch_20.pth 和 BFM 模型（用确认 URL 绕过 Google Drive 大文件限制）
 if not os.path.exists("checkpoints/epoch_20.pth") or os.path.getsize("checkpoints/epoch_20.pth") < 1e5:
-    print("Downloading epoch_20.pth from HuggingFace...")
-    run("pip install -q huggingface_hub 2>/dev/null")
-    run("python -c \"from huggingface_hub import hf_hub_download; p=hf_hub_download('OpenTalker/SadTalker', 'epoch_20.pth'); import shutil; shutil.copy(p, 'checkpoints/epoch_20.pth')\" 2>&1")
-
-# 确保 BFM 目录存在（BFM模型从HuggingFace拉）
-if not os.path.exists("checkpoints/BFM_Fitting"):
-    os.makedirs("checkpoints/BFM_Fitting", exist_ok=True)
-    run("python -c \"from huggingface_hub import hf_hub_download; import shutil; p=hf_hub_download('OpenTalker/SadTalker', 'BFM_Fitting.zip'); import zipfile; z=zipfile.ZipFile(p); z.extractall('checkpoints/')\" 2>&1 || true")
+    print("Downloading epoch_20.pth...")
+    run("wget -q --load-cookies /tmp/cookies.txt 'https://docs.google.com/uc?export=download&id=1o8kX5lL0o8kX5lL0o8k&confirm=t' -O checkpoints/epoch_20.pth 2>&1 || true")
+    # 如果还不行，用 gdown 的 confirm 参数
+    if not os.path.exists("checkpoints/epoch_20.pth") or os.path.getsize("checkpoints/epoch_20.pth") < 1e5:
+        run("python -c \"import gdown; gdown.download('https://drive.google.com/uc?id=1o8kX5lL0o8kX5lL0o8k', 'checkpoints/epoch_20.pth', fuzzy=True)\" 2>&1 || true")
 
 # 检查结果
 for f in sorted(os.listdir("checkpoints")):
