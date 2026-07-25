@@ -38,8 +38,9 @@ run("pip install -q basicsr==1.4.2 gfpgan==1.3.8")
 print("="*60 + "\n4/6 修复兼容性\n" + "="*60)
 run("sed -i 's/np.VisibleDeprecationWarning/DeprecationWarning/g' src/face3d/util/preprocess.py")
 run("sed -i 's/\\.astype(np\\.float,/.astype(float,/g' src/face3d/util/my_awing_arch.py")
-run("sed -i 's/epoch_20.pth: 0.0MB/epoch_20.pth: download failed, retrying.../g' /dev/null")
 run("sed -i 's/from torchvision.transforms.functional_tensor import/from torchvision.transforms.functional import/g' /usr/local/lib/python3.12/dist-packages/basicsr/data/degradations.py")
+# 修复 align_img：用 python 直接改源文件（更可靠）
+run("python -c \"import re; p=open('src/face3d/util/preprocess.py').read(); p=p.replace('trans_params = np.array([w0, h0, s, t[0], t[1]])', 'trans_params = np.array([float(w0), float(h0), float(s), float(t[0].item()), float(t[1].item())])'); open('src/face3d/util/preprocess.py','w').write(p)\"")
 import site
 with open(os.path.join(site.getsitepackages()[0], "sitecustomize.py"), "w") as f:
     f.write("import sys,torchvision.transforms.functional as F;from types import ModuleType\n_m=ModuleType('torchvision.transforms.functional_tensor')\n_m.rgb_to_grayscale=F.rgb_to_grayscale\nsys.modules['torchvision.transforms.functional_tensor']=_m\n")
