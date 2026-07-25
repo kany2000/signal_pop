@@ -113,7 +113,27 @@ communicate = edge_tts.Communicate(text, voice, connector=conn, connect_timeout=
 
 **修复:** `win_pipeline_parse.py` 中 `opinion_text.lstrip('*：: ')` 去除标点前缀。
 
-### 8. 封面图女主播面孔重复
+### 8. AI主播小窗合成 (v2.0)
+
+**方案：** 静态照片+微妙呼吸动画，右下角PiP小窗。无需GPU、无需Colab、零依赖。
+
+**脚本：** `scripts/composite_anchor_static.py`
+
+```bash
+python scripts/composite_anchor_static.py main.mp4 anchor_face.jpg output_v2.mp4
+```
+
+**效果：**
+- 右下角 320x240 PiP小窗
+- 主播照片有轻微缩放呼吸动画
+- 圆角阴影边框
+- 主播照片用 `scripts/gen_anchor_face.py` 生成（Pollinations，每期不同seed）
+
+**相关文件：**
+- `scripts/composite_anchor_static.py` — PiP合成脚本
+- `scripts/gen_anchor_face.py` — 生成主播照片
+
+### 9. 封面图女主播面孔重复
 
 **问题:** Unsplash 固定池中照片轮替完会重复出现。
 
