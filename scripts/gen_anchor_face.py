@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""生成AI主播照片 — 用于SadTalker口型驱动"""
+"""生成AI主播照片 — 根据TTS音色匹配性别"""
 import sys, os, hashlib, urllib.request, urllib.parse
 from datetime import datetime
 
-VOICE = "zh-CN-XiaoxiaoNeural"  # 女声
-GENDER = "female"
+# 默认男声（Yunyang），女声 Xioaxiao 时改为 female
+VOICE = os.environ.get("TTS_VOICE", "zh-CN-YunyangNeural")
+GENDER = "male" if "Yunyang" in VOICE else "female"
 SEED = int(hashlib.md5(datetime.now().strftime("%Y%m%d%H").encode()).hexdigest()[:8], 16) % 99999
 
 if GENDER == "female":
