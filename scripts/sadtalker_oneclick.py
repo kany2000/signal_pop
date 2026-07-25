@@ -53,17 +53,18 @@ run("cat scripts/download_models.sh")
 # 用 SadTalker 自带的 shell 脚本下载
 run("bash scripts/download_models.sh 2>&1")
 
-# 补充下载主模型（用 gdown --fuzzy）
-run("pip install -q gdown")
-run("gdown --fuzzy 'https://drive.google.com/uc?id=1g4d-H1kpV6BmM3sA7qRp2L9mhgVqGjvG' -O checkpoints/SadTalker_V0.0.1.pth 2>&1")
+# 补充下载 BFM 模型（从GitHub release）
+if not os.path.exists("checkpoints/BFM_Fitting"):
+    print("Downloading BFM_Fitting...")
+    run("wget -q 'https://github.com/Winfredy/SadTalker/releases/download/v0.0.2/BFM_Fitting.zip' -O /tmp/BFM_Fitting.zip 2>&1 && unzip -q -o /tmp/BFM_Fitting.zip -d checkpoints/ 2>/dev/null || true")
 
-# 下载 epoch_20.pth 和 BFM 模型（用确认 URL 绕过 Google Drive 大文件限制）
+# 下载 epoch_20.pth（从旧版GitHub release，不是Google Drive）
 if not os.path.exists("checkpoints/epoch_20.pth") or os.path.getsize("checkpoints/epoch_20.pth") < 1e5:
-    print("Downloading epoch_20.pth...")
-    run("wget -q --load-cookies /tmp/cookies.txt 'https://docs.google.com/uc?export=download&id=1o8kX5lL0o8kX5lL0o8k&confirm=t' -O checkpoints/epoch_20.pth 2>&1 || true")
-    # 如果还不行，用 gdown 的 confirm 参数
+    print("Downloading epoch_20.pth from GitHub release...")
+    run("wget -q 'https://github.com/Winfredy/SadTalker/releases/download/v0.0.2/epoch_20.pth' -O checkpoints/epoch_20.pth 2>&1")
     if not os.path.exists("checkpoints/epoch_20.pth") or os.path.getsize("checkpoints/epoch_20.pth") < 1e5:
-        run("python -c \"import gdown; gdown.download('https://drive.google.com/uc?id=1o8kX5lL0o8kX5lL0o8k', 'checkpoints/epoch_20.pth', fuzzy=True)\" 2>&1 || true")
+        print("GitHub failed, trying OpenTalker release...")
+        run("wget -q 'https://github.com/OpenTalker/SadTalker/releases/download/v0.0.2-rc/epoch_20.pth' -O checkpoints/epoch_20.pth 2>&1")
 
 # 检查结果
 for f in sorted(os.listdir("checkpoints")):
