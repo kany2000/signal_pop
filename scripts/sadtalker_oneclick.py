@@ -52,7 +52,7 @@ for f in sorted(os.listdir("checkpoints")):
 # ===== 6. 主播照片 =====
 print("="*60 + "\n生成主播照片\n" + "="*60)
 seed = int(time.time()) % 99999
-q = urllib.parse.quote("professional Chinese female news anchor, head and shoulders portrait, natural realistic body proportions, neutral studio background, professional broadcast look, soft lighting, no text, no distortion")
+q = urllib.parse.quote("professional Chinese male news anchor, head and shoulders portrait, natural realistic body proportions, neutral studio background, professional broadcast look, soft lighting, no text, no distortion")
 url = f"https://image.pollinations.ai/prompt/{q}?width=768&height=768&nologo=true&seed={seed}"
 req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
 with urllib.request.urlopen(req, timeout=120) as r:
