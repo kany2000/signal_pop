@@ -95,7 +95,7 @@ print(f"  {AUDIO_FILE} ({os.path.getsize(AUDIO_FILE)//1048576}MB)")
 # ===== 8. 推理 =====
 print("="*60 + "\n6/6 生成AI主播口型视频 (~5-10分钟)\n" + "="*60)
 os.makedirs("output", exist_ok=True)
-run(f"python inference.py --driven_audio {AUDIO_FILE} --source_image anchor.jpg --result_dir output --preprocess full --still --enhancer gfpgan")
+run(f"python inference.py --driven_audio {AUDIO_FILE} --source_image anchor.jpg --result_dir output --preprocess full --still")
 
 # ===== 9. 结果 =====
 print("="*60 + "\n完成！\n" + "="*60)
