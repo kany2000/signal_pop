@@ -37,6 +37,8 @@ run("pip install -q basicsr==1.4.2 gfpgan==1.3.8")
 # ===== 4. 修复 =====
 print("="*60 + "\n4/6 修复兼容性\n" + "="*60)
 run("sed -i 's/np.VisibleDeprecationWarning/DeprecationWarning/g' src/face3d/util/preprocess.py")
+run("sed -i 's/\\.astype(np\\.float,/.astype(float,/g' src/face3d/util/my_awing_arch.py")
+run("sed -i 's/epoch_20.pth: 0.0MB/epoch_20.pth: download failed, retrying.../g' /dev/null")
 run("sed -i 's/from torchvision.transforms.functional_tensor import/from torchvision.transforms.functional import/g' /usr/local/lib/python3.12/dist-packages/basicsr/data/degradations.py")
 import site
 with open(os.path.join(site.getsitepackages()[0], "sitecustomize.py"), "w") as f:
@@ -53,11 +55,16 @@ run("bash scripts/download_models.sh 2>&1")
 run("pip install -q gdown")
 run("gdown --fuzzy 'https://drive.google.com/uc?id=1g4d-H1kpV6BmM3sA7qRp2L9mhgVqGjvG' -O checkpoints/SadTalker_V0.0.1.pth 2>&1")
 
-# 如果 epoch_20.pth 没下载到，用备用方法
+# 如果 epoch_20.pth 没下载到（0字节），用 HuggingFace hub
 if not os.path.exists("checkpoints/epoch_20.pth") or os.path.getsize("checkpoints/epoch_20.pth") < 1e5:
-    print("Downloading epoch_20.pth via alternative method...")
-    # 尝试用 requests 直接下载
-    run("python -c \"import requests; r=requests.get('https://drive.google.com/uc?export=download&id=1o8kX5lL0o8kX5lL0o8k', allow_redirects=True); open('checkpoints/epoch_20.pth','wb').write(r.content)\" 2>&1")
+    print("Downloading epoch_20.pth from HuggingFace...")
+    run("pip install -q huggingface_hub 2>/dev/null")
+    run("python -c \"from huggingface_hub import hf_hub_download; p=hf_hub_download('OpenTalker/SadTalker', 'epoch_20.pth'); import shutil; shutil.copy(p, 'checkpoints/epoch_20.pth')\" 2>&1")
+
+# 确保 BFM 目录存在
+if not os.path.exists("checkpoints/BFM_Fitting"):
+    os.makedirs("checkpoints/BFM_Fitting", exist_ok=True)
+    print("Created BFM_Fitting directory")
 
 # 检查结果
 for f in sorted(os.listdir("checkpoints")):
