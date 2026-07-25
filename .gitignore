@@ -12,6 +12,7 @@ env/
 
 # Output & generated files
 output/
+output_old/
 *.mp4
 *.wav
 *.srt
