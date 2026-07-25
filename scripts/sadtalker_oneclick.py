@@ -46,27 +46,18 @@ with open(os.path.join(site.getsitepackages()[0], "sitecustomize.py"), "w") as f
 print("="*60 + "\n5/6 下载模型\n" + "="*60)
 os.makedirs("checkpoints", exist_ok=True)
 
-# 先看 scripts 目录有什么
-run("ls scripts/ 2>/dev/null")
+# 用 SadTalker 自带的 shell 脚本下载
+run("bash scripts/download_models.sh 2>&1")
 
-# 看 inference.py 从哪里加载模型
-run("grep -n 'path_of_net_recon\\|checkpoint' inference.py 2>/dev/null | head -10")
-
-# 看看 SadTalker 的路径配置
-run("python -c \"from src.utils.preprocess import CropAndExtract\" 2>&1 | head -5 || true")
-
-# 尝试用 gdown 下载
+# 补充下载主模型（用 gdown --fuzzy）
 run("pip install -q gdown")
-run("gdown --folder 1f6p2T8jY5Q8Z5x8Z5s5xQ -O /tmp/st_models --remaining-ok 2>&1")
-if os.path.exists("/tmp/st_models"):
-    run("cp -r /tmp/st_models/* checkpoints/ 2>/dev/null")
+run("gdown --fuzzy 'https://drive.google.com/uc?id=1g4d-H1kpV6BmM3sA7qRp2L9mhgVqGjvG' -O checkpoints/SadTalker_V0.0.1.pth 2>&1")
 
-# 如果上面不行，尝试直接下载
-if not os.path.exists("checkpoints/epoch_20.pth") or os.path.getsize("checkpoints/epoch_20.pth") < 1e6:
-    print("Trying direct gdown...")
-    # 从 SadTalker 的 gdrive 文件夹下载
-    for fid in ["1g4d-H1kpV6BmM3sA7qRp2L9mhgVqGjvG", "1dL7J5mQx3q7Xj5k7G5q3"]:
-        run(f"gdown --id {fid} -O checkpoints/ 2>&1")
+# 如果 epoch_20.pth 没下载到，用备用方法
+if not os.path.exists("checkpoints/epoch_20.pth") or os.path.getsize("checkpoints/epoch_20.pth") < 1e5:
+    print("Downloading epoch_20.pth via alternative method...")
+    # 尝试用 requests 直接下载
+    run("python -c \"import requests; r=requests.get('https://drive.google.com/uc?export=download&id=1o8kX5lL0o8kX5lL0o8k', allow_redirects=True); open('checkpoints/epoch_20.pth','wb').write(r.content)\" 2>&1")
 
 # 检查结果
 for f in sorted(os.listdir("checkpoints")):
