@@ -28,7 +28,7 @@ os.chdir("SadTalker")
 
 # ===== 3. 依赖 =====
 print("="*60 + "\n3/6 安装依赖\n" + "="*60)
-run("pip install -q numpy==1.23.5 opencv-python-headless imageio scipy scikit-image")
+run("pip install -q --only-binary :all: numpy==1.23.5 opencv-python-headless imageio scipy scikit-image")
 run("pip install -q torch torchvision --index-url https://download.pytorch.org/whl/cu118")
 run("pip install -q tqdm tensorboard kornia ninja einops omegaconf yacs numexpr")
 run("pip install -q dlib-bin face-alignment")
