@@ -5,13 +5,13 @@ from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import numpy as np
 
-DATE = "20260724"
+DATE = "20260729"
 PUB_DT = datetime.strptime(DATE, "%Y%m%d")
 PUB_DATE = PUB_DT.strftime("%Y%m%d")
 PUB_DATE_FMT = f"{PUB_DATE[:4]}年{PUB_DATE[4:6]}月{PUB_DATE[6:8]}日"
 PUB_DATE_SHORT = f"{PUB_DATE[:4]}.{PUB_DATE[4:6]}.{PUB_DATE[6:8]}"
 
-OUT_DIR = "E:/projects/signal_pop/output/daily_20260724"
+OUT_DIR = "E:/projects/signal_pop/output/daily_20260729"
 CACHE = os.path.join(OUT_DIR, ".cache")
 os.makedirs(CACHE, exist_ok=True)
 
@@ -35,7 +35,7 @@ ANCHOR_POOL = [
     "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04",
     "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb",
     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
-    "https://images.unsplash.com/photo-1542587222-f9172e5c1d6c",
+    "https://images.unsplash.com/photo-1438761681033-6461ffad8d80",
     "https://images.unsplash.com/photo-1560250097-0b93528c311a",
 ]
 
@@ -67,9 +67,12 @@ def make_bg():
     return bg
 
 
-def get_anchor():
-    seed = int(hashlib.md5(DATE.encode()).hexdigest()[:8], 16)
-    idx = seed % len(ANCHOR_POOL)
+def get_anchor(force_idx=None):
+    if force_idx is not None:
+        idx = force_idx
+    else:
+        seed = int(hashlib.md5(DATE.encode()).hexdigest()[:8], 16)
+        idx = seed % len(ANCHOR_POOL)
     url = f"{ANCHOR_POOL[idx]}?w=900&q=85"
     cache = os.path.join(CACHE, f"anchor_f_{idx}.jpg")
     if not os.path.exists(cache):
@@ -107,7 +110,7 @@ def hud_corners(draw):
         draw.line([(cx, cy), (cx, cy + dy * 80)], fill=CYAN, width=2)
 
 
-def make_cover():
+def make_cover(anchor_idx=None):
     print(f"Building daily cover @ {W}x{H}...")
     bg = make_bg().convert("RGBA")
     draw = ImageDraw.Draw(bg)
@@ -115,7 +118,7 @@ def make_cover():
 
     draw.text((90, 60), "新闻 · 科技 · 财经", fill=(0, 200, 255), font=fnt(22, True))
 
-    anchor = get_anchor()
+    anchor = get_anchor(anchor_idx)
     paste_anchor(bg, anchor)
 
     tx = 120
@@ -141,7 +144,7 @@ def make_cover():
     return bg.convert("RGB")
 
 
-def make_cover_portrait():
+def make_cover_portrait(anchor_idx=None):
     """3:4 竖版封面 1080x1440，适合手机屏幕"""
     PW, PH = 1080, 1440
     print(f"Building portrait cover @ {PW}x{PH}...")
@@ -164,7 +167,7 @@ def make_cover_portrait():
         draw.line([(0, y), (PW, y)], fill=(25, 35, 60), width=1)
 
     # 主播（上半部分，稍小）
-    anchor = get_anchor()
+    anchor = get_anchor(anchor_idx)
     aw, ah = anchor.size
     crop = (aw // 5, 0, aw - aw // 5, ah)
     ac = anchor.crop(crop)
@@ -266,7 +269,10 @@ def main():
         if f.startswith("anchor_"):
             os.remove(os.path.join(CACHE, f))
 
-    cover = make_cover()
+    # 指定新锚点索引，避免重复之前用过的头像
+    NEW_ANCHOR_IDX = 5
+
+    cover = make_cover(NEW_ANCHOR_IDX)
     p16 = os.path.join(OUT_DIR, f"cover_{PUB_DATE}_16x9.png")
     cover.save(p16)
     print(f"16:9 -> {p16}")
@@ -276,7 +282,7 @@ def main():
     p43.save(p43_path)
     print(f"4:3 -> {p43_path}")
 
-    p34 = make_cover_portrait()
+    p34 = make_cover_portrait(NEW_ANCHOR_IDX)
     p34_path = os.path.join(OUT_DIR, f"cover_{PUB_DATE}_3x4.png")
     p34.save(p34_path)
     print(f"3:4 -> {p34_path}")

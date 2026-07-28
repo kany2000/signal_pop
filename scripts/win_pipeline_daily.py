@@ -5,8 +5,8 @@ from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont
 
 # ========== CONFIG ==========
-SCRIPT_FILE = "E:/projects/signal_pop/archive/signal_pop_daily_20260724.txt"
-DATE = "20260724"
+SCRIPT_FILE = "E:/projects/signal_pop/archive/signal_pop_daily_20260729.txt"
+DATE = "20260729"
 OUTPUT_BASE = "E:/projects/signal_pop/output"
 
 SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)))
