@@ -24,6 +24,9 @@ output_old/
 # Archive — generated daily assets
 archive/
 
+# Secrets
+cookies.json
+
 # IDE & tools
 .claude/
 .idea/

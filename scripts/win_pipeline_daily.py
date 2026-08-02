@@ -5,15 +5,15 @@ from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont
 
 # ========== CONFIG ==========
-SCRIPT_FILE = "E:/projects/signal_pop/archive/signal_pop_daily_20260729.txt"
-DATE = "20260729"
+SCRIPT_FILE = "E:/projects/signal_pop/archive/signal_pop_daily_20260802.txt"
+DATE = "20260802"
 OUTPUT_BASE = "E:/projects/signal_pop/output"
 
 SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, SCRIPTS_DIR)
 
 # Parse date
-PUB_DT = datetime.strptime(DATE, "%Y%m%d")
+PUB_DT = datetime.strptime(DATE, "%Y%m%d") + timedelta(days=1)
 PUB_DATE = PUB_DT.strftime("%Y%m%d")
 PUB_DATE_FMT = f"{PUB_DATE[:4]}年{PUB_DATE[4:6]}月{PUB_DATE[6:8]}日"
 PUB_DATE_SHORT = f"{PUB_DATE[:4]}.{PUB_DATE[4:6]}.{PUB_DATE[6:8]}"
