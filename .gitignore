@@ -26,11 +26,16 @@ archive/
 
 # Secrets
 cookies.json
+.env
+.env.*
+!.env.example
 
 # IDE & tools
 .claude/
 .idea/
 .vscode/
+.opencode/
+.workbuddy/
 *.swp
 *.swo
 *~

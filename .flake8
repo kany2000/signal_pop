@@ -1,0 +1,21 @@
+[flake8]
+max-line-length = 120
+exclude =
+    .git,
+    __pycache__,
+    archive,
+    output,
+    output_old,
+    skills,
+    tools,
+    .workbuddy
+per-file-ignores =
+    # Scripts need sys.path manipulation before imports
+    scripts/*.py: E402
+    # Root pipeline runner also needs sys.path manipulation
+    run_pipeline.py: E402
+    # Long prompt strings in image generation
+    scripts/win_pipeline_images.py: E501
+extend-ignore =
+    # Allow multiple imports on one line for standard library modules
+    E401

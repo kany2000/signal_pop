@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Sensenova-u1-fast 生图，失败自动降级到 Pollinations"""
-import urllib.request, urllib.parse, json, io, os, time
+import urllib.request, urllib.parse, json, io, os, time, sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")))
+from config import SENSENOVA_API_KEY
 
 API_URL = "https://token.sensenova.cn/v1/images/generations"
-API_KEY = "sk-Orks5KCFxdjhRSm7EEFY57UdykEWzWIQ"
+API_KEY = SENSENOVA_API_KEY
 MODEL = "sensenova-u1-fast"
 SIZE = "2752x1536"  # 16:9
 

@@ -3,7 +3,7 @@
 import json, os
 from datetime import datetime, timedelta
 
-DATE = "20260802"
+DATE = "20260804"
 PUB_DT = datetime.strptime(DATE, "%Y%m%d") + timedelta(days=1)
 PUB_DATE = PUB_DT.strftime("%Y%m%d")
 PUB_DATE_SHORT = f"{PUB_DATE[:4]}.{PUB_DATE[4:6]}.{PUB_DATE[6:8]}"

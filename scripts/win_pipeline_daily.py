@@ -5,8 +5,8 @@ from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont
 
 # ========== CONFIG ==========
-SCRIPT_FILE = "E:/projects/signal_pop/archive/signal_pop_daily_20260802.txt"
-DATE = "20260802"
+SCRIPT_FILE = "E:/projects/signal_pop/archive/signal_pop_daily_20260804.txt"
+DATE = "20260804"
 OUTPUT_BASE = "E:/projects/signal_pop/output"
 
 SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)))
@@ -596,7 +596,7 @@ def main():
     build_video(items, IMAGES_DIR, AUDIO_PATH, SEGMENTS_PATH, OUTPUT_VIDEO)
 
     print(f"\n{'='*60}")
-    print(f"  ✅ ALL DONE")
+    print(f"  [OK] ALL DONE")
     print(f"  Video: {OUTPUT_VIDEO}")
     print(f"{'='*60}")
 

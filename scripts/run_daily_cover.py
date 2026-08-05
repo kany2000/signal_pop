@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import numpy as np
 
-DATE = "20260802"
+DATE = "20260804"
 PUB_DT = datetime.strptime(DATE, "%Y%m%d") + timedelta(days=1)
 PUB_DATE = PUB_DT.strftime("%Y%m%d")
 PUB_DATE_FMT = f"{PUB_DATE[:4]}年{PUB_DATE[4:6]}月{PUB_DATE[6:8]}日"
@@ -23,7 +23,7 @@ SENSENOVA_URL = "https://token.sensenova.cn/v1/images/generations"
 SENSENOVA_KEY = "sk-Orks5KCFxdjhRSm7EEFY57UdykEWzWIQ"
 SENSENOVA_MODEL = "sensenova-u1-fast"
 
-ANCHOR_PROMPT = "Chinese female news anchor, professional studio portrait, elegant business suit, warm smile, modern broadcast studio background, soft lighting, clean background, high quality, photorealistic, 8K, no text, no words, no letters, no numbers, no characters, no typography, no signage, no labels, no captions, no UI, no writing, no screens with text, no charts, no data displays, no any text whatsoever, completely text-free image, no monitors with text, no screens showing data"
+ANCHOR_PROMPT = "Chinese female news anchor, studio portrait, stylish red blazer with white blouse, long hair tied back, confident smile, modern broadcast studio with blue accent lighting, soft shadow, warm skin tone, photorealistic, high quality, 8K, no text, no words, no letters, no numbers, no characters, no typography, no signage, no labels, no captions, no UI, no writing, no screens with text, no charts, no data displays, no any text whatsoever, completely text-free image, no monitors with text, no screens showing data"
 
 CYAN = (0, 255, 255)
 GOLD = (255, 200, 50)
