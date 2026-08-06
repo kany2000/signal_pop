@@ -5,8 +5,8 @@ from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont
 
 # ========== CONFIG ==========
-SCRIPT_FILE = "E:/projects/signal_pop/archive/signal_pop_daily_20260804.txt"
-DATE = "20260804"
+SCRIPT_FILE = "E:/projects/signal_pop/archive/signal_pop_daily_20260806.txt"
+DATE = "20260806"
 OUTPUT_BASE = "E:/projects/signal_pop/output"
 
 SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)))
@@ -276,7 +276,7 @@ async def gen_tts(items, output_wav):
         wav = mp3.replace('.mp3', '.wav')
         subprocess.run([FFMPEG, '-y', '-i', mp3, '-acodec', 'pcm_s16le', '-ar', '24000', '-ac', '1', wav],
                        check=True, capture_output=True, timeout=60)
-        os.remove(mp3)
+        safe_remove(mp3)
 
         with wave.open(wav, 'rb') as w:
             rate = w.getframerate()
@@ -302,7 +302,7 @@ async def gen_tts(items, output_wav):
             all_pcm.extend(struct.pack('<h', s))
         print(f" {dur:.2f}s")
         durations.append(dur)
-        os.remove(wav)
+        safe_remove(wav)
 
     with wave.open(output_wav, 'wb') as out:
         out.setnchannels(1)
@@ -556,6 +556,14 @@ def build_video(items, img_dir, audio_path, segments_path, output_path):
 
 
 # ========== MAIN ==========
+def safe_remove(path):
+    """Remove file, ignoring errors from sandbox safe-delete interception."""
+    try:
+        os.remove(path)
+    except OSError:
+        pass
+
+
 def step(msg):
     print(f"\n{'='*60}")
     print(f"  {msg}")
