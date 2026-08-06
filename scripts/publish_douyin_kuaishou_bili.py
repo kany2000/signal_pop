@@ -8,16 +8,16 @@ import os, re, subprocess, sys, json
 if sys.stdout.encoding and sys.stdout.encoding.lower().startswith("gbk"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-DATE = "20260804"
+DATE = "20260806"
 OUT_DIR = f"E:/projects/signal_pop/output/daily_{DATE}"
 SAU = ["sau"]
 ACCOUNT = "her2home"
-SCHEDULE = "2026-08-05 08:00"
+SCHEDULE = "2026-08-07 08:00"
 BILI_TID = 249
 
 VIDEO = os.path.join(OUT_DIR, f"signal_pop_daily_{DATE}.mp4")
-COVER_34 = os.path.join(OUT_DIR, f"cover_20260805_3x4.png")
-COVER_169 = os.path.join(OUT_DIR, f"cover_20260805_16x9.png")
+COVER_34 = os.path.join(OUT_DIR, f"cover_20260807_3x4.png")
+COVER_169 = os.path.join(OUT_DIR, f"cover_20260807_16x9.png")
 
 def read_md(fname):
     with open(os.path.join(OUT_DIR, fname), encoding="utf-8") as f:
@@ -83,14 +83,14 @@ results = {}
 results["douyin"] = run("douyin", SAU + [
     "douyin", "upload-video", "--account", ACCOUNT,
     "--file", VIDEO, "--title", dy_title, "--desc", dy_desc, "--tags", dy_tags,
-    "--thumbnail", COVER_34, "--schedule", SCHEDULE,
+    "--thumbnail", COVER_34, "--schedule", SCHEDULE, "--headless",
 ])
 
-# 2. 快手 (non-headless + thumbnail 3:4)
+# 2. 快手 (headed + thumbnail 3:4)
 results["kuaishou"] = run("kuaishou", SAU + [
     "kuaishou", "upload-video", "--account", ACCOUNT,
     "--file", VIDEO, "--title", ks_title, "--desc", ks_desc, "--tags", ks_tags,
-    "--thumbnail", COVER_34, "--schedule", SCHEDULE,
+    "--thumbnail", COVER_34, "--schedule", SCHEDULE, "--headed",
 ])
 
 # 3. B站 (tid 249, no thumbnail)
