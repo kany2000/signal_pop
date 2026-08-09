@@ -34,6 +34,34 @@ NO_TEXT = ", no text, no words, no labels, no captions, no UI, clean image witho
 SCENE_PROMPTS = {
     "SpaceX": "SpaceX Starship rocket on launch pad at Boca Chica Texas, dramatic sunset, launch tower, aerospace technology, documentary photography"
     + NO_TEXT,
+    "台风": "Massive typhoon spiral over East China Sea seen from space, swirling storm clouds approaching coastal city, dramatic satellite view, storm surge, meteorology"
+    + NO_TEXT,
+    "居民消费价格": "Chinese supermarket with fresh produce and price tags, shopper checking prices, consumer economy, everyday life, warm lighting"
+    + NO_TEXT,
+    "医疗垃圾": "Phone case production line inspection, laboratory testing, magnifying glass over smartphone case, safety inspection concept, industrial photography"
+    + NO_TEXT,
+    "手机壳": "Phone case production line inspection, laboratory testing, magnifying glass over smartphone case, safety inspection concept, industrial photography"
+    + NO_TEXT,
+    "折叠iPhone": "Foldable smartphone floating in dark studio, sleek silver and dark blue design, product photography, dramatic rim lighting, premium tech"
+    + NO_TEXT,
+    "iPhone": "Foldable smartphone floating in dark studio, sleek silver and dark blue design, product photography, dramatic rim lighting, premium tech"
+    + NO_TEXT,
+    "大气田": "Offshore oil and gas platform in Bohai Sea, golden hour, industrial energy production, drilling rigs, maritime engineering, dramatic sky"
+    + NO_TEXT,
+    "AI流量": "Massive data center with glowing server racks, network traffic visualization as streams of light, artificial intelligence infrastructure, futuristic technology"
+    + NO_TEXT,
+    "Cloudflare": "Massive data center with glowing server racks, network traffic visualization as streams of light, artificial intelligence infrastructure, futuristic technology"
+    + NO_TEXT,
+    "斯诺克": "Real professional snooker table seen from above, green baize cloth, EXACTLY six pockets: four corner pockets at the four corners of the table, and two middle pockets at the center of the left and right long side rails. The center of the top short side and the center of the bottom short side have NO pocket. Triangle rack of 15 red balls at one end, six colored balls (yellow green brown blue pink black) and white cue ball on the cloth, wooden cushion rails, overhead triangular lamp, championship tournament hall, photorealistic, accurate sports photography"
+    + NO_TEXT,
+    "非遗": "Chinese intangible cultural heritage handicrafts, young people wearing traditional Yi ethnic festival attire, torch festival celebration, vibrant colors, cultural tourism"
+    + NO_TEXT,
+    "运动相机": "Action camera mounted on bike handlebar, outdoor adventure sports, mountain trail, dynamic sports photography, rugged tech"
+    + NO_TEXT,
+    "核科学": "Science olympiad laboratory, young students in competition, nuclear science equipment, medals on table, bright modern lab, educational achievement"
+    + NO_TEXT,
+    "超算": "Chinese supercomputer center with glowing blue server racks, neural network visualization, futuristic technology"
+    + NO_TEXT,
     "超算": "Chinese supercomputer center with glowing blue server racks, neural network visualization, futuristic technology"
     + NO_TEXT,
     "千问": "Modern AI earphones product on minimalist white desk, sleek design, technology concept" + NO_TEXT,
@@ -188,7 +216,8 @@ def gen_all_images(items, out_dir):
         if os.path.exists(out_path) and os.path.getsize(out_path) > 5000:
             logger.info(f"  {fname} exists, skip")
             continue
-        prompt = make_prompt(item["title"], item.get("full_body", item.get("body", "")))
+        vp = item.get("visual_prompt") or ""
+        prompt = vp if vp else make_prompt(item["title"], item.get("full_body", item.get("body", "")))
         logger.info(f"[{fname}] {item['title'][:40]}...")
         logger.debug(f"  Prompt: {prompt[:80]}...")
         download_image(prompt, item["num"] * 100, out_path)

@@ -12,6 +12,24 @@ from datetime import datetime, timedelta
 # --- General Configuration ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+
+def _load_dotenv():
+    """Load .env into os.environ (no third-party dependency)."""
+    path = os.path.join(BASE_DIR, ".env")
+    if not os.path.exists(path):
+        return
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, v = line.split("=", 1)
+            k, v = k.strip(), v.strip().strip('"').strip("'")
+            os.environ.setdefault(k, v)
+
+
+_load_dotenv()
+
 # Output base directory for generated files
 OUTPUT_BASE = os.getenv("SIGNAL_POP_OUTPUT_BASE", os.path.join(BASE_DIR, "output"))
 

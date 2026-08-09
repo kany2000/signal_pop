@@ -1,32 +1,28 @@
 #!/usr/bin/env python3
-"""Signal Pop — 临时新闻抓取脚本（Windows版）"""
-import os, sys, json, io, requests, html, re, time
-from datetime import datetime, timedelta
+"""Signal Pop — 新闻抓取脚本（Windows版，多源 / 非政治导向）"""
+import os, sys, json, io, time, html, re
+import requests
 import feedparser
 
 OUTPUT_DIR = "E:/projects/signal_pop/output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+# 以综合 / 科技 / 财经 / 民生类媒体为主，规避政治重源（BBC中文、路透、联合国等）
 FEEDS = [
     {"name": "腾讯新闻", "url": "https://news.qq.com/newsrss.xml"},
     {"name": "新浪新闻", "url": "https://rss.sina.com.cn/news/china/focus15.xml"},
+    {"name": "36氪", "url": "https://36kr.com/feed"},
+    {"name": "IT之家", "url": "https://www.ithome.com/rss/"},
+    {"name": "少数派", "url": "https://sspai.com/feed"},
     {"name": "澎湃新闻", "url": "https://www.thepaper.cn/rss/default.xml"},
-    {"name": "36kr", "url": "https://36kr.com/feed"},
-    {"name": "BBC中文", "url": "https://feeds.bbci.co.uk/zhongwen/simp/rss.xml"},
-    {"name": "BBC英文", "url": "https://feeds.bbci.co.uk/news/rss.xml"},
-    {"name": "路透中文", "url": "https://feeds.reuters.com/reuters/CNTopStories"},
-    {"name": "联合国新闻", "url": "https://news.un.org/feed/subscribe/zh/news/beat/science-technology/feed"},
+    {"name": "中国新闻网", "url": "https://www.chinanews.com/rss/scroll-news.xml"},
+    {"name": "央视网", "url": "https://news.cctv.com/rss/index.shtml?launcher=1"},
+    {"name": "网易科技", "url": "https://tech.163.com/rss/"},
+    {"name": "虎嗅", "url": "https://www.huxiu.com/rss/0.xml"},
+    {"name": "机器之心", "url": "https://www.jiqizhixin.com/feed"},
+    {"name": "量子位", "url": "https://www.qbitai.com/feed"},
+    {"name": "界面新闻", "url": "https://www.jiemian.com/rss.html"},
 ]
-
-def parse_date(entry):
-    for attr in ['published', 'updated', 'created', 'start_date']:
-        if hasattr(entry, attr):
-            try:
-                from dateutil import parser as dtparser
-                return dtparser.parse(getattr(entry, attr))
-            except:
-                pass
-    return None
 
 def fetch_feed(feed):
     try:
@@ -43,11 +39,20 @@ def fetch_feed(feed):
             if len(summary) > 300:
                 m = re.search(r'[。！？.!?]', summary[:300])
                 summary = summary[:m.end()] if m else summary[:300]
+            published = e.get("published", "") or e.get("updated", "")
+            iso = ""
+            pp = getattr(e, "published_parsed", None) or getattr(e, "updated_parsed", None)
+            if pp:
+                try:
+                    iso = time.strftime("%Y-%m-%dT%H:%M:%S", pp)
+                except Exception:
+                    pass
             entries.append({
                 "title": e.get("title", ""),
                 "link": e.get("link", ""),
                 "source": feed["name"],
-                "published": e.get("published", ""),
+                "published": published,
+                "published_iso": iso,
                 "summary": summary,
             })
         return entries
@@ -63,7 +68,10 @@ def fetch_all():
         print(f"[fetch]   -> {len(entries)} 条")
         all_entries.extend(entries)
         time.sleep(0.5)
-    all_entries.sort(key=lambda x: x["published"], reverse=True)
+
+    def sortkey(x):
+        return x.get("published_iso") or "0000"
+    all_entries.sort(key=sortkey, reverse=True)
     out_path = os.path.join(OUTPUT_DIR, "raw_feed.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(all_entries, f, ensure_ascii=False, indent=2)

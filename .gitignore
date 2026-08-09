@@ -44,4 +44,9 @@ Thumbs.db
 
 # Temp
 .tmp/
-*.log
+*.loghyperframes/
+download.log
+logs/
+
+# HyperFrames generated assets
+hyperframes/**

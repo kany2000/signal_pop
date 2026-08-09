@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont
 
 WIDTH, HEIGHT = 1920, 1080
-FFMPEG = "C:/Users/Administrator/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-8.1.2-full_build/bin/ffmpeg.exe"
+FFMPEG = "C:/Users/Administrator/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-9.0-full_build/bin/ffmpeg.exe"
 
 FONT = "C:/Windows/Fonts/msyh.ttc"
 FONT_BOLD = "C:/Windows/Fonts/msyhbd.ttc"
@@ -86,11 +86,11 @@ def draw_opening(bg_path, items, pub_date_fmt, pub_weekday):
     d.ellipse([cx - 18, cy - 18, cx + 18, cy + 18], outline=GOLD, width=3)
     d.ellipse([cx - 5, cy - 5, cx + 5, cy + 5], fill=GOLD)
     draw_shadow(d, 960, 210, "隔天信号弹", fnt(72, True), GOLD)
-    draw_shadow(d, 960, 295, "周末特别版 · 本周新闻汇总", fnt(32), LIGHT_GREY)
+    draw_shadow(d, 960, 295, "每日要闻 · 今日播报", fnt(32), LIGHT_GREY)
     draw_shadow(d, 960, 345, f"{pub_date_fmt} · {pub_weekday}", fnt(28), LIGHT_GREY)
 
     intro = ["这里是隔天信号弹，", f"今天是{pub_date_fmt}，{pub_weekday}。",
-             f"欢迎收看本期周末特别版，以下是本周精选的{len(items)}条核心新闻。"]
+             f"欢迎收看本期信号弹，以下是本期精选的{len(items)}条核心新闻。"]
     y = 665
     for line in intro:
         draw_shadow(d, 960, y, line, fnt(36), WHITE, off=2)

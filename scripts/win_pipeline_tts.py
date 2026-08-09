@@ -3,12 +3,12 @@
 import sys, os, json, asyncio, subprocess, wave, struct, time
 
 VOICE = "zh-CN-YunyangNeural"
-FFMPEG = "C:/Users/Administrator/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-8.1.2-full_build/bin/ffmpeg.exe"
+FFMPEG = "C:/Users/Administrator/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-9.0-full_build/bin/ffmpeg.exe"
 
 
 def build_segments(items, pub_date_fmt, pub_weekday):
     segs = []
-    segs.append(("intro", f"这里是隔天信号弹，今天是{pub_date_fmt}，{pub_weekday}。欢迎收看本期周末特别版，以下是本周精选的{len(items)}条核心新闻。"))
+    segs.append(("intro", f"这里是隔天信号弹，今天是{pub_date_fmt}，{pub_weekday}。欢迎收看本期信号弹，以下是本期精选的{len(items)}条核心新闻。"))
     for i, item in enumerate(items, 1):
         txt = f"第{i}条，{item['section']}。{item['title']}。{item['full_body']}"
         if item["opinion"]:

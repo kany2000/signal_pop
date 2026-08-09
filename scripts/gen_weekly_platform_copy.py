@@ -3,11 +3,11 @@
 import json, os
 from datetime import datetime, timedelta
 
-PARSED = "E:/projects/signal_pop/output/parsed_weekly_20260731.json"
-SEGMENTS = "E:/projects/signal_pop/output/daily_20260731/audio/tts_segments.json"
-OUT_DIR = "E:/projects/signal_pop/output/daily_20260731"
+PARSED = "E:/projects/signal_pop/output/parsed_weekly_20260807.json"
+SEGMENTS = "E:/projects/signal_pop/output/daily_20260808/audio/tts_segments.json"
+OUT_DIR = "E:/projects/signal_pop/output/daily_20260808"
 
-DATE = "20260731"
+DATE = "20260807"
 PUB_DT = datetime.strptime(DATE, "%Y%m%d") + timedelta(days=1)
 PUB_DATE = PUB_DT.strftime("%Y%m%d")
 PUB_DATE_SHORT = f"{PUB_DATE[:4]}.{PUB_DATE[4:6]}.{PUB_DATE[6:8]}"

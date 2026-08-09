@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Signal Pop 每日封面 — 复用 run_cover.py 风格，参数适配"""
-import sys, os, hashlib, urllib.request, ssl
+import sys, os, json, random, hashlib, urllib.request, ssl
 from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import numpy as np
@@ -23,9 +23,111 @@ SENSENOVA_URL = "https://token.sensenova.cn/v1/images/generations"
 SENSENOVA_KEY = "sk-Orks5KCFxdjhRSm7EEFY57UdykEWzWIQ"
 SENSENOVA_MODEL = "sensenova-u1-fast"
 
-ANCHOR_PROMPT = "Chinese female news anchor, studio portrait, elegant navy blue professional blazer with silver silk scarf, shoulder-length wavy hair, warm confident expression, modern broadcast studio with warm amber and teal accent lighting, soft rim light, glowing skin tone, photorealistic, high quality, 8K, no text, no words, no letters, no numbers, no characters, no typography, no signage, no labels, no captions, no UI, no writing, no screens with text, no charts, no data displays, no any text whatsoever, completely text-free image, no monitors with text, no screens showing data"
+# ===== 主播形象库：多维度特征池（组合空间百万级），每期生成"从未用过"的全新形象 =====
+# 每个维度独立池，组合指纹记录到 used_anchor_styles.json，生成时自动避开历史，确保每期人物全新。
+HAIR_STYLES = [
+    "long straight black hair", "shoulder-length wavy chestnut hair", "long curly dark brown hair",
+    "neat black bob hair", "shoulder-length straight hair", "medium curly black hair",
+    "long wavy golden-brown hair", "short pixie black hair", "long braided dark hair",
+    "shoulder-length layered ash-brown hair", "high ponytail black hair", "loose waves dark hair",
+]
+HAIR_COLORS = ["black", "dark brown", "chestnut", "black-brown", "deep brown", "natural black"]
+OUTFIT_STYLES = [
+    "tailored blazer with silk scarf", "professional suit with light blouse", "professional dress with blazer",
+    "business suit with white shirt", "blazer with white top", "professional dress",
+    "classic suit with subtle patterns", "blazer with silk blouse", "pencil skirt suit with blouse",
+    "structured jacket with turtleneck", "double-breasted suit", "slim-fit suit with shirt",
+]
+OUTFIT_COLORS = [
+    "navy blue", "cream white", "deep red", "charcoal grey", "soft pink", "teal green",
+    "classic black", "lavender", "burgundy", "steel blue", "olive green", "pearl white",
+]
+ACCESSORIES = [
+    "pearl necklace", "gold earrings", "silver necklace", "pearl stud earrings", "gold necklace",
+    "diamond earrings", "pearl drop earrings", "silver bracelet", "scarf", "minimal pendant necklace",
+]
+VIBES = [
+    "warm confident expression", "gentle friendly smile", "graceful poised look", "sharp intelligent gaze",
+    "bright cheerful smile", "calm elegant demeanor", "professional composed look", "warm approachable smile",
+    "sophisticated serene look", "energetic positive smile",
+]
+FACE_SHAPES = [
+    "oval face", "round face", "heart-shaped face", "narrow face", "soft jawline", "delicate facial features",
+]
 
-AVATAR_PROMPT = "Close-up portrait headshot of Chinese female news anchor, elegant navy blue professional blazer with silver silk scarf, shoulder-length wavy hair, warm confident smile, clean blurred studio background with soft teal and amber bokeh, professional headshot lighting, looking directly at camera, photorealistic, high quality, 8K, centered composition, no text, no words, no letters, no numbers, no characters, no typography, no signage, no labels, no captions, no UI, no writing, no screens with text, no charts, no data displays, no any text whatsoever, completely text-free image"
+NO_TEXT_SUFFIX = ", no text, no words, no letters, no numbers, no characters, no typography, no signage, no labels, no captions, no UI, no writing, no screens with text, no charts, no data displays, no any text whatsoever, completely text-free image, no monitors with text, no screens showing data"
+NO_TEXT_SUFFIX_AV = ", no text, no words, no letters, no numbers, no characters, no typography, no signage, no labels, no captions, no UI, no writing, no screens with text, no charts, no data displays, no any text whatsoever, completely text-free image"
+
+USED_STYLES_FILE = "E:/projects/signal_pop/output/used_anchor_styles.json"
+
+
+def _load_used_styles():
+    try:
+        with open(USED_STYLES_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _save_used_styles(used):
+    os.makedirs(os.path.dirname(USED_STYLES_FILE), exist_ok=True)
+    with open(USED_STYLES_FILE, "w", encoding="utf-8") as f:
+        json.dump(used, f, ensure_ascii=False, indent=2)
+
+
+def _style_signature(pick):
+    """组合指纹：任一维度不同 → 指纹不同，视为不同人物。"""
+    return "|".join(pick)
+
+
+def build_anchor_prompts():
+    """生成"从未用过"的全新形象组合（脸型/发型/发色/服装/配饰/气质），并记录指纹防重。"""
+    used = _load_used_styles()
+    base_seed = int(hashlib.md5(DATE.encode()).hexdigest()[:8], 16)
+
+    pick = None
+    for attempt in range(500):  # 组合空间足够大，极少需要多次尝试
+        rnd_seed = base_seed + attempt
+        import random
+        rng = random.Random(rnd_seed)
+        candidate = (
+            rng.choice(HAIR_STYLES),
+            rng.choice(HAIR_COLORS),
+            rng.choice(FACE_SHAPES),
+            rng.choice(OUTFIT_STYLES),
+            rng.choice(OUTFIT_COLORS),
+            rng.choice(ACCESSORIES),
+            rng.choice(VIBES),
+        )
+        sig = _style_signature(candidate)
+        if sig not in used:
+            pick = candidate
+            used[sig] = {"date": DATE, "style": list(candidate)}
+            _save_used_styles(used)
+            break
+
+    if pick is None:
+        raise RuntimeError("无法找到未使用过的主播形象组合（历史组合过多）")
+
+    hair, hcolor, face, outfit, ocolor, acc, vibe = pick
+    style_desc = f"{hcolor} {hair}, {face}, {ocolor} {outfit}, {acc}, {vibe}"
+
+    anchor = (
+        f"Chinese female news anchor, studio portrait, {style_desc}, "
+        "modern broadcast studio with warm amber and teal accent lighting, soft rim light, "
+        "glowing skin tone, photorealistic, high quality, 8K"
+        + NO_TEXT_SUFFIX
+    )
+    avatar = (
+        f"Close-up portrait headshot of Chinese female news anchor, {style_desc}, "
+        "clean blurred studio background with soft teal and amber bokeh, "
+        "professional headshot lighting, looking directly at camera, photorealistic, high quality, 8K, centered composition"
+        + NO_TEXT_SUFFIX_AV
+    )
+    return anchor, avatar, style_desc
+
+
+ANCHOR_PROMPT, AVATAR_PROMPT, _ = build_anchor_prompts()
 
 CYAN = (0, 255, 255)
 GOLD = (255, 200, 50)
@@ -350,6 +452,20 @@ def make_avatar():
 
 
 def main():
+    global DATE, PUB_DT, PUB_DATE, PUB_DATE_FMT, PUB_DATE_SHORT, OUT_DIR, CACHE, ANCHOR_PROMPT, AVATAR_PROMPT
+    # 支持命令行传日期：python run_daily_cover.py 20260809
+    if len(sys.argv) > 1 and sys.argv[1].isdigit() and len(sys.argv[1]) == 8:
+        DATE = sys.argv[1]
+        PUB_DT = datetime.strptime(DATE, "%Y%m%d") + timedelta(days=1)
+        PUB_DATE = PUB_DT.strftime("%Y%m%d")
+        PUB_DATE_FMT = f"{PUB_DATE[:4]}年{PUB_DATE[4:6]}月{PUB_DATE[6:8]}日"
+        PUB_DATE_SHORT = f"{PUB_DATE[:4]}.{PUB_DATE[4:6]}.{PUB_DATE[6:8]}"
+        OUT_DIR = f"E:/projects/signal_pop/output/daily_{DATE}"
+        CACHE = os.path.join(OUT_DIR, ".cache")
+        os.makedirs(CACHE, exist_ok=True)
+        ANCHOR_PROMPT, AVATAR_PROMPT, _ = build_anchor_prompts()
+        print(f"[anchor] DATE={DATE} style -> {AVATAR_PROMPT[:60]}...")
+
     os.makedirs(OUT_DIR, exist_ok=True)
     # Clear old cache (ignore failures from sandbox safe-delete)
     for f in os.listdir(CACHE):

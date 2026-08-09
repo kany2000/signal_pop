@@ -1,0 +1,1 @@
+- [weekly-pipeline-order](memory/weekly-pipeline-order.md) — 周末特别版管线：先新闻稿检查，再配图渲染

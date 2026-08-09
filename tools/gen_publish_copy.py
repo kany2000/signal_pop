@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""Signal Pop — 统一生成 7 平台发布文案（抖音/快手/B站/小红书/知乎/Facebook/YouTube）
+用法：python tools/gen_publish_copy.py [PREP_DATE]  默认 20260809
+输出：output/daily_{DATE}/*.md（每个平台一份，风格差异化）
+"""
+import os
+import sys
+import json
+from datetime import datetime, timedelta
+
+PROJECT_ROOT = "E:/projects/signal_pop"
+PREP_DATE = sys.argv[1] if len(sys.argv) > 1 else "20260809"
+OUT_DIR = os.path.join(PROJECT_ROOT, "output", f"daily_{PREP_DATE}")
+PARSED = os.path.join(PROJECT_ROOT, "output", "daily", PREP_DATE, "parsed_news.json")
+SEGMENTS = os.path.join(PROJECT_ROOT, "output", "daily", PREP_DATE, "audio", "tts_segments.json")
+
+PUB_DT = datetime.strptime(PREP_DATE, "%Y%m%d") + timedelta(days=1)
+PUB_DATE = PUB_DT.strftime("%Y%m%d")
+PUB_DATE_FMT = f"{PUB_DT.year}年{PUB_DT.month:02d}月{PUB_DT.day:02d}日"
+PUB_DATE_SHORT = f"{PUB_DT.year}.{PUB_DT.month:02d}.{PUB_DT.day:02d}"
+PUB_WEEKDAY = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"][PUB_DT.weekday()]
+M_D = f"{PUB_DT.month}月{PUB_DT.day}日"
+
+
+def load_items():
+    with open(PARSED, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def load_durations():
+    try:
+        with open(SEGMENTS, encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+
+
+def short_of(title):
+    """从完整标题提炼短视频短句（去掉来源/引号冗余）。"""
+    t = title
+    for p in ["：", ":", "｜", "|"]:
+        if p in t:
+            t = t.split(p, 1)[1]
+    t = t.replace("”", "").replace("“", "")
+    return t.strip()
+
+
+def build_short_lines(items):
+    """10条一句话短句（各平台共用底料，但话术各不相同）。"""
+    lines = []
+    for it in items:
+        s = short_of(it["title"])
+        if len(s) > 30:
+            s = s[:29] + "…"
+        lines.append(s)
+    return lines
+
+
+def fmt_ts(sec):
+    m = int(sec // 60)
+    s = int(sec % 60)
+    return f"{m:02d}:{s:02d}"
+
+
+def main():
+    os.makedirs(OUT_DIR, exist_ok=True)
+    items = load_items()
+    shorts = build_short_lines(items)
+    durs = load_durations()
+    n = len(items)
+    title_all = "、".join(shorts[:3])
+
+    # ── B站分段时间轴（用真实 TTS 分段时长 + 完整标题）──
+    timeline_lines = []
+    full_titles = [it["title"] for it in items]
+    if durs and len(durs) == n + 2:
+        t = 0.0
+        timeline_lines.append(f"{fmt_ts(t)} 开场")
+        acc = durs[0]  # intro
+        for i in range(n):
+            start = acc
+            acc += durs[i + 1]
+            timeline_lines.append(f"{fmt_ts(start)} {i+1}. {full_titles[i]}")
+    else:
+        for i in range(n):
+            timeline_lines.append(f"{i+1}. {full_titles[i]}")
+
+    files = {}
+
+    # 1. 抖音
+    files["douyin.md"] = f"""标题：{M_D}信号弹｜{title_all}！{n}条核心新闻
+
+简介：每天3分钟，了解今天发生的{n}件大事！
+
+📱 本期看点：
+""" + "\n".join(f"{i+1}️⃣ {s}" for i, s in enumerate(shorts)) + f"""
+
+#隔天信号弹 #每日新闻 #今日热点 #新闻播报 #热点新闻 #科技资讯 #AI新闻 #新闻早报 #每日播报 #时政要闻 #民生新闻
+
+正文：
+隔天信号弹，每天为你精选{n}条核心新闻。"""
+
+    # 2. 快手
+    files["kuaishou.md"] = f"""标题：{M_D}信号弹｜{n}条核心新闻：{title_all}
+
+简介：每天3分钟，听遍天下事！今天{n}条新闻全在这里👇
+
+🔥 本期热点：
+""" + "\n".join(f"{'①②③④⑤⑥⑦⑧⑨⑩'[i]} {s}" for i, s in enumerate(shorts)) + f"""
+
+#隔天信号弹 #新闻早报 #热点 #今日新闻 #每日播报 #科技 #财经 #民生 #社会 #资讯
+
+正文：
+隔天信号弹，每天为你精选{n}条核心新闻。"""
+
+    # 3. B站
+    files["bilibili.md"] = f"""【{M_D}信号弹】{title_all}｜{n}条核心新闻
+
+📌 本期{n}条新闻：
+""" + "\n".join(timeline_lines) + f"""
+
+每天3分钟，纵览天下事。记得三连支持一下~
+
+#隔天信号弹 #每日新闻 #新闻早报 #科技 #财经 #民生 #资讯
+
+（以下为视频文案，供字幕参考）
+这里是隔天信号弹，今天是{PUB_DATE_FMT}，{PUB_WEEKDAY}。"""
+
+    # 4. 小红书
+    files["xiaohongshu.md"] = f"""今天{n}条新闻，3分钟看完 📺✨
+
+早上好呀宝子们☀️ 今天的信号弹来咯～
+每天8点，3分钟带你速览今日大事👇
+
+""" + "\n".join(f"{'①②③④⑤⑥⑦⑧⑨⑩'[i]}️⃣ {s}" for i, s in enumerate(shorts)) + f"""
+
+你关注哪一条？评论区聊聊呀💬
+记得关注不迷路，每天8点见哦～
+
+#新闻早报 #每日新闻 #隔天信号弹 #今日热点 #科技资讯 #民生新闻 #信息差 #认知升级 #早安新闻 #新闻播报 #每日热点 #快讯"""
+
+    # 5. 知乎
+    files["zhihu.md"] = f"""隔天信号弹 | {M_D}新闻早报（每日{n}条）
+
+""" + "\n".join(f"{i+1}. {s}" for i, s in enumerate(shorts)) + """
+
+完整内容见视频。欢迎关注，每天 8 点更新。"""
+
+    # 6. Facebook
+    files["facebook.md"] = f"""📡 隔天信号弹 | {M_D} 每日新闻播报
+
+今天{n}条核心新闻：
+""" + "\n".join(f"{i+1}. {s}" for i, s in enumerate(shorts)) + """
+
+每天3分钟，看世界动态。欢迎关注、分享！
+
+#SignalPop #DailyNews #ChinaNews #Technology #News"""
+
+    # 7. YouTube
+    files["youtube.md"] = f"""📡 Signal Pop Daily | {PUB_DATE_SHORT} - {n} Core News Stories
+
+Today's Top {n}:
+""" + "\n".join(f"{i+1}. {s}" for i, s in enumerate(shorts)) + """
+
+Every day in 3 minutes, catch up on the world.
+#SignalPop #DailyNews #China #Technology #News #DailyNews"""
+
+    for name, content in files.items():
+        with open(os.path.join(OUT_DIR, name), "w", encoding="utf-8") as f:
+            f.write(content)
+        print(f"  ✓ {name} ({len(content)} chars)")
+    print(f"\n全部 {len(files)} 个平台文案已生成到 {OUT_DIR}/")
+
+
+if __name__ == "__main__":
+    main()

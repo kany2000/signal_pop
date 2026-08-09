@@ -17,7 +17,7 @@
 
 📖 Which story surprised you the most? Let us know below! 👇
 
-#SignalPop #ChinaNews #TechNews #AI #Robotics #AutonomousDriving #PaidLeave #3DPrinting #Leapmotor #ChinaCool #AncientWine #Innovation #DailyBriefing
+SignalPop,ChinaNews,TechNews,AI,Robotics,AutonomousDriving,PaidLeave,3DPrinting,Leapmotor,ChinaCool,AncientWine,Innovation,DailyBriefing
 
 正文：
 Signal Pop — your daily signal flare of 10 essential news stories. Subscribe and never miss a beat!

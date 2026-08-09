@@ -14,7 +14,7 @@
 9️⃣ 2,300-year-old sealed ancient grain wine unearthed in Ningxia — 3,740ml recovered
 🔟 Sanitation workers wear "AC vests" with built-in cooling — robots replace high-temp jobs
 
-#SignalPop #DailyNews #ChinaNews #TechNews #AI #Robotics #AutonomousDriving #PaidLeave #3DPrinting #EV #Archaeology #ChinaCool
+SignalPop,DailyNews,ChinaNews,TechNews,AI,Robotics,AutonomousDriving,PaidLeave,3DPrinting,EV,Archaeology,ChinaCool
 
 正文：
 Signal Pop — your daily blast of 10 essential news stories from China and beyond.
