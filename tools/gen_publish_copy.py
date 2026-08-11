@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 
 PROJECT_ROOT = "E:/projects/signal_pop"
 PREP_DATE = sys.argv[1] if len(sys.argv) > 1 else "20260809"
-OUT_DIR = os.path.join(PROJECT_ROOT, "output", f"daily_{PREP_DATE}")
+OUT_DIR = os.path.join(PROJECT_ROOT, "output", "daily", PREP_DATE)
 PARSED = os.path.join(PROJECT_ROOT, "output", "daily", PREP_DATE, "parsed_news.json")
 SEGMENTS = os.path.join(PROJECT_ROOT, "output", "daily", PREP_DATE, "audio", "tts_segments.json")
 
@@ -66,24 +66,33 @@ def fmt_ts(sec):
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
     items = load_items()
-    shorts = build_short_lines(items)
     durs = load_durations()
-    n = len(items)
+    # 历史上的今天(num=0) 是口播栏目，不计入"核心新闻"列表（但 B站时间轴保留完整顺序）
+    news_items = [it for it in items if it.get("num", 0) != 0]
+    history_items = [it for it in items if it.get("num", 0) == 0]
+    shorts = build_short_lines(news_items)
+    n = len(news_items)
     title_all = "、".join(shorts[:3])
+    has_history = bool(history_items)
+    history_text = ""
+    if has_history:
+        h = history_items[0]
+        history_text = f"📜 历史上的今天：{h.get('full_body', '')[:60]}\n\n"
 
-    # ── B站分段时间轴（用真实 TTS 分段时长 + 完整标题）──
+    # ── B站分段时间轴（用真实 TTS 分段时长 + 完整标题，含历史上的今天）──
     timeline_lines = []
     full_titles = [it["title"] for it in items]
-    if durs and len(durs) == n + 2:
+    full_n = len(items)
+    if durs and len(durs) == full_n + 2:
         t = 0.0
         timeline_lines.append(f"{fmt_ts(t)} 开场")
         acc = durs[0]  # intro
-        for i in range(n):
+        for i in range(full_n):
             start = acc
             acc += durs[i + 1]
             timeline_lines.append(f"{fmt_ts(start)} {i+1}. {full_titles[i]}")
     else:
-        for i in range(n):
+        for i in range(full_n):
             timeline_lines.append(f"{i+1}. {full_titles[i]}")
 
     files = {}
@@ -93,7 +102,7 @@ def main():
 
 简介：每天3分钟，了解今天发生的{n}件大事！
 
-📱 本期看点：
+{history_text}📱 本期看点：
 """ + "\n".join(f"{i+1}️⃣ {s}" for i, s in enumerate(shorts)) + f"""
 
 #隔天信号弹 #每日新闻 #今日热点 #新闻播报 #热点新闻 #科技资讯 #AI新闻 #新闻早报 #每日播报 #时政要闻 #民生新闻
@@ -102,12 +111,13 @@ def main():
 隔天信号弹，每天为你精选{n}条核心新闻。"""
 
     # 2. 快手
+    CIRC = "①②③④⑤⑥⑦⑧⑨⑩"
     files["kuaishou.md"] = f"""标题：{M_D}信号弹｜{n}条核心新闻：{title_all}
 
 简介：每天3分钟，听遍天下事！今天{n}条新闻全在这里👇
 
 🔥 本期热点：
-""" + "\n".join(f"{'①②③④⑤⑥⑦⑧⑨⑩'[i]} {s}" for i, s in enumerate(shorts)) + f"""
+""" + "\n".join(f"{CIRC[i] if i < len(CIRC) else i+1} {s}" for i, s in enumerate(shorts)) + f"""
 
 #隔天信号弹 #新闻早报 #热点 #今日新闻 #每日播报 #科技 #财经 #民生 #社会 #资讯
 
@@ -133,7 +143,7 @@ def main():
 早上好呀宝子们☀️ 今天的信号弹来咯～
 每天8点，3分钟带你速览今日大事👇
 
-""" + "\n".join(f"{'①②③④⑤⑥⑦⑧⑨⑩'[i]}️⃣ {s}" for i, s in enumerate(shorts)) + f"""
+""" + history_text + "\n".join(f"{CIRC[i] if i < len(CIRC) else i+1}️⃣ {s}" for i, s in enumerate(shorts)) + f"""
 
 你关注哪一条？评论区聊聊呀💬
 记得关注不迷路，每天8点见哦～
@@ -143,7 +153,7 @@ def main():
     # 5. 知乎
     files["zhihu.md"] = f"""隔天信号弹 | {M_D}新闻早报（每日{n}条）
 
-""" + "\n".join(f"{i+1}. {s}" for i, s in enumerate(shorts)) + """
+""" + history_text + "\n".join(f"{i+1}. {s}" for i, s in enumerate(shorts)) + """
 
 完整内容见视频。欢迎关注，每天 8 点更新。"""
 
