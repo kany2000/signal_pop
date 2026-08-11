@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
-"""Step 3: TTS — per-segment edge-tts with timeout, trim silence, real durations"""
+"""Step 3: TTS — per-segment edge-tts with timeout, trim silence, real durations
+语音规则（用户明确）：平日（周一~周五）用女性语音，周末期（周六/周日）用男性语音。
+"""
 import sys, os, json, asyncio, subprocess, wave, struct, time
 
-VOICE = "zh-CN-YunyangNeural"
+VOICE_WEEKDAY = "zh-CN-XiaoxiaoNeural"   # 平日：女声
+VOICE_WEEKEND = "zh-CN-YunyangNeural"    # 周末：男声
 FFMPEG = "C:/Users/Administrator/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-9.0-full_build/bin/ffmpeg.exe"
+
+
+def select_voice(pub_weekday="星期六"):
+    """平日（周一~五）女声；周末（周六/日）男声。"""
+    return VOICE_WEEKEND if (pub_weekday in ("星期六", "星期日")) else VOICE_WEEKDAY
 
 
 def build_segments(items, pub_date_fmt, pub_weekday):
@@ -20,7 +28,7 @@ def build_segments(items, pub_date_fmt, pub_weekday):
         if item["opinion"]:
             txt += f".主播观点：{item['opinion']}"
         segs.append((f"item{n}", txt))
-    segs.append(("outro", "今天主播：图图。互动话题：您最关注哪条新闻？欢迎在评论区留言讨论！感谢您的关注，我们下期见~"))
+    segs.append(("outro", "您的一键三连是我们更新制作的动力。互动话题：您最关注哪条新闻？欢迎在评论区留言讨论！感谢您的关注，我们下期见~"))
     return segs
 
 
@@ -45,12 +53,15 @@ async def gen_tts(items_path, output_wav, pub_date_fmt="2026年07月25日", pub_
     segs = build_segments(items, pub_date_fmt, pub_weekday)
     print(f"Per-segment TTS: {len(segs)} segments")
 
+    voice = select_voice(pub_weekday)
+    print(f"Voice (发布日{pub_weekday}): {voice}")
+
     audio_dir = os.path.dirname(output_wav)
     os.makedirs(audio_dir, exist_ok=True)
 
     # Run all segments concurrently with semaphore (max 3 concurrent)
     sem = asyncio.Semaphore(3)
-    tasks = [gen_one_segment(i, l, t, VOICE, sem, audio_dir) for i, (l, t) in enumerate(segs)]
+    tasks = [gen_one_segment(i, l, t, voice, sem, audio_dir) for i, (l, t) in enumerate(segs)]
     results = await asyncio.gather(*tasks)
 
     # Sort by index, convert to WAV, trim silence

@@ -16,7 +16,7 @@ import json
 import shutil
 import subprocess
 from datetime import datetime, timedelta
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 PROJECT_ROOT = "E:/projects/signal_pop"
 sys.path.insert(0, PROJECT_ROOT)
@@ -289,7 +289,7 @@ def draw_opening_frame(items, pub_date_fmt, pub_weekday, total):
 
 
 def draw_ending_frame(pub_date_fmt):
-    """结尾：清晰城市夜景配图 + 品牌"""
+    """结尾：清晰城市夜景配图 + 品牌 + 一键三连呼吁"""
     en_bg = os.path.join(IMAGES_DIR, "ending_bg.jpg")
     if not os.path.exists(en_bg):
         en_bg = os.path.join(IMAGES_DIR, "10.jpg")
@@ -302,10 +302,95 @@ def draw_ending_frame(pub_date_fmt):
     d.text((960, 260), "隔天信号弹", fill=ACCENT, font=fnt(72, bold=True), anchor="mm")
     d.text((960, 360), "下期见", fill=WHITE, font=fnt(48, bold=True), anchor="mm")
     d.text((960, 430), pub_date_fmt, fill=LIGHT_GREY, font=fnt(32), anchor="mm")
-    d.text((960, 620), "今天主播：图图", fill=LIGHT_GREY, font=fnt(30), anchor="mm")
-    d.text((960, 670), "互动话题：您最关注哪条新闻？欢迎在评论区留言讨论！", fill=WHITE, font=fnt(28), anchor="mm")
-    d.text((960, 720), "感谢您的关注，我们下期见~", fill=LIGHT_GREY, font=fnt(30), anchor="mm")
+    # 一键三连呼吁（替代原"今天主播：图图"）
+    d.text((960, 600), "您的一键三连", fill=ACCENT, font=fnt(40, bold=True), anchor="mm")
+    d.text((960, 660), "是我们更新制作的动力", fill=WHITE, font=fnt(32), anchor="mm")
+    d.text((960, 720), "互动话题：您最关注哪条新闻？欢迎在评论区留言讨论！", fill=LIGHT_GREY, font=fnt(26), anchor="mm")
     return img
+
+
+def draw_sanlian_icon(canvas, cx, cy, kind, glow):
+    """画三连图标（订阅/关注/转发）到 RGBA canvas。glow=发光强度 0..1。
+    使用局部小图 + alpha_composite，避免污染全图。"""
+    r = 62
+    w, h = 220, 200  # 图标+标签 局部画布
+    icon = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    bd = ImageDraw.Draw(icon)
+    ox, oy = w // 2, 90  # 圆心在局部画布内
+    # 圆底
+    bd.ellipse([ox - r, oy - r, ox + r, oy + r], fill=(20, 26, 36, 235), outline=(212, 175, 55, 255), width=4)
+    ic = (255, 240, 190)
+    if kind == "subscribe":
+        bd.arc([ox - 24, oy - 30, ox + 24, oy + 20], start=0, end=180, fill=ic, width=5)
+        bd.line([ox - 24, oy - 5, ox - 24, oy + 10], fill=ic, width=5)
+        bd.line([ox + 24, oy - 5, ox + 24, oy + 10], fill=ic, width=5)
+        bd.arc([ox - 10, oy - 52, ox + 10, oy - 32], start=180, end=360, fill=ic, width=5)
+        bd.ellipse([ox - 7, oy + 8, ox + 7, oy + 22], fill=ic)
+    elif kind == "follow":
+        bd.polygon([(ox, oy + 24), (ox - 26, oy - 6), (ox - 12, oy - 22), (ox, oy - 12),
+                    (ox + 12, oy - 22), (ox + 26, oy - 6)], fill=ic)
+        bd.ellipse([ox - 28, oy - 32, ox - 4, oy - 6], fill=ic)
+        bd.ellipse([ox + 4, oy - 32, ox + 28, oy - 6], fill=ic)
+    else:  # share
+        bd.arc([ox - 26, oy - 24, ox + 26, oy + 28], start=30, end=300, fill=ic, width=6)
+        bd.polygon([(ox + 24, oy - 6), (ox + 34, oy - 18), (ox + 18, oy - 20)], fill=ic)
+    # 标签
+    lf = fnt(26, bold=True)
+    bd.text((w // 2, h - 20), {"subscribe": "订阅", "follow": "关注", "share": "转发"}[kind],
+            fill=(255, 255, 255), font=lf, anchor="mm")
+    # glow 光晕（只在局部画布内模糊）
+    if glow > 0.02:
+        halo = icon.filter(ImageFilter.GaussianBlur(radius=18))
+        a = halo.split()[3].point(lambda v: int(v * min(1.0, glow)))
+        halo.putalpha(a)
+        canvas.alpha_composite(halo, (cx - w // 2, cy - oy))
+    canvas.alpha_composite(icon, (cx - w // 2, cy - oy))
+
+
+def render_ending_animation(pub_date_fmt, out_dir, dur, fps=25):
+    """渲染结尾三连动画帧序列。三图标按序浮现 → 全亮保持。返回帧列表路径。"""
+    n = max(2, int(dur * fps))
+    frames = []
+    # 动画节奏：0~35% 逐个浮现，之后全亮保持
+    appear_start, appear_end = 0.05, 0.40
+    cx = [700, 960, 1220]
+    cy = 900
+    for i in range(n):
+        t = i / n
+        img = draw_ending_frame(pub_date_fmt).convert("RGBA")
+        glows = [0.0, 0.0, 0.0]
+        if t < appear_end:
+            for k in range(3):
+                seg = (appear_end - appear_start) / 3
+                s = (t - appear_start) / seg
+                if s > k:
+                    glows[k] = min(1.0, (s - k) * 4)
+        else:
+            glows = [1.0, 1.0, 1.0]
+        for k, g in enumerate(glows):
+            if g > 0.02:
+                draw_sanlian_icon(img, cx[k], cy, ["subscribe", "follow", "share"][k], g)
+        p = os.path.join(out_dir, f"an_{i:04d}.png")
+        img.convert("RGB").save(p)
+        frames.append(p)
+    return frames, fps
+
+
+def encode_part_animation(frame_dir, output_mp4, dur, fps=25):
+    """把帧序列编码为精确时长 mp4（动画版）。"""
+    pattern = os.path.join(frame_dir, "an_%04d.png").replace("\\", "/")
+    cmd = [
+        FFMPEG, "-y",
+        "-framerate", str(fps),
+        "-i", pattern,
+        "-c:v", "libx264",
+        "-preset", "fast",
+        "-crf", "20",
+        "-pix_fmt", "yuv420p",
+        "-r", str(fps),
+        output_mp4,
+    ]
+    subprocess.run(cmd, check=True, capture_output=True, timeout=180)
 
 
 def encode_part(input_png, output_mp4, dur):
@@ -355,7 +440,7 @@ def main():
     # opening
     op_png = os.path.join(tmp, "00_opening.png")
     draw_opening_frame(items, PUB_DATE_FMT, PUB_WEEKDAY, len(items)).save(op_png)
-    frames.append(("opening", op_png, durations[0]))
+    frames.append(("opening", op_png, durations[0], "static"))
     print(f"  opening: {durations[0]:.2f}s")
 
     # news slides（含可选的历史条目 num=0，图片按 num 定位：00.jpg / 01.jpg...）
@@ -370,7 +455,7 @@ def main():
             png = os.path.join(tmp, "00_history.png")
             draw_history_slide(bg, item, PUB_DATE_SHORT).save(png)
             dur = durations[seg_idx]
-            frames.append(("history", png, dur))
+            frames.append(("history", png, dur, "static"))
             print(f"  history [{item.get('section','')}]: {dur:.2f}s")
             seg_idx += 1
             continue
@@ -380,26 +465,32 @@ def main():
         png = os.path.join(tmp, f"{n:02d}_slide.png")
         draw_split_slide(bg, item, n, len(items), PUB_DATE_SHORT).save(png)
         dur = durations[seg_idx]
-        frames.append((f"slide{n}", png, dur))
+        frames.append((f"slide{n}", png, dur, "static"))
         print(f"  slide {n} [{item.get('section','')}]: {dur:.2f}s")
         seg_idx += 1
 
-    # ending
-    en_png = os.path.join(tmp, "11_ending.png")
-    draw_ending_frame(PUB_DATE_FMT).save(en_png)
-    frames.append(("ending", en_png, durations[-1]))
-    print(f"  ending: {durations[-1]:.2f}s")
+    # ending（一键三连动画）
+    en_dir = os.path.join(tmp, "ending_anim")
+    os.makedirs(en_dir, exist_ok=True)
+    anim_frames, fps = render_ending_animation(PUB_DATE_FMT, en_dir, durations[-1])
+    en_png = anim_frames[0]  # 占位（实际用动画编码）
+    frames.append(("ending", en_dir, durations[-1], "anim"))
+    print(f"  ending (animation): {durations[-1]:.2f}s ({len(anim_frames)}帧 @{fps}fps)")
 
-    total_dur = sum(d for _, _, d in frames)
-    print(f"\n  帧时长总和: {total_dur:.3f}s (应 ≈ 音频 203.30s)")
+    total_dur = sum(d for f in frames for d in [f[2]])
+    print(f"\n  帧时长总和: {total_dur:.3f}s (应 ≈ 音频 {sum(durations):.2f}s)")
 
     # 2. 每段编码成精确时长 mp4
     print("\n=== 每段独立编码为精确时长 mp4 ===")
     parts_txt = os.path.join(tmp, "concat.txt")
     part_files = []
-    for idx, (label, png, dur) in enumerate(frames):
+    for idx, f in enumerate(frames):
+        label, payload, dur, kind = f[0], f[1], f[2], f[3]
         part_mp4 = os.path.join(tmp, f"part_{idx:02d}_{label}.mp4")
-        encode_part(png, part_mp4, dur)
+        if kind == "anim":
+            encode_part_animation(payload, part_mp4, dur)
+        else:
+            encode_part(payload, part_mp4, dur)
         size = os.path.getsize(part_mp4) // 1024
         print(f"  part {idx} [{label}]: {dur:.3f}s -> {size}KB")
         part_files.append(part_mp4)
