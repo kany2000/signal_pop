@@ -164,7 +164,65 @@ Today's Top {n}:
 """ + "\n".join(f"{i+1}. {s}" for i, s in enumerate(shorts)) + """
 
 Every day in 3 minutes, catch up on the world.
-#SignalPop #DailyNews #China #Technology #News #DailyNews"""
+SignalPop,DailyNews,China,Technology,News,DailyNews"""
+
+    # 8. Twitter / X（英文、# 话题、280 字符内紧凑版）
+    # 从英文字幕提取前3条英文短标题（去掉 "Article N, Category." 前缀 + 正文只取标题句）
+    en_titles = []
+    en_srt = os.path.join(PROJECT_ROOT, "output", "daily", PREP_DATE, f"signal_pop_daily_{PREP_DATE}_en.srt")
+    if os.path.exists(en_srt):
+        import re as _re
+        blocks = _re.split(r"\n\n+", open(en_srt, encoding="utf-8").read().strip())
+        for b in blocks[1:4]:
+            lines = b.strip().split("\n")
+            if len(lines) >= 3:
+                t = lines[2]
+                t = _re.sub(r"^Article\s*\d+\s*,\s*[^.]+\.\s*", "", t)
+                # 英文标题以首个句号截断（取标题句）
+                t = t.split(". ")[0].strip()
+                if not t.endswith("."):
+                    t += "."
+                if t:
+                    if len(t) > 100:
+                        t = t[:97].rstrip() + "..."
+                    en_titles.append(t)
+    if len(en_titles) < 3:
+        en_titles = [s[:60] for s in shorts[:3]]
+
+    twitter = f"""📡 Signal Pop Daily | {n} News in 3 min
+
+Today's top stories:
+🔹 {en_titles[0]}
+🔹 {en_titles[1]}
+🔹 {en_titles[2]}
+➕ {n-3} more in the video 👇
+
+#SignalPop #DailyNews #China #Technology #News #AI #Weather"""
+    # 若超 280 字符，逐步压缩
+    if len(twitter) > 280:
+        twitter = f"""📡 Signal Pop Daily | {n} News in 3 min
+
+🔹 {en_titles[0]}
+🔹 {en_titles[1]}
+🔹 {en_titles[2]}
+➕ {n-3} more in the video 👇
+
+#SignalPop #DailyNews #China #News #AI"""
+    if len(twitter) > 280:
+        # 再压：标题截断 48 字符 + 精简标签
+        short_t = [t[:48].rstrip() + ("..." if len(t) > 48 else "") for t in en_titles]
+        twitter = f"""📡 Signal Pop Daily | {n} News in 3 min
+
+🔹 {short_t[0]}
+🔹 {short_t[1]}
+🔹 {short_t[2]}
+➕ {n-3} more in the video 👇
+
+#SignalPop #DailyNews #China #AI"""
+    if len(twitter) > 280:
+        # 最后兜底：去掉 emoji 圆点，只留纯文本
+        twitter = f"📡 Signal Pop Daily | {n} News in 3 min\n\n{en_titles[0][:55]}\n{en_titles[1][:55]}\n{en_titles[2][:55]}\n+{n-3} more in the video\n\n#SignalPop #DailyNews #China #AI"
+    files["twitter.md"] = twitter
 
     for name, content in files.items():
         with open(os.path.join(OUT_DIR, name), "w", encoding="utf-8") as f:

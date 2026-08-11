@@ -202,6 +202,59 @@ def full_bg(bg_path, dark_alpha=130):
     return Image.alpha_composite(rgba, dark).convert("RGB")
 
 
+def draw_history_slide(bg_path, item, pub_short):
+    """历史上的今天：旧纸张/羊皮纸色调 + 复古边框，突出历史氛围。"""
+    from PIL import ImageFilter
+
+    bg = Image.open(bg_path).convert("RGB").resize((WIDTH, HEIGHT), Image.LANCZOS)
+    # 暖色调暗化遮罩（古旧感）
+    rgba = bg.convert("RGBA")
+    sepia = Image.new("RGBA", (WIDTH, HEIGHT), (60, 35, 10, 110))
+    img = Image.alpha_composite(rgba, sepia).convert("RGB")
+    d = ImageDraw.Draw(img)
+
+    # 顶部金色线
+    for x in range(120, 1800):
+        d.rectangle([x, 60, x + 1, 65], fill=GOLD if 'GOLD' in dir() else ACCENT)
+
+    # 中央区域：复古卷轴面板（浅色半透明 + 深棕描边）
+    panel_w, panel_h = 1500, 760
+    px, py = (WIDTH - panel_w) // 2, (HEIGHT - panel_h) // 2
+    overlay = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    od = ImageDraw.Draw(overlay)
+    od.rounded_rectangle([px, py, px + panel_w, py + panel_h], 24,
+                         fill=(30, 22, 14, 200), outline=(212, 175, 55, 255), width=3)
+    img = Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
+    d = ImageDraw.Draw(img)
+
+    # 标题
+    title_f = fnt(62, bold=True)
+    d.text((960, py + 70), "历史上的今天", fill=ACCENT, font=title_f, anchor="mm")
+    # 分隔线
+    d.rectangle([960 - 120, py + 110, 960 + 120, py + 116], fill=ACCENT)
+
+    # 正文（历史内容）
+    body = item.get("full_body", "")
+    bd_f = fnt(34)
+    lines = wrap_text(d, body, bd_f, 1280)[:6]
+    if len(body) > sum(len(l) for l in lines):
+        lines[-1] = lines[-1][:-1] + "…"
+    y = py + 180
+    for line in lines:
+        for ox in (-1, 0, 1):
+            for oy in (-1, 0, 1):
+                if ox == 0 and oy == 0:
+                    continue
+                d.text((960 + ox, y + oy), line, fill=(0, 0, 0), font=bd_f, anchor="mm")
+        d.text((960, y), line, fill=(245, 240, 225), font=bd_f, anchor="mm")
+        y += 54
+
+    # 底部品牌
+    ft = fnt(22)
+    d.text((960, py + panel_h - 45), f"隔天信号弹 · {pub_short}", fill=(190, 170, 130), font=ft, anchor="mm")
+    return img
+
+
 def draw_opening_frame(items, pub_date_fmt, pub_weekday, total):
     """开屏：清晰演播厅配图 + 居中品牌"""
     op_bg = os.path.join(IMAGES_DIR, "opening_bg.jpg")
@@ -305,16 +358,31 @@ def main():
     frames.append(("opening", op_png, durations[0]))
     print(f"  opening: {durations[0]:.2f}s")
 
-    # news slides
-    for i, item in enumerate(items, 1):
-        bg = os.path.join(IMAGES_DIR, f"{i:02d}.jpg")
+    # news slides（含可选的历史条目 num=0，图片按 num 定位：00.jpg / 01.jpg...）
+    seg_idx = 1  # durations[0] 是 intro，新闻段从 1 开始
+    for item in items:
+        n = item.get("num", 0)
+        if n == 0:
+            # 历史上的今天：用 00.jpg（若无则用 opening_bg）
+            bg = os.path.join(IMAGES_DIR, "00.jpg")
+            if not os.path.exists(bg):
+                bg = os.path.join(IMAGES_DIR, "opening_bg.jpg")
+            png = os.path.join(tmp, "00_history.png")
+            draw_history_slide(bg, item, PUB_DATE_SHORT).save(png)
+            dur = durations[seg_idx]
+            frames.append(("history", png, dur))
+            print(f"  history [{item.get('section','')}]: {dur:.2f}s")
+            seg_idx += 1
+            continue
+        bg = os.path.join(IMAGES_DIR, f"{n:02d}.jpg")
         if not os.path.exists(bg):
             bg = os.path.join(IMAGES_DIR, "opening_bg.jpg")
-        png = os.path.join(tmp, f"{i:02d}_slide.png")
-        draw_split_slide(bg, item, i, len(items), PUB_DATE_SHORT).save(png)
-        dur = durations[i]  # durations[1..10]
-        frames.append((f"slide{i}", png, dur))
-        print(f"  slide {i} [{item.get('section','')}]: {dur:.2f}s")
+        png = os.path.join(tmp, f"{n:02d}_slide.png")
+        draw_split_slide(bg, item, n, len(items), PUB_DATE_SHORT).save(png)
+        dur = durations[seg_idx]
+        frames.append((f"slide{n}", png, dur))
+        print(f"  slide {n} [{item.get('section','')}]: {dur:.2f}s")
+        seg_idx += 1
 
     # ending
     en_png = os.path.join(tmp, "11_ending.png")

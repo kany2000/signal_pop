@@ -33,6 +33,7 @@ PUB_WEEKDAY = ["星期一", "星期二", "星期三", "星期四", "星期五", 
 
 def parse_daily_script(text):
     """解析单行格式：
+    历史上的今天。正文
     第N条，[分类]新闻。标题。据 来源 报道，正文[。主播观点：xxx]
     """
     items = []
@@ -41,6 +42,20 @@ def parse_daily_script(text):
         if not line:
             continue
         if line.startswith("这里是隔天信号弹") or line.startswith("以上是本期"):
+            continue
+        # 历史上的今天（特殊条目 num=0）
+        hm = re.match(r"^历史上的今天[。.]\s*(.+)$", line)
+        if hm:
+            content = hm.group(1).strip()
+            items.append({
+                "num": 0,
+                "section": "历史",
+                "title": "历史上的今天",
+                "source": "",
+                "body": content,
+                "opinion": "",
+                "full_body": content,
+            })
             continue
         m = re.match(r"^第(\d+)条[，,]\s*\[?(.+?)\]?\s*新闻[。.]\s*(.+?)[。.]\s*据\s*(.+?)\s*报道[，,]\s*(.+)$", line)
         if not m:

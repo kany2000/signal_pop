@@ -10,10 +10,16 @@ def build_segments(items, pub_date_fmt, pub_weekday):
     segs = []
     segs.append(("intro", f"这里是隔天信号弹，今天是{pub_date_fmt}，{pub_weekday}。欢迎收看本期信号弹，以下是本期精选的{len(items)}条核心新闻。"))
     for i, item in enumerate(items, 1):
-        txt = f"第{i}条，{item['section']}。{item['title']}。{item['full_body']}"
+        n = item.get("num", i)
+        if n == 0:
+            # 历史上的今天（特殊条目）
+            txt = f"历史上的今天。{item['full_body']}"
+            segs.append((f"item0", txt))
+            continue
+        txt = f"第{n}条，{item['section']}。{item['title']}。{item['full_body']}"
         if item["opinion"]:
             txt += f".主播观点：{item['opinion']}"
-        segs.append((f"item{i}", txt))
+        segs.append((f"item{n}", txt))
     segs.append(("outro", "今天主播：图图。互动话题：您最关注哪条新闻？欢迎在评论区留言讨论！感谢您的关注，我们下期见~"))
     return segs
 

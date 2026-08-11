@@ -32,6 +32,14 @@ NEWS_PROMPTS = {
 NO_TEXT = ", no text, no words, no labels, no captions, no UI, clean image without any writing"
 
 SCENE_PROMPTS = {
+    "NVIDIA": "NVIDIA GPU chip glowing green, massive AI data center with rows of server racks and glowing cooling fans, digital money and stock charts flowing as light streams above, artificial intelligence computing infrastructure investment concept, cinematic tech photography, no people, no text, no words, no letters, no numbers"
+    + NO_TEXT,
+    "历史上的今天": "Vintage 1980s computer scene, classic beige IBM PC with CRT monitor on wooden desk, retro technology, warm nostalgic lighting, old newspapers and calendar in background, archival photography style"
+    + NO_TEXT,
+    "IBM": "Vintage 1980s computer scene, classic beige IBM PC with CRT monitor on wooden desk, retro technology, warm nostalgic lighting, old newspapers and calendar in background, archival photography style"
+    + NO_TEXT,
+    "个人电脑": "Vintage 1980s computer scene, classic beige IBM PC with CRT monitor on wooden desk, retro technology, warm nostalgic lighting, old newspapers and calendar in background, archival photography style"
+    + NO_TEXT,
     "SpaceX": "SpaceX Starship rocket on launch pad at Boca Chica Texas, dramatic sunset, launch tower, aerospace technology, documentary photography"
     + NO_TEXT,
     "台风": "Massive typhoon spiral over East China Sea seen from space, swirling storm clouds approaching coastal city, dramatic satellite view, storm surge, meteorology"
@@ -44,7 +52,7 @@ SCENE_PROMPTS = {
     + NO_TEXT,
     "折叠iPhone": "Foldable smartphone floating in dark studio, sleek silver and dark blue design, product photography, dramatic rim lighting, premium tech"
     + NO_TEXT,
-    "iPhone": "Foldable smartphone floating in dark studio, sleek silver and dark blue design, product photography, dramatic rim lighting, premium tech"
+    "iPhone": "Sleek modern all-glass smartphone, seamless glass unibody with edge-to-edge transparent display, standard smartphone shape held at slight angle, reflective glass surface, dark studio background, premium product photography, rim lighting, photorealistic, no hands, no people, no text"
     + NO_TEXT,
     "大气田": "Offshore oil and gas platform in Bohai Sea, golden hour, industrial energy production, drilling rigs, maritime engineering, dramatic sky"
     + NO_TEXT,
@@ -99,6 +107,20 @@ SCENE_PROMPTS = {
     "OPEC": "OPEC headquarters building Vienna, oil barrels and petroleum refinery, OPEC flag and member country flags, global energy summit, oil industry photography"
     + NO_TEXT,
     "OPEC+": "World oil map with petroleum pipelines, oil drilling rigs at sunset, OPEC energy ministers meeting, global oil production concept, industrial photography"
+    + NO_TEXT,
+    "全玻璃": "Modern transparent smartphone concept, sleek glass smartphone floating on dark studio background, minimal product photography, glowing edge lighting, no hands, no people"
+    + NO_TEXT,
+    "贝索斯": "Liverpool football stadium Anfield green pitch at dusk with dramatic floodlights, large elegant golden business handshake sculpture at center of pitch, modern city skyscrapers skyline behind stands, football club acquisition deal concept, luxury corporate sports business photography, cinematic warm lighting, no people, no hands, no text"
+    + NO_TEXT,
+    "横店": "Chinese ancient town film set, traditional wooden buildings and red lanterns, vintage street with movie props, warm daylight, cinematic scenery, no text, no signs"
+    + NO_TEXT,
+    "山洪": "Torrential mountain flood water rushing down valley, dramatic storm clouds, wet rocks and trees, dramatic weather photography, no text, no signs"
+    + NO_TEXT,
+    "博物馆": "Spacious modern museum interior with visitors viewing ancient cultural relics display, warm gallery lighting, elegant exhibition hall, cultural heritage photography, no text"
+    + NO_TEXT,
+    "文博": "Spacious modern museum interior with visitors viewing ancient cultural relics display, warm gallery lighting, elegant exhibition hall, cultural heritage photography, no text"
+    + NO_TEXT,
+    "上海博物馆": "Spacious modern museum interior with visitors viewing ancient cultural relics display, warm gallery lighting, elegant exhibition hall, cultural heritage photography, no text"
     + NO_TEXT,
 }
 DEFAULT_SCENE = "news event scene, documentary photography" + NO_TEXT
@@ -209,9 +231,10 @@ def gen_all_images(items, out_dir):
     else:
         logger.info("  opening_bg.jpg exists, skip")
 
-    # News images
-    for i, item in enumerate(items, 1):
-        fname = f"{i:02d}.jpg"
+    # News images（历史条目 num=0 -> 00.jpg，新闻按 num 编号）
+    for item in items:
+        n = item.get("num", 0)
+        fname = f"{n:02d}.jpg"
         out_path = os.path.join(out_dir, fname)
         if os.path.exists(out_path) and os.path.getsize(out_path) > 5000:
             logger.info(f"  {fname} exists, skip")
