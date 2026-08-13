@@ -77,7 +77,13 @@ def main():
     history_text = ""
     if has_history:
         h = history_items[0]
-        history_text = f"📜 历史上的今天：{h.get('full_body', '')[:60]}\n\n"
+        h_body = h.get('full_body', '').strip()
+        # 历史上的今天：优先完整保留；超长才按完整句号截断，避免文案半截
+        if len(h_body) > 80:
+            cut = h_body[:80].rfind('。')
+            if cut > 0:
+                h_body = h_body[:cut + 1]
+        history_text = f"📜 历史上的今天：{h_body}\n\n"
 
     # ── B站分段时间轴（用真实 TTS 分段时长 + 完整标题，含历史上的今天）──
     timeline_lines = []
