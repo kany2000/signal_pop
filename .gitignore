@@ -51,5 +51,8 @@ logs/
 # 本地二进制（ffmpeg 9.0.1，413MB，不提交）
 bin/
 
+# 归档/无用文件目录（整理时移入，不提交）
+old/
+
 # HyperFrames generated assets
 hyperframes/**
