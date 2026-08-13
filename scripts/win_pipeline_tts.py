@@ -6,7 +6,7 @@ import sys, os, json, asyncio, subprocess, wave, struct, time
 
 VOICE_WEEKDAY = "zh-CN-XiaoxiaoNeural"   # 平日：女声
 VOICE_WEEKEND = "zh-CN-YunyangNeural"    # 周末：男声
-FFMPEG = "C:/Users/Administrator/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-9.0-full_build/bin/ffmpeg.exe"
+FFMPEG = "E:/projects/signal_pop/bin/ffmpeg-9.0.1-essentials_build/bin/ffmpeg.exe"
 
 
 def select_voice(pub_weekday="星期六"):

@@ -37,7 +37,7 @@ PUB_DATE_SHORT = f"{PUB_DT.year}.{PUB_DT.month:02d}.{PUB_DT.day:02d}"
 PUB_WEEKDAY = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"][PUB_DT.weekday()]
 
 WIDTH, HEIGHT = 1920, 1080
-FFMPEG = "C:/Users/Administrator/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-9.0-full_build/bin/ffmpeg.exe"
+FFMPEG = "E:/projects/signal_pop/bin/ffmpeg-9.0.1-essentials_build/bin/ffmpeg.exe"
 FONT = "C:/Windows/Fonts/msyh.ttc"
 FONT_BOLD = "C:/Windows/Fonts/msyhbd.ttc"
 
@@ -498,8 +498,8 @@ def main():
     # 3. concat demuxer 拼接
     with open(parts_txt, "w", encoding="utf-8") as f:
         for p in part_files:
-            p_abs = os.path.abspath(p).replace("\\", "/")
-            f.write(f"file '{p_abs}'\n")
+            # 用相对文件名 + cwd=tmp，规避旧版 ffmpeg concat 对 Windows 绝对路径的解析 bug
+            f.write(f"file '{os.path.basename(p)}'\n")
 
     # 4. 拼接 + 音频
     print("\n=== concat demuxer 拼接 + 音频 ===")
@@ -507,14 +507,14 @@ def main():
         os.remove(OUTPUT_VIDEO)
     cmd = [
         FFMPEG, "-y",
-        "-f", "concat", "-safe", "0", "-i", parts_txt,
+        "-f", "concat", "-safe", "0", "-i", "concat.txt",
         "-i", AUDIO_PATH,
         "-c:v", "copy",
         "-c:a", "aac", "-b:a", "128k",
         "-shortest",
-        OUTPUT_VIDEO,
+        os.path.basename(OUTPUT_VIDEO),
     ]
-    r = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    r = subprocess.run(cmd, capture_output=True, text=True, timeout=300, cwd=tmp)
     if r.returncode != 0:
         print("FFMPEG STDERR:", r.stderr[-1500:])
         sys.exit(1)

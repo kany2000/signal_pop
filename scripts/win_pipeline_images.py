@@ -34,7 +34,7 @@ NO_TEXT = ", no text, no words, no labels, no captions, no UI, clean image witho
 SCENE_PROMPTS = {
     "NVIDIA": "NVIDIA GPU chip glowing green, massive AI data center with rows of server racks and glowing cooling fans, digital money and stock charts flowing as light streams above, artificial intelligence computing infrastructure investment concept, cinematic tech photography, no people, no text, no words, no letters, no numbers"
     + NO_TEXT,
-    "历史上的今天": "Vintage 1980s computer scene, classic beige IBM PC with CRT monitor on wooden desk, retro technology, warm nostalgic lighting, old newspapers and calendar in background, archival photography style"
+    "历史上的今天": "Chinese maglev train gliding on elevated track, sleek streamlined white maglev train with aerodynamic design, futuristic rail transit, clean modern station background, product photography, no people, no text, no words, no letters, no numbers"
     + NO_TEXT,
     "IBM": "Vintage 1980s computer scene, classic beige IBM PC with CRT monitor on wooden desk, retro technology, warm nostalgic lighting, old newspapers and calendar in background, archival photography style"
     + NO_TEXT,
@@ -77,7 +77,7 @@ SCENE_PROMPTS = {
     "中科天塔": "Satellite laser communication terminal in cleanroom laboratory, aerospace engineering, precision optics"
     + NO_TEXT,
     "智谱": "Chinese AI startup office, glowing data dashboard, modern glass building, business photography" + NO_TEXT,
-    "蚂蚁": "Ant Group headquarters building in Hangzhou, AI health interface on large screen, modern fintech"
+    "蚂蚁": "extreme macro photograph of a single ant, its delicate antennae touching a glowing blue tactile sensor surface, biomimetic tactile sensing concept, shallow depth of field, dark background, dramatic cinematic lighting, scientific nature photography, one ant only, no text, no words, no letters, no numbers, no hands, no people, no other insects, no watermarks"
     + NO_TEXT,
     "阿里": "B2B ecommerce platform automation, factory AI trading concept, industrial internet" + NO_TEXT,
     "A股": "Chinese stock market trading floor with red and green digital tickers, investors watching screens"
@@ -90,7 +90,7 @@ SCENE_PROMPTS = {
     "ABB": "Industrial automation factory, robotic arms on assembly line, precision manufacturing" + NO_TEXT,
     "本田": "Honda dealer showroom with electric SUV on display, automotive, clean commercial photography" + NO_TEXT,
     "美国对伊朗": "Persian Gulf coast, Strait of Hormuz aerial view, naval ships, geopolitical tension" + NO_TEXT,
-    "DeepSeek": "Chinese AI startup DeepSeek office, futuristic data center with blue neon lights, server racks glowing, artificial intelligence research laboratory, technology innovation"
+    "DeepSeek": "DeepSeek AI large language model inference visualization, glowing neural network with streaming text tokens flowing through layers, futuristic dark data center with blue server racks, AI model training concept, cinematic tech photography, no people, no text, no words, no letters, no numbers, no logos"
     + NO_TEXT,
     "智能外骨骼": "Smart exoskeleton suit on display, futuristic wearable technology, augmented reality smart glasses, consumer electronics show, innovative tech products"
     + NO_TEXT,
@@ -121,6 +121,30 @@ SCENE_PROMPTS = {
     "文博": "Spacious modern museum interior with visitors viewing ancient cultural relics display, warm gallery lighting, elegant exhibition hall, cultural heritage photography, no text"
     + NO_TEXT,
     "上海博物馆": "Spacious modern museum interior with visitors viewing ancient cultural relics display, warm gallery lighting, elegant exhibition hall, cultural heritage photography, no text"
+    + NO_TEXT,
+    "谷歌": "Gemini AI model concept, abstract colorful neural network glowing in dark space, futuristic artificial intelligence brain, Google technology, geometric light patterns, no people, no text, no words, no letters, no numbers"
+    + NO_TEXT,
+    "韦布": "James Webb Space Telescope with golden hexagonal mirror segments floating in deep space, distant star surrounded by dust and water vapor, cosmic nebula, black hole region, deep space astronomy, cinematic photography, no people, no text, no words, no letters, no numbers"
+    + NO_TEXT,
+    "电动车": "modern electric vehicles charging at sleek charging stations, futuristic EV on city street, clean energy transportation concept, European street scene, no people, no text, no words, no letters, no numbers, no price tags, no signage"
+    + NO_TEXT,
+    "超导": "ultra-thin superconducting material layer, atomic-scale copper oxide crystal lattice glowing blue, levitating magnetic field concept, laboratory scientific research equipment, quantum physics, no people, no text, no words, no letters, no numbers"
+    + NO_TEXT,
+    "机器人手机": "futuristic smartphone with mechanical robotic elements, sleek robotic phone concept floating in dark studio, glowing accent lights, premium product photography, no hands, no people, no text, no words, no letters, no numbers"
+    + NO_TEXT,
+    "日全食": "total solar eclipse, black sun with glowing corona ring, dramatic dusk sky with orange and purple sunset, silhouette of landscape below, rare astronomical phenomenon, cinematic photography, no people, no text, no words, no letters, no numbers"
+    + NO_TEXT,
+    "柯桥": "colorful textile fabric rolls and curtain fabrics, elegant hanging curtains in various colors, textile wholesale market display, soft fabric textures, industrial textile production, no people, no text, no words, no letters, no numbers, no price tags, no signage"
+    + NO_TEXT,
+    "乌镇": "Wuzhen ancient water town in China, traditional white-wall black-tile buildings along canals, stone arch bridge, wooden boats on water, red lanterns, summer travel scenery, warm sunlight, no people, no text, no words, no letters, no numbers, no signage"
+    + NO_TEXT,
+    "金价": "gold bars and gold coins stacked on dark reflective surface, shimmering golden bullion, financial market investment concept, dramatic lighting, macro photography, no text, no words, no letters, no numbers, no hands, no people, no price tags"
+    + NO_TEXT,
+    "歌舞剧": "Guizhou ethnic minority dance performance on stage, traditional Miao costumes with silver jewelry and embroidery, colorful national stage art, vibrant cultural show, dramatic stage lighting, no text, no words, no letters, no numbers, no signs, no banners"
+    + NO_TEXT,
+    "智能手机": "modern smartphones displayed on retail counter, several smartphone models with clean screens, consumer electronics market concept, store display, soft lighting, no text, no words, no letters, no numbers, no price tags, no signage, no people"
+    + NO_TEXT,
+    "Siri": "modern smartphone with glowing AI assistant interface on desk, stacked newspapers and books beside it, digital news publishing and artificial intelligence concept, clean bright workspace, no text, no words, no letters, no numbers, no logos, no people, no text bubbles"
     + NO_TEXT,
 }
 DEFAULT_SCENE = "news event scene, documentary photography" + NO_TEXT

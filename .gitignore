@@ -48,5 +48,8 @@ Thumbs.db
 download.log
 logs/
 
+# 本地二进制（ffmpeg 9.0.1，413MB，不提交）
+bin/
+
 # HyperFrames generated assets
 hyperframes/**
