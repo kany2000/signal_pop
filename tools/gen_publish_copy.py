@@ -185,7 +185,7 @@ SignalPop,DailyNews,China,Technology,News,DailyNews"""
     # 8. Twitter / X（英文、# 话题、280 字符内紧凑版）
     # 从英文字幕提取前3条英文短标题（去掉 "Article N, Category." 前缀 + 正文只取标题句）
     en_titles = []
-    en_srt = os.path.join(PROJECT_ROOT, "output", "daily", PREP_DATE, f"signal_pop_daily_{PREP_DATE}_en.srt")
+    en_srt = os.path.join(PROJECT_ROOT, "output", "daily", PREP_DATE, f"signal_pop_daily_{PREP_DATE}.en_US.srt")
     if os.path.exists(en_srt):
         import re as _re
         blocks = _re.split(r"\n\n+", open(en_srt, encoding="utf-8").read().strip())

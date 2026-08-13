@@ -16,8 +16,21 @@ import urllib.request
 PROJECT_ROOT = "E:/projects/signal_pop"
 PREP_DATE = sys.argv[1] if len(sys.argv) > 1 else "20260809"
 OUT_DIR = os.path.join(PROJECT_ROOT, "output", "daily", PREP_DATE)
-SRT_ZH = os.path.join(OUT_DIR, f"signal_pop_daily_{PREP_DATE}.srt")
-SRT_EN = os.path.join(OUT_DIR, f"signal_pop_daily_{PREP_DATE}_en.srt")
+
+
+def detect_srt_paths():
+    """自动识别 daily/weekly 中文 SRT，返回 (中文SRT路径, kind)。
+    命名规则（用户明确）：signal_pop_daily/weekly_yyyymmdd.en_US.srt
+    """
+    for kind in ("daily", "weekly"):
+        p = os.path.join(OUT_DIR, f"signal_pop_{kind}_{PREP_DATE}.srt")
+        if os.path.exists(p):
+            return p, kind
+    return os.path.join(OUT_DIR, f"signal_pop_daily_{PREP_DATE}.srt"), "daily"
+
+
+SRT_ZH, SRT_KIND = detect_srt_paths()
+SRT_EN = os.path.join(OUT_DIR, f"signal_pop_{SRT_KIND}_{PREP_DATE}.en_US.srt")
 
 
 def translate(text):

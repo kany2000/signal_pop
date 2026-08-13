@@ -112,11 +112,14 @@ if os.path.exists(pj):
 else:
     chk(False, "parsed_news.json 存在")
 
-# 7. SRT
-zh_srt = os.path.join(OUT, f"signal_pop_daily_{PREP_DATE}.srt")
-en_srt = os.path.join(OUT, f"signal_pop_daily_{PREP_DATE}_en.srt")
+# 7. SRT（命名规则：signal_pop_daily/weekly_yyyymmdd.en_US.srt）
+zh_daily = os.path.join(OUT, f"signal_pop_daily_{PREP_DATE}.srt")
+zh_weekly = os.path.join(OUT, f"signal_pop_weekly_{PREP_DATE}.srt")
+zh_srt = zh_daily if os.path.exists(zh_daily) else zh_weekly
+kind = "daily" if os.path.exists(zh_daily) else "weekly"
+en_srt = os.path.join(OUT, f"signal_pop_{kind}_{PREP_DATE}.en_US.srt")
 chk(os.path.exists(zh_srt), "中文字幕 SRT")
-chk(os.path.exists(en_srt), "英文字幕 SRT")
+chk(os.path.exists(en_srt), "英文字幕 SRT (.en_US)")
 
 # 结果
 print(f"\n═══ 结果：{'✅ 全部通过，可以发布' if not fails else '❌ %d 项未通过，禁止发布' % len(fails)} ═══")
