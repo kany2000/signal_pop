@@ -15,7 +15,21 @@ import urllib.request
 
 PROJECT_ROOT = "E:/projects/signal_pop"
 PREP_DATE = sys.argv[1] if len(sys.argv) > 1 else "20260809"
-OUT_DIR = os.path.join(PROJECT_ROOT, "output", "daily", PREP_DATE)
+
+
+def detect_out_dir():
+    """自动识别 weekly/daily 输出目录（周末版在 output/weekly/）。"""
+    daily = os.path.join(PROJECT_ROOT, "output", "daily", PREP_DATE)
+    weekly = os.path.join(PROJECT_ROOT, "output", "weekly", PREP_DATE)
+    for kind, d in (("weekly", weekly), ("daily", daily)):
+        if os.path.isdir(d):
+            for f in os.listdir(d):
+                if f.startswith(f"signal_pop_{kind}_{PREP_DATE}.srt"):
+                    return d, kind
+    return daily, "daily"
+
+
+OUT_DIR, _KIND = detect_out_dir()
 
 
 def detect_srt_paths():

@@ -34,19 +34,27 @@ def find_font(size):
 def main():
     date = sys.argv[1] if len(sys.argv) > 1 else None
     out_name = sys.argv[2] if len(sys.argv) > 2 else "contact_sheet.png"
+    kind = sys.argv[3] if len(sys.argv) > 3 else "daily"  # daily | weekly
 
+    sub = "weekly" if kind == "weekly" else "daily"
     if date:
-        img_dir = os.path.join(BASE, "output", "daily", date, "images")
-        out_path = os.path.join(BASE, "output", "daily", date, out_name)
+        img_dir = os.path.join(BASE, "output", sub, date, "images")
+        out_path = os.path.join(BASE, "output", sub, date, out_name)
     else:
-        img_dir = os.path.join(BASE, "output", "daily", "images")
+        img_dir = os.path.join(BASE, "output", sub, "images")
         out_path = os.path.join(BASE, "output", out_name)
 
+    # 自动扫描编号图片（排除 opening_bg/ending_bg），daily 支持 00=历史
     files = []
-    for n in range(11):  # 00 ~ 10
-        f = os.path.join(img_dir, f"{n:02d}.jpg")
-        if os.path.exists(f):
-            files.append((n, f))
+    for fname in sorted(os.listdir(img_dir)) if os.path.isdir(img_dir) else []:
+        if not fname.endswith(".jpg"):
+            continue
+        stem = fname[:-4]
+        if not stem.isdigit():
+            continue
+        n = int(stem)
+        files.append((n, os.path.join(img_dir, fname)))
+    files.sort(key=lambda x: x[0])
 
     if not files:
         print(f"[contact_sheet] 未找到配图：{img_dir}")

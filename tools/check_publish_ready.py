@@ -23,7 +23,14 @@ if not PREP_DATE:
     print("用法: python tools/check_publish_ready.py YYYYMMDD")
     sys.exit(2)
 
+# 自动识别 daily/weekly（周末版在 output/weekly/，文件前缀 signal_pop_weekly_）
 OUT = os.path.join(PROJECT_ROOT, "output", "daily", PREP_DATE)
+KIND = "daily"
+if os.path.isdir(os.path.join(PROJECT_ROOT, "output", "weekly", PREP_DATE)) and os.path.exists(
+    os.path.join(PROJECT_ROOT, "output", "weekly", PREP_DATE, f"signal_pop_weekly_{PREP_DATE}.mp4")
+):
+    OUT = os.path.join(PROJECT_ROOT, "output", "weekly", PREP_DATE)
+    KIND = "weekly"
 PLATFORMS = ["douyin", "kuaishou", "bilibili", "xiaohongshu", "zhihu", "facebook", "youtube", "twitter"]
 
 fails = []
@@ -54,7 +61,7 @@ def extract(md_text, key):
 print(f"═══ 发布前质检 · {PREP_DATE} ═══")
 
 # 1. 视频
-video = os.path.join(OUT, f"signal_pop_daily_{PREP_DATE}.mp4")
+video = os.path.join(OUT, f"signal_pop_{KIND}_{PREP_DATE}.mp4")
 v_ok = os.path.exists(video) and os.path.getsize(video) > 5 * 1024 * 1024
 chk(v_ok, "视频文件存在且 >5MB",
     f"{os.path.getsize(video)//1024//1024}MB" if os.path.exists(video) else "缺失")
@@ -64,9 +71,9 @@ for c in ["cover_3x4", "cover_16x9"]:
     # 封面按发布日命名：发布日 = 制作日 + 1
     from datetime import datetime, timedelta
     pub = (datetime.strptime(PREP_DATE, "%Y%m%d") + timedelta(days=1)).strftime("%Y%m%d")
-    # 支持两种命名：cover_{pub}_{ratio}.png 或 cover_{PREP}_{ratio}.png
+    # 支持多种命名：cover_weekly_{PREP}_{ratio}.png / cover_{pub}_{ratio}.png / cover_{PREP}_{ratio}.png
     found = False
-    for base in [pub, PREP_DATE]:
+    for base in [f"weekly_{PREP_DATE}", pub, PREP_DATE]:
         p = os.path.join(OUT, f"cover_{base}_{c.split('_')[1]}.png")
         if os.path.exists(p):
             found = True
@@ -113,11 +120,8 @@ else:
     chk(False, "parsed_news.json 存在")
 
 # 7. SRT（命名规则：signal_pop_daily/weekly_yyyymmdd.en_US.srt）
-zh_daily = os.path.join(OUT, f"signal_pop_daily_{PREP_DATE}.srt")
-zh_weekly = os.path.join(OUT, f"signal_pop_weekly_{PREP_DATE}.srt")
-zh_srt = zh_daily if os.path.exists(zh_daily) else zh_weekly
-kind = "daily" if os.path.exists(zh_daily) else "weekly"
-en_srt = os.path.join(OUT, f"signal_pop_{kind}_{PREP_DATE}.en_US.srt")
+zh_srt = os.path.join(OUT, f"signal_pop_{KIND}_{PREP_DATE}.srt")
+en_srt = os.path.join(OUT, f"signal_pop_{KIND}_{PREP_DATE}.en_US.srt")
 chk(os.path.exists(zh_srt), "中文字幕 SRT")
 chk(os.path.exists(en_srt), "英文字幕 SRT (.en_US)")
 

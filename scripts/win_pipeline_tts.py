@@ -15,6 +15,16 @@ def select_voice(pub_weekday="星期六"):
 
 
 def build_segments(items, pub_date_fmt, pub_weekday):
+    # 榜单版（周末特别版：items 含 rank 字段）—— 分段文本用 full_body，自动切换
+    if any(it.get("rank") is not None for it in items):
+        segs = []
+        segs.append(("intro", "这里是隔天信号弹·周末特别版！本周十大事件，倒计时揭晓——从第十名到第一名，哪条才是本周之最？"))
+        for it in items:
+            n = it.get("num", 0)
+            segs.append((f"item{n}", it["full_body"]))
+        segs.append(("outro", "以上是本期信号弹周末特别版。您的一键三连，是我们更新制作的动力！互动话题：本周哪条新闻您觉得最值得关注？欢迎在评论区留言，我们下周见~"))
+        return segs
+
     segs = []
     segs.append(("intro", f"这里是隔天信号弹，今天是{pub_date_fmt}，{pub_weekday}。欢迎收看本期信号弹，以下是本期精选的{len(items)}条核心新闻。"))
     for i, item in enumerate(items, 1):
