@@ -96,7 +96,12 @@ def draw_split_slide(bg_path, item, idx, total, pub_short):
             a = 0
         md.rectangle([x, 0, x, HEIGHT], fill=a)
 
-    base = Image.composite(blurred_dark, bg, mask)
+    # 右侧文字区：轻度模糊（保持轻微退后质感，图片仍清晰）+ 轻暗化提升文字对比度
+    blur_light = bg.filter(ImageFilter.GaussianBlur(radius=2))
+    blur_light_rgba = blur_light.convert("RGBA")
+    dark_light = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 35))
+    right_bg = Image.alpha_composite(blur_light_rgba, dark_light).convert("RGB")
+    base = Image.composite(blurred_dark, right_bg, mask)
     d = ImageDraw.Draw(base)
 
     # ===== 左侧面板文字 (0-384, 中心 x=192) =====
@@ -148,8 +153,9 @@ def draw_split_slide(bg_path, item, idx, total, pub_short):
         lines[-1] = lines[-1][:-1] + "…"
     y = 90
     for line in lines:
-        for ox in (-2, 0, 2):
-            for oy in (-2, 0, 2):
+        # 加粗描边（3px）提升对比度
+        for ox in (-3, 0, 3):
+            for oy in (-3, 0, 3):
                 if ox == 0 and oy == 0:
                     continue
                 d.text((TX + ox, y + oy), line, fill=(0, 0, 0), font=ttl_f)
@@ -164,8 +170,9 @@ def draw_split_slide(bg_path, item, idx, total, pub_short):
         bd_lines[-1] = bd_lines[-1][:-1] + "…"
     y += 22
     for line in bd_lines:
-        for ox in (-1, 0, 1):
-            for oy in (-1, 0, 1):
+        # 加粗描边（2px）提升对比度
+        for ox in (-2, 0, 2):
+            for oy in (-2, 0, 2):
                 if ox == 0 and oy == 0:
                     continue
                 d.text((TX + ox, y + oy), line, fill=(0, 0, 0), font=bd_f)
@@ -347,7 +354,38 @@ def draw_sanlian_icon(canvas, cx, cy, kind, glow):
     canvas.alpha_composite(icon, (cx - w // 2, cy - oy))
 
 
-def render_ending_animation(pub_date_fmt, out_dir, dur, fps=25):
+def add_avatar_corner(img, avatar_img, size=104, margin=30):
+    """在画面右下角叠加主播头像（圆形 + 白环 + 半透明底圆，确保任何背景可见）。"""
+    if avatar_img is None:
+        return img
+    base = img.convert("RGBA")
+    # 底圆（半透明深色，保证头像在亮背景上可见）
+    pad = 14
+    disc_d = size + pad * 2
+    x0 = WIDTH - disc_d - margin
+    y0 = HEIGHT - disc_d - margin
+    overlay = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    od = ImageDraw.Draw(overlay)
+    od.ellipse([x0, y0, x0 + disc_d, y0 + disc_d], fill=(10, 14, 24, 110))
+    # 头像圆形裁剪
+    av = avatar_img.convert("RGBA").resize((size, size), Image.LANCZOS)
+    mask = Image.new("L", (size, size), 0)
+    md = ImageDraw.Draw(mask)
+    md.ellipse([0, 0, size, size], fill=255)
+    # 白环
+    ring = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    rd = ImageDraw.Draw(ring)
+    rd.ellipse([x0 + pad - 3, y0 + pad - 3, x0 + pad + size + 3, y0 + pad + size + 3],
+               outline=(255, 255, 255, 235), width=4)
+    base = Image.alpha_composite(base, overlay)
+    base = Image.alpha_composite(base, ring)
+    layer = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    layer.paste(av, (x0 + pad, y0 + pad), mask)
+    base = Image.alpha_composite(base, layer)
+    return base.convert("RGB")
+
+
+def render_ending_animation(pub_date_fmt, out_dir, dur, fps=25, avatar_img=None):
     """渲染结尾三连动画帧序列。三图标按序浮现 → 全亮保持。返回帧列表路径。"""
     n = max(2, int(dur * fps))
     frames = []
@@ -370,6 +408,9 @@ def render_ending_animation(pub_date_fmt, out_dir, dur, fps=25):
         for k, g in enumerate(glows):
             if g > 0.02:
                 draw_sanlian_icon(img, cx[k], cy, ["subscribe", "follow", "share"][k], g)
+        # 右下角主播头像
+        if avatar_img is not None:
+            img = add_avatar_corner(img, avatar_img)
         p = os.path.join(out_dir, f"an_{i:04d}.png")
         img.convert("RGB").save(p)
         frames.append(p)
@@ -437,9 +478,18 @@ def main():
     print("=== 绘制分屏风格帧 ===")
     frames = []  # (label, png_path, dur)
 
+    # 主播头像（右下角角标，avatar_<发布日>.png，找不到则不显示）
+    avatar_img = None
+    av_path = os.path.join(OUT_DIR, f"avatar_{PUB_DT.strftime('%Y%m%d')}.png")
+    if os.path.exists(av_path):
+        avatar_img = Image.open(av_path)
+
     # opening
     op_png = os.path.join(tmp, "00_opening.png")
-    draw_opening_frame(items, PUB_DATE_FMT, PUB_WEEKDAY, len(items)).save(op_png)
+    op_frame = draw_opening_frame(items, PUB_DATE_FMT, PUB_WEEKDAY, len(items))
+    if avatar_img is not None:
+        op_frame = add_avatar_corner(op_frame, avatar_img)
+    op_frame.save(op_png)
     frames.append(("opening", op_png, durations[0], "static"))
     print(f"  opening: {durations[0]:.2f}s")
 
@@ -453,7 +503,10 @@ def main():
             if not os.path.exists(bg):
                 bg = os.path.join(IMAGES_DIR, "opening_bg.jpg")
             png = os.path.join(tmp, "00_history.png")
-            draw_history_slide(bg, item, PUB_DATE_SHORT).save(png)
+            h_frame = draw_history_slide(bg, item, PUB_DATE_SHORT)
+            if avatar_img is not None:
+                h_frame = add_avatar_corner(h_frame, avatar_img)
+            h_frame.save(png)
             dur = durations[seg_idx]
             frames.append(("history", png, dur, "static"))
             print(f"  history [{item.get('section','')}]: {dur:.2f}s")
@@ -463,7 +516,10 @@ def main():
         if not os.path.exists(bg):
             bg = os.path.join(IMAGES_DIR, "opening_bg.jpg")
         png = os.path.join(tmp, f"{n:02d}_slide.png")
-        draw_split_slide(bg, item, n, len(items), PUB_DATE_SHORT).save(png)
+        s_frame = draw_split_slide(bg, item, n, len(items), PUB_DATE_SHORT)
+        if avatar_img is not None:
+            s_frame = add_avatar_corner(s_frame, avatar_img)
+        s_frame.save(png)
         dur = durations[seg_idx]
         frames.append((f"slide{n}", png, dur, "static"))
         print(f"  slide {n} [{item.get('section','')}]: {dur:.2f}s")
@@ -472,7 +528,7 @@ def main():
     # ending（一键三连动画）
     en_dir = os.path.join(tmp, "ending_anim")
     os.makedirs(en_dir, exist_ok=True)
-    anim_frames, fps = render_ending_animation(PUB_DATE_FMT, en_dir, durations[-1])
+    anim_frames, fps = render_ending_animation(PUB_DATE_FMT, en_dir, durations[-1], avatar_img=avatar_img)
     en_png = anim_frames[0]  # 占位（实际用动画编码）
     frames.append(("ending", en_dir, durations[-1], "anim"))
     print(f"  ending (animation): {durations[-1]:.2f}s ({len(anim_frames)}帧 @{fps}fps)")
@@ -512,7 +568,7 @@ def main():
         "-c:v", "copy",
         "-c:a", "aac", "-b:a", "128k",
         "-shortest",
-        os.path.basename(OUTPUT_VIDEO),
+        OUTPUT_VIDEO,  # 绝对路径输出（cwd=tmp 下用 basename 会写到 tmp 目录）
     ]
     r = subprocess.run(cmd, capture_output=True, text=True, timeout=300, cwd=tmp)
     if r.returncode != 0:

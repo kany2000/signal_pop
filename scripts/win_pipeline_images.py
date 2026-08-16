@@ -32,9 +32,25 @@ NEWS_PROMPTS = {
 NO_TEXT = ", no text, no words, no labels, no captions, no UI, clean image without any writing"
 
 SCENE_PROMPTS = {
+    "人形机器人": "rows of humanoid robots standing on a sports stadium field, robot athletes competing in track and field, jumping and lifting events, large-scale robotics competition venue with spotlights, thousands of robots lined up, futuristic technology olympics concept, cinematic wide shot, no people, no text, no words, no letters, no numbers"
+    + NO_TEXT,
+    "机器人运动会": "rows of humanoid robots standing on a sports stadium field, robot athletes competing in track and field, jumping and lifting events, large-scale robotics competition venue with spotlights, thousands of robots lined up, futuristic technology olympics concept, cinematic wide shot, no people, no text, no words, no letters, no numbers"
+    + NO_TEXT,
+    "Cursor": "SpaceX rocket launching at sunset with streams of glowing digital code and holographic programming lines flowing across the sky, artificial intelligence software acquisition concept, futuristic aerospace and AI fusion, cinematic, no people, no text, no words, no letters, no numbers"
+    + NO_TEXT,
+    "Anthropic": "giant glowing AI brain above a stock market trading floor, digital IPO concept, golden light rays and floating stock chart holograms, futuristic artificial intelligence company listing, dramatic financial technology scene, no people, no text, no words, no letters, no numbers"
+    + NO_TEXT,
+    "唐钱婷": "indoor swimming pool with crystal clear water, golden medal and trophy placed on pool deck edge, Chinese national flag draped beside, subtle water ripples and blue waves, championship victory concept, no people, no text, no words, no letters, no numbers"
+    + NO_TEXT,
+    "蛙泳": "indoor swimming pool with crystal clear water, golden medal and trophy placed on pool deck edge, Chinese national flag draped beside, subtle water ripples and blue waves, championship victory concept, no people, no text, no words, no letters, no numbers"
+    + NO_TEXT,
+    "电动自行车": "urban city street with a dedicated bicycle lane, rows of electric bikes parked neatly at designated parking area, modern city infrastructure with clear lane markings, urban mobility management concept, daytime, no people, no text, no words, no letters, no numbers, no signage"
+    + NO_TEXT,
+    "原创音乐": "open-air summer night concert stage with warm golden stage lights, audience silhouettes with raised hands, night sky with stars, outdoor music festival atmosphere, bokeh lights, cinematic, no text, no words, no letters, no numbers"
+    + NO_TEXT,
     "NVIDIA": "NVIDIA GPU chip glowing green, massive AI data center with rows of server racks and glowing cooling fans, digital money and stock charts flowing as light streams above, artificial intelligence computing infrastructure investment concept, cinematic tech photography, no people, no text, no words, no letters, no numbers"
     + NO_TEXT,
-    "历史上的今天": "Chinese maglev train gliding on elevated track, sleek streamlined white maglev train with aerodynamic design, futuristic rail transit, clean modern station background, product photography, no people, no text, no words, no letters, no numbers"
+    "历史上的今天": "quantum satellite floating in space above Earth, satellite dish with glowing quantum encryption signal beams connecting to ground station, futuristic quantum communication technology, dark space background with stars and Earth curvature, cinematic space photography, no text, no words, no letters, no numbers"
     + NO_TEXT,
     "IBM": "Vintage 1980s computer scene, classic beige IBM PC with CRT monitor on wooden desk, retro technology, warm nostalgic lighting, old newspapers and calendar in background, archival photography style"
     + NO_TEXT,
