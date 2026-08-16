@@ -163,37 +163,18 @@ def main():
 
 完整内容见视频。欢迎关注，每天 8 点更新。"""
 
-    # 6. Facebook
-    files["facebook.md"] = f"""📡 隔天信号弹 | {M_D} 每日新闻播报
-
-今天{n}条核心新闻：
-""" + "\n".join(f"{i+1}. {s}" for i, s in enumerate(shorts)) + """
-
-每天3分钟，看世界动态。欢迎关注、分享！
-
-#SignalPop #DailyNews #ChinaNews #Technology #News"""
-
-    # 7. YouTube
-    files["youtube.md"] = f"""📡 Signal Pop Daily | {PUB_DATE_SHORT} - {n} Core News Stories
-
-Today's Top {n}:
-""" + "\n".join(f"{i+1}. {s}" for i, s in enumerate(shorts)) + """
-
-Every day in 3 minutes, catch up on the world.
-SignalPop,DailyNews,China,Technology,News,DailyNews"""
-
-    # 8. Twitter / X（英文、# 话题、280 字符内紧凑版）
-    # 从英文字幕提取前3条英文短标题（去掉 "Article N, Category." 前缀 + 正文只取标题句）
+    # 6. Facebook（全英文，2026-08-16 用户明确）
+    # 从英文字幕提取全部英文短标题（去掉 "[Category] News." 前缀，取标题句）
+    import re as _re
     en_titles = []
     en_srt = os.path.join(PROJECT_ROOT, "output", "daily", PREP_DATE, f"signal_pop_daily_{PREP_DATE}.en_US.srt")
     if os.path.exists(en_srt):
-        import re as _re
         blocks = _re.split(r"\n\n+", open(en_srt, encoding="utf-8").read().strip())
-        for b in blocks[1:4]:
+        for b in blocks[1:]:
             lines = b.strip().split("\n")
             if len(lines) >= 3:
                 t = lines[2]
-                t = _re.sub(r"^Article\s*\d+\s*,\s*[^.]+\.\s*", "", t)
+                t = _re.sub(r"^\[?[^\]]*\]?\s*News\.\s*", "", t)
                 # 英文标题以首个句号截断（取标题句）
                 t = t.split(". ")[0].strip()
                 if not t.endswith("."):
@@ -202,8 +183,29 @@ SignalPop,DailyNews,China,Technology,News,DailyNews"""
                     if len(t) > 100:
                         t = t[:97].rstrip() + "..."
                     en_titles.append(t)
-    if len(en_titles) < 3:
-        en_titles = [s[:60] for s in shorts[:3]]
+    if len(en_titles) < n:
+        # 兜底：英文字幕不足时用中文短标题 + 英文框架（正常情况下不会触发）
+        en_titles = [s[:60] for s in shorts[:n]]
+
+    files["facebook.md"] = f"""📡 Signal Pop Daily | {PUB_DATE_SHORT} Daily News Briefing
+
+Top {n} stories today:
+""" + "\n".join(f"{i+1}. {t}" for i, t in enumerate(en_titles[:n])) + """
+
+3 minutes a day, catch up on what's happening in the world. Follow & share!
+
+#SignalPop #DailyNews #ChinaNews #Technology #News"""
+
+    # 7. YouTube（全英文）
+    files["youtube.md"] = f"""📡 Signal Pop Daily | {PUB_DATE_SHORT} - {n} Core News Stories
+
+Today's Top {n}:
+""" + "\n".join(f"{i+1}. {t}" for i, t in enumerate(en_titles[:n])) + """
+
+Every day in 3 minutes, catch up on the world.
+SignalPop,DailyNews,China,Technology,News,DailyNews"""
+
+    # 8. Twitter / X（英文、# 话题、280 字符内紧凑版）——取前3条英文标题
 
     twitter = f"""📡 Signal Pop Daily | {n} News in 3 min
 
