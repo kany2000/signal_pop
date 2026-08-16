@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Signal Pop 周末特别版 · 双人对话 TTS 合成器
-解析对话稿（阿信/小蓝）→ 逐段 edge-tts 合成（阿信=Yunyang男 / 小蓝=Xiaoxiao女）→ 合并 WAV + 分段时长。
+解析对话稿（阿信/小蓝）→ 逐段合成（阿信=云舟男声 / 小蓝=爽快思思女声，豆包语音 2.0）→ 合并 WAV + 分段时长。
 用法：python tools/gen_dual_tts.py [PREP_DATE]
+后端：默认豆包语音（volcengine）；环境变量 SIGNAL_POP_TTS_BACKEND=edge 可回退 edge-tts。
 """
 import os
 import sys
@@ -21,8 +22,27 @@ AUDIO_PATH = os.path.join(AUDIO_DIR, "tts.wav")
 SEGMENTS_PATH = os.path.join(AUDIO_DIR, "tts_segments.json")
 TALK_PATH = os.path.join(OUT_DIR, "talk_segments.json")
 FFMPEG = "E:/projects/signal_pop/bin/ffmpeg-9.0.1-essentials_build/bin/ffmpeg.exe"
+sys.path.insert(0, os.path.join(PROJECT_ROOT, "tools"))
+sys.path.insert(0, os.path.join(PROJECT_ROOT, "scripts"))
 
-VOICES = {"阿信": "zh-CN-YunyangNeural", "小蓝": "zh-CN-XiaoxiaoNeural"}
+# 读取 .env 到环境变量（无 python-dotenv 时手动解析）
+def _load_env():
+    env_path = os.path.join(PROJECT_ROOT, ".env")
+    if os.path.exists(env_path):
+        for line in open(env_path, encoding="utf-8"):
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                os.environ.setdefault(k.strip(), v.strip())
+
+_load_env()
+BACKEND = os.environ.get("SIGNAL_POP_TTS_BACKEND", "volcengine")
+
+# 豆包语音双人音色（2026-08-16 用户认可）：阿信=云舟男 / 小蓝=爽快思思女；edge 兜底保留
+VOICES = {
+    "阿信": ("zh_male_m191_uranus_bigtts", "zh-CN-YunyangNeural"),    # 云舟 2.0 男声 / edge 男
+    "小蓝": ("zh_female_shuangkuaisisi_uranus_bigtts", "zh-CN-XiaoxiaoNeural"),  # 爽快思思 2.0 女声 / edge 女
+}
 
 
 def parse_talk(text):
@@ -32,27 +52,31 @@ def parse_talk(text):
         line = line.strip()
         if not line or line.startswith("【"):
             continue
-        for name, voice in VOICES.items():
+        for name, voices in VOICES.items():
             if line.startswith(f"{name}：") or line.startswith(f"{name}:"):
                 content = line.split("：", 1)[1] if "：" in line else line.split(":", 1)[1]
+                voice = voices[0] if BACKEND == "volcengine" else voices[1]
                 segs.append({"speaker": name, "voice": voice, "text": content.strip()})
                 break
     return segs
 
 
 async def gen_one(idx, seg, sem, audio_dir):
-    """单句 edge-tts 合成（带重试）。返回 mp3 路径。"""
-    import edge_tts
-    import aiohttp
+    """单句合成（豆包语音 volc_synthesize，带重试；edge 兜底）。返回 mp3 路径。"""
+    from gen_cloud_tts import volc_synthesize
+    import edge_tts, aiohttp
     async with sem:
         mp3 = os.path.join(audio_dir, f"_s{idx:03d}.mp3")
         last_err = None
         for attempt in range(4):
             try:
-                conn = aiohttp.TCPConnector(resolver=aiohttp.resolver.ThreadedResolver())
-                comm = edge_tts.Communicate(seg["text"], seg["voice"], connector=conn,
-                                            connect_timeout=30, receive_timeout=120)
-                await comm.save(mp3)
+                if BACKEND == "volcengine":
+                    volc_synthesize(seg["text"], seg["voice"], mp3)
+                else:
+                    conn = aiohttp.TCPConnector(resolver=aiohttp.resolver.ThreadedResolver())
+                    comm = edge_tts.Communicate(seg["text"], seg["voice"], connector=conn,
+                                                connect_timeout=30, receive_timeout=120)
+                    await comm.save(mp3)
                 if os.path.getsize(mp3) > 1000:
                     return mp3
                 last_err = "empty audio"

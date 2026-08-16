@@ -23,6 +23,10 @@ sys.path.insert(0, PROJECT_ROOT)
 sys.path.insert(0, os.path.join(PROJECT_ROOT, "scripts"))
 
 PREP_DATE = sys.argv[1] if len(sys.argv) > 1 else "20260809"
+# 兼容带后缀的目录名（如 20260816_yue 粤语试点）：提取前 8 位数字作为制作日
+import re as _re
+_m = _re.match(r"(\d{8})", PREP_DATE)
+_YYYYMMDD = _m.group(1) if _m else PREP_DATE
 SCRIPT_FILE = os.path.join(PROJECT_ROOT, "archive", f"signal_pop_daily_{PREP_DATE}.txt")
 OUT_DIR = os.path.join(PROJECT_ROOT, "output", "daily", PREP_DATE)
 IMAGES_DIR = os.path.join(OUT_DIR, "images")
@@ -31,7 +35,7 @@ SEGMENTS_PATH = os.path.join(OUT_DIR, "audio", "tts_segments.json")
 PARSED_PATH = os.path.join(OUT_DIR, "parsed_news.json")
 OUTPUT_VIDEO = os.path.join(OUT_DIR, f"signal_pop_daily_{PREP_DATE}.mp4")
 
-PUB_DT = datetime.strptime(PREP_DATE, "%Y%m%d") + timedelta(days=1)
+PUB_DT = datetime.strptime(_YYYYMMDD, "%Y%m%d") + timedelta(days=1)
 PUB_DATE_FMT = f"{PUB_DT.year}年{PUB_DT.month:02d}月{PUB_DT.day:02d}日"
 PUB_DATE_SHORT = f"{PUB_DT.year}.{PUB_DT.month:02d}.{PUB_DT.day:02d}"
 PUB_WEEKDAY = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"][PUB_DT.weekday()]
