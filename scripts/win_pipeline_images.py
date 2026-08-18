@@ -32,6 +32,30 @@ NEWS_PROMPTS = {
 NO_TEXT = ", no text, no words, no labels, no captions, no UI, clean image without any writing"
 
 SCENE_PROMPTS = {
+    "豆包": "modern Windows desktop computer screen showing a virtual desktop session with cursor and highlighted UI elements, AI agent operating the computer, glowing cursor pointer hovering over application windows, automation concept, blue ambient glow, no people, no text, no words, no letters, no numbers, no logos, no UI text"
+    + NO_TEXT,
+    "汽车出口": "massive car carrier ship loaded with new energy vehicles docked at busy container port, rows of colorful new cars on dock waiting for export, cranes and shipping containers in background, China automotive export concept, golden hour lighting, aerial perspective, no text, no words, no letters, no numbers, no signage"
+    + NO_TEXT,
+    "宇树": "humanoid robot silhouette standing on a stock exchange trading floor with glowing red and green stock tickers and digital price charts in background, IPO listing concept, futuristic finance and robotics fusion, dramatic lighting, no people, no text, no words, no letters, no numbers, no logos"
+    + NO_TEXT,
+    "县域消费": "vibrant county town market street with shops, street vendors and colorful goods, shoppers browsing, rural commercial vitality concept, warm daylight, modern Chinese small city commerce, no text, no words, no letters, no numbers, no signage"
+    + NO_TEXT,
+    "上海科技馆": "modern science museum building with futuristic architecture, families with children entering glass dome entrance, science exhibition posters without text, educational tourism concept, blue sky, no text, no words, no letters, no numbers, no signage"
+    + NO_TEXT,
+    "乒乓球": "two humanoid robots playing table tennis across a green ping pong table viewed from above at 45 degrees, table oriented horizontally across the frame, robot arms holding red and black paddles mid-swing, white ball frozen mid-air above the net, indoor sports arena lighting, robotic agility concept, dynamic action shot, no people, no text, no words, no letters, no numbers"
+    + NO_TEXT,
+    "Arm": "glowing central processor chip with ARM architecture logo pattern on dark circuit board, semiconductor design concept, macro photography, blue and gold light traces, no text, no words, no letters, no numbers, no logos"
+    + NO_TEXT,
+    "三星显示": "ultra-thin flexible OLED display panel being lifted by a clean room robot arm inside a semiconductor fabrication factory, glowing edge lit glass substrate, futuristic display manufacturing line with overhead robotic arms and precision machinery, no phones, no devices, no people, no text, no words, no letters, no numbers, no logos"
+    + NO_TEXT,
+    "OLED": "ultra-thin flexible OLED display panel being lifted by a clean room robot arm inside a semiconductor fabrication factory, glowing edge lit glass substrate, futuristic display manufacturing line with overhead robotic arms and precision machinery, no phones, no devices, no people, no text, no words, no letters, no numbers, no logos"
+    + NO_TEXT,
+    "芡实": "fresh green water caltrop seed pods and white lotus seeds in traditional bamboo basket, Suzhou water town wetland background, farm harvest scene, natural sunlight, close-up food photography, no text, no words, no letters, no numbers, no people"
+    + NO_TEXT,
+    "乒联": "two table tennis rackets crossed above a green ping pong table viewed from above at 45 degrees, white ball frozen mid-air between them, world map hologram projection in background, professional championship atmosphere, dramatic spotlight, no people, no text, no words, no letters, no numbers"
+    + NO_TEXT,
+    "太空摆渡车": "space tug spacecraft with glowing engines docking with a satellite in low Earth orbit, orbital transfer vehicle concept, Earth and stars in background, blue engine thrust, futuristic space logistics, cinematic space photography, no text, no words, no letters, no numbers"
+    + NO_TEXT,
     "人形机器人": "rows of humanoid robots standing on a sports stadium field, robot athletes competing in track and field, jumping and lifting events, large-scale robotics competition venue with spotlights, thousands of robots lined up, futuristic technology olympics concept, cinematic wide shot, no people, no text, no words, no letters, no numbers"
     + NO_TEXT,
     "机器人运动会": "rows of humanoid robots standing on a sports stadium field, robot athletes competing in track and field, jumping and lifting events, large-scale robotics competition venue with spotlights, thousands of robots lined up, futuristic technology olympics concept, cinematic wide shot, no people, no text, no words, no letters, no numbers"
@@ -50,7 +74,7 @@ SCENE_PROMPTS = {
     + NO_TEXT,
     "NVIDIA": "NVIDIA GPU chip glowing green, massive AI data center with rows of server racks and glowing cooling fans, digital money and stock charts flowing as light streams above, artificial intelligence computing infrastructure investment concept, cinematic tech photography, no people, no text, no words, no letters, no numbers"
     + NO_TEXT,
-    "历史上的今天": "quantum satellite floating in space above Earth, satellite dish with glowing quantum encryption signal beams connecting to ground station, futuristic quantum communication technology, dark space background with stars and Earth curvature, cinematic space photography, no text, no words, no letters, no numbers"
+    "历史上的今天": "Great Wall of China stretching across misty green mountain ridges, ancient stone watchtowers winding along the ridgeline, Chinese landscape photography at sunrise, Badaling or Mutianyu section, rolling hills and historical architecture, panoramic wide shot, no text, no words, no letters, no numbers"
     + NO_TEXT,
     "IBM": "Vintage 1980s computer scene, classic beige IBM PC with CRT monitor on wooden desk, retro technology, warm nostalgic lighting, old newspapers and calendar in background, archival photography style"
     + NO_TEXT,

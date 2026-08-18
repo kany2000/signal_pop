@@ -57,7 +57,7 @@ def parse_daily_script(text):
                 "full_body": content,
             })
             continue
-        m = re.match(r"^第(\d+)条[，,]\s*\[?(.+?)\]?\s*新闻[。.]\s*(.+?)[。.]\s*据\s*(.+?)\s*报道[，,]\s*(.+)$", line)
+        m = re.match(r"^第(\d+)条[，,]\s*\[?(.+?)\]?\s*新闻[。.]\s*(.+?)[。.？！!]\s*据\s*(.+?)\s*(?:报道|消息|报告|公告|介绍|表示|称|发文|指出)\s*[,，]\s*(.+)$", line)
         if not m:
             continue
         num = int(m.group(1))

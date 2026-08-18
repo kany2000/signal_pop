@@ -458,19 +458,25 @@ def encode_part(input_png, output_mp4, dur):
 
 
 def main():
-    if not os.path.exists(PARSED_PATH):
-        print(f"ERROR: {PARSED_PATH} not found")
-        sys.exit(1)
-    if not os.path.exists(SEGMENTS_PATH):
-        print(f"ERROR: {SEGMENTS_PATH} not found")
-        sys.exit(1)
-
-    items = json.load(open(PARSED_PATH, encoding="utf-8"))
-    durations = json.load(open(SEGMENTS_PATH, encoding="utf-8"))
-
-    if len(durations) != len(items) + 2:
-        print(f"ERROR: durations({len(durations)}) != items({len(items)})+2 (intro+outro)")
-        sys.exit(1)
+    # 兜底：若 parsed_news.json 缺失或条数与音频不匹配，从 archive 重新解析重建
+    try:
+        items = json.load(open(PARSED_PATH, encoding="utf-8"))
+        durations = json.load(open(SEGMENTS_PATH, encoding="utf-8"))
+    except Exception:
+        items, durations = None, None
+    if items is None or durations is None or len(durations) != len(items) + 2:
+        print("=== 检测到 parsed_news.json 与音频段数不匹配，从 archive 重新解析 ===")
+        sys.path.insert(0, os.path.join(PROJECT_ROOT, "tools"))
+        from tools.run_daily_video import parse_daily_script
+        text = open(SCRIPT_FILE, encoding="utf-8").read()
+        items = parse_daily_script(text)
+        with open(PARSED_PATH, "w", encoding="utf-8") as f:
+            json.dump(items, f, ensure_ascii=False, indent=2)
+        durations = json.load(open(SEGMENTS_PATH, encoding="utf-8"))
+        if len(durations) != len(items) + 2:
+            print(f"ERROR: durations({len(durations)}) != items({len(items)})+2 (intro+outro)")
+            sys.exit(1)
+        print(f"✅ 重建 parsed_news.json：{len(items)} 条")
 
     # 临时目录：每个 part 的 PNG + mp4
     tmp = os.path.join(OUT_DIR, "split_build")

@@ -170,11 +170,14 @@ def main():
     en_srt = os.path.join(PROJECT_ROOT, "output", "daily", PREP_DATE, f"signal_pop_daily_{PREP_DATE}.en_US.srt")
     if os.path.exists(en_srt):
         blocks = _re.split(r"\n\n+", open(en_srt, encoding="utf-8").read().strip())
-        for b in blocks[1:]:
+        for b in blocks:
             lines = b.strip().split("\n")
             if len(lines) >= 3:
                 t = lines[2]
-                t = _re.sub(r"^\[?[^\]]*\]?\s*News\.\s*", "", t)
+                # 跳过历史条目块（Today in history）
+                if t.startswith("Today in history"):
+                    continue
+                t = _re.sub(r"^\[?[^\]]*\]?\s*news\.\s*", "", t, flags=_re.IGNORECASE)
                 # 英文标题以首个句号截断（取标题句）
                 t = t.split(". ")[0].strip()
                 if not t.endswith("."):
