@@ -175,7 +175,7 @@ def draw_opening():
     draw.ellipse([(945, 390), (975, 420)], fill=STYLE['accent'])
     
     draw.text((960, 465), "隔天信号弹", fill=STYLE['accent'], font=fnt(72, True), anchor="mm")
-    draw.text((960, 525), "每日新闻播报", fill=STYLE['sub'], font=fnt(32), anchor="mm")
+    draw.text((960, 525), "每周定期新闻播报", fill=STYLE['sub'], font=fnt(32), anchor="mm")
     draw.text((960, 620), f"{PUB_DATE_FMT} · {len(news_items)}条新闻", fill=STYLE['sub'], font=fnt(30), anchor="mm")
     
     # No intro text overlay — user wants clean opening card

@@ -27,7 +27,7 @@ else:
 DATE = prep_date  # 用于文件名
 PUB = pub_date_str  # 用于显示在封面上
 TITLE = "隔天信号弹"
-SUB = "Signal Pop · 每日新闻播报"
+SUB = "Signal Pop · 每周定期新闻播报"
 TAG = "新闻 • 时事 • 资讯"
 # =================
 

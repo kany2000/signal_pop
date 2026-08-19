@@ -283,7 +283,7 @@ def draw_opening_frame(items, pub_date_fmt, pub_weekday, total):
     d.text((960, 240), "隔天信号弹", fill=ACCENT, font=title_f, anchor="mm")
     # 副标题
     sub_f = fnt(36)
-    d.text((960, 340), "每日要闻 · 今日播报", fill=WHITE, font=sub_f, anchor="mm")
+    d.text((960, 340), "本期要闻播报", fill=WHITE, font=sub_f, anchor="mm")
     d.text((960, 390), f"{pub_date_fmt} · {pub_weekday}", fill=LIGHT_GREY, font=sub_f, anchor="mm")
     # 介绍语
     intro_f = fnt(34)

@@ -237,9 +237,9 @@ def make_cover(anchor_idx=None):
         draw.text((tx + ox, 240 + oy), "隔天信号弹", fill=(0, 200, 255, 80), font=title_font)
 
     sub_font = fnt(44, bold=False)
-    draw.text((tx, 370), "每日新闻播报", fill=(100, 220, 255), font=sub_font)
+    draw.text((tx, 370), "每周定期新闻播报", fill=(100, 220, 255), font=sub_font)
     for ox, oy in [(2, 2), (-2, 2)]:
-        draw.text((tx + ox, 370 + oy), "每日新闻播报", fill=(0, 100, 150, 60), font=sub_font)
+        draw.text((tx + ox, 370 + oy), "每周定期新闻播报", fill=(0, 100, 150, 60), font=sub_font)
 
     mark_font = fnt(38, bold=True)
     draw.text((tx, 460), "MARK哥的创想引擎", fill=GOLD, font=mark_font)
@@ -329,9 +329,9 @@ def make_cover_portrait(anchor_idx=None):
         draw.text((tx + ox, 700 + oy), "隔天信号弹", fill=(0, 200, 255, 80), font=title_font)
 
     sub_font = ImageFont.truetype(FONT_REG, 34)
-    draw.text((tx, 790), "每日新闻播报", fill=(100, 220, 255), font=sub_font)
+    draw.text((tx, 790), "每周定期新闻播报", fill=(100, 220, 255), font=sub_font)
     for ox, oy in [(1, 1), (-1, 1)]:
-        draw.text((tx + ox, 790 + oy), "每日新闻播报", fill=(0, 100, 150, 60), font=sub_font)
+        draw.text((tx + ox, 790 + oy), "每周定期新闻播报", fill=(0, 100, 150, 60), font=sub_font)
 
     mark_font = ImageFont.truetype(FONT_BOLD, 36)
     draw.text((tx, 860), "MARK哥的创想引擎", fill=GOLD, font=mark_font)

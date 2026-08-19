@@ -94,7 +94,7 @@ ffprobe -v error -show_entries format=duration,size \
 ln -sf cover_YYYYMMDD.png /home/kan/shared/her2home/video_YYYYMMDD.png
 # 写元数据
 cat > /home/kan/shared/her2home/video_YYYYMMDD.json <<'JSON'
-{"title":"隔天信号弹 | 2026.07.10 每日新闻播报",
+{"title":"隔天信号弹 | 2026.07.10 每周定期新闻播报",
  "desc":"每日硬核资讯，十条直达核心。",
  "tags":"隔天信号弹,新闻播报,每日资讯,AI,科技"}
 JSON

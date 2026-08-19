@@ -82,21 +82,31 @@ def parse_srt(srt_path: str) -> list:
 
 
 def build_drawtext_filter(segments: list, video_w: int, video_h: int) -> str:
-    """构建 ffmpeg drawtext 滤镜字符串"""
+    """构建 ffmpeg drawtext 滤镜字符串
+    字幕固定在底部区域(y=h-100)，字号根据文字长度动态调整
+    """
     filters = []
     for i, (start, end, text) in enumerate(segments):
         # 转义文本中的特殊字符
         safe_text = text.replace("'", r"\'").replace(":", r"\:").replace(",", r"\,")
-        # 字幕位置：底部居中，留出边距
-        y_pos = f"h-{FONT_SIZE * 2}-50"
+        # 动态字号：文字越少字号越大
+        char_count = len(text)
+        if char_count <= 15:
+            font_size = 40
+        elif char_count <= 30:
+            font_size = 32
+        else:
+            font_size = 26
+        # 字幕固定区域：底部居中，y 固定在 h-100
+        y_pos = video_h - 100
         filter_str = (
             f"drawtext="
             f"fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:"
             f"text='{safe_text}':"
-            f"fontsize={FONT_SIZE}:"
+            f"fontsize={font_size}:"
             f"fontcolor={FONT_COLOR}:"
             f"box=1:boxcolor={BOX_COLOR}:"
-            f"boxborderw=10:"
+            f"boxborderw=8:"
             f"x=(w-tw)/2:y={y_pos}:"
             f"enable='between(t,{start},{end})'"
         )

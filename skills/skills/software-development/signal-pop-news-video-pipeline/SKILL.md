@@ -116,7 +116,7 @@ signal_pop_project/
 | Top line | Gold horizontal rule | — | Gold horizontal rule |
 | Emblem | Gold circle (outer ring + filled dot) | — | Gold circle |
 | Title | **隔天信号弹** (gold, 72px, bold) | — | **隔天信号弹** (64px) |
-| Subtitle | 每日新闻播报 | — | 下期见 |
+| Subtitle | 每周定期新闻播报 | — | 下期见 |
 | Date/info | YYYY年MM月DD日 · N条新闻 | — | Date only |
 | Intro text overlay | 3-line spoken intro (36px, center-bottom, shadow) MUST be drawn | — | — |
 | Tag badge | — | **国内民生** (blue pill) + **#01** at upper-left | — |

@@ -206,7 +206,7 @@ def render_intro(style_idx, date_display, total, accent_hex, bar_hex):
 <div class="center-content">
 <div class="hero-icon">📡</div>
 <h1 class="hero-title">隔天信号弹</h1>
-<p class="hero-sub" style="color:{a};">每日新闻播报</p>
+<p class="hero-sub" style="color:{a};">每周定期新闻播报</p>
 <p class="hero-date">{date_display} · {total}条新闻</p>
 </div>
 </div>'''
@@ -226,7 +226,7 @@ def render_outro(style_idx, date_display, accent_hex, bar_hex):
 <div class="center-content">
 <div class="hero-icon" style="font-size:60px;">📡</div>
 <h2 class="outro-title">隔天信号弹</h2>
-<p class="outro-sub">每日新闻播报 · {date_display}</p>
+<p class="outro-sub">每周定期新闻播报 · {date_display}</p>
 <p class="outro-end" style="color:{a};">下期再见！</p>
 </div>
 </div>'''

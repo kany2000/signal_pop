@@ -86,7 +86,7 @@ def draw_opening(bg_path, items, pub_date_fmt, pub_weekday):
     d.ellipse([cx - 18, cy - 18, cx + 18, cy + 18], outline=GOLD, width=3)
     d.ellipse([cx - 5, cy - 5, cx + 5, cy + 5], fill=GOLD)
     draw_shadow(d, 960, 210, "隔天信号弹", fnt(72, True), GOLD)
-    draw_shadow(d, 960, 295, "每日要闻 · 今日播报", fnt(32), LIGHT_GREY)
+    draw_shadow(d, 960, 295, "本期要闻播报", fnt(32), LIGHT_GREY)
     draw_shadow(d, 960, 345, f"{pub_date_fmt} · {pub_weekday}", fnt(28), LIGHT_GREY)
 
     intro = ["这里是隔天信号弹，", f"今天是{pub_date_fmt}，{pub_weekday}。",

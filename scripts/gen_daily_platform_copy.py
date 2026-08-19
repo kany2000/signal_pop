@@ -51,7 +51,7 @@ for it in items:
     hashtags.add(ht)
 hashtag_str = ' '.join(sorted(hashtags)) + ' #信号弹 #隔天信号弹 #新闻早报 #AI新闻'
 
-title_main = f"隔天信号弹 {PUB_DATE_SHORT}｜{PUB_WEEKDAY} · 每日新闻播报"
+title_main = f"隔天信号弹 {PUB_DATE_SHORT}｜{PUB_WEEKDAY} · 每周定期新闻播报"
 title_douyin = f"📡 {title_main}"
 
 # 1. Douyin

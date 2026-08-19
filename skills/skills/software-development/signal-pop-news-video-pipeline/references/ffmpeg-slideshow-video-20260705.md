@@ -71,7 +71,7 @@ Each frame is 1920×1080 PIL composite. Uses **RGBA overlay** for transparency �
 - RGBA dark overlay (α=160) over whole image
 - Gold horizontal rules (top/bottom decoration)
 - "隔天信号弹" in bold gold, 72px
-- "每日新闻播报" subtitle, white 32px
+- "每周定期新闻播报" subtitle, white 32px
 - Date line: "2026年07月05日 · 星期日 · 10条新闻", gray 28px
 
 ### News Slide
