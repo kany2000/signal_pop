@@ -87,21 +87,24 @@ def gen_srt(text_path, srt_path):
 
 def main():
     if len(sys.argv) < 2:
-        date = os.path.basename(sorted(glob("E:/projects/signal_pop/daily/data/script_*.txt"))[-1]).split("_")[1].split(".")[0] if False else "20260705"
+        date = "20260705"
     else:
         date = sys.argv[1]
 
-    base = "E:/projects/signal_pop/daily"
-    text_path = f"{base}/data/script_{date}.txt"
-    srt_path = f"{base}/output/signal_pop_daily_{date}.srt"
+    # 适配新目录结构：archive/signal_pop_daily_{date}.txt -> output/daily/{date}/signal_pop_daily_{date}.srt
+    base = "E:/projects/signal_pop"
+    text_path = f"{base}/archive/signal_pop_daily_{date}.txt"
+    srt_path = f"{base}/output/daily/{date}/signal_pop_daily_{date}.srt"
 
     if not os.path.exists(text_path):
-        # 试试没日期的
-        text_path = f"{base}/data/script.txt"
+        # 兼容旧路径
+        text_path = f"{base}/daily/data/script_{date}.txt"
+        srt_path = f"{base}/daily/output/signal_pop_daily_{date}.srt"
     if not os.path.exists(text_path):
         print(f"Error: not found {text_path}")
         sys.exit(1)
 
+    os.makedirs(os.path.dirname(srt_path), exist_ok=True)
     print(f"Reading: {text_path}")
     print(f"Output:  {srt_path}\n")
     gen_srt(text_path, srt_path)
