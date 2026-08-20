@@ -32,6 +32,30 @@ NEWS_PROMPTS = {
 NO_TEXT = ", no text, no words, no labels, no captions, no UI, clean image without any writing"
 
 SCENE_PROMPTS = {
+    # ===== 2026-08-20 期定制 =====
+    "沈大高速": "aerial view of a modern eight-lane expressway stretching across green northeastern China landscape, red ribbon cutting ceremony at a toll gate, vintage 1990s Chinese cars driving on the highway, morning sunlight, historical highway opening scene, documentary photography"
+    + NO_TEXT,
+    "互换协议": "close-up of Chinese red yuan banknote and Australian purple dollar banknote placed side by side on a dark polished wooden desk, two currency symbols meeting, central bank seal stamp on a swap agreement document, financial cooperation between China and Australia, warm golden light from above, professional financial photography"
+    + NO_TEXT,
+    "OpenRouter": "abstract digital payment gateway network connecting to multiple glowing AI model nodes, network of connected servers and routers, payment and artificial intelligence convergence concept, dark blue tech background with golden connection lines"
+    + NO_TEXT,
+    "泉州": "Quanzhou ancient street in Fujian with traditional red-brick Minnan architecture and arcade buildings, stone-paved street with hanging red lanterns, tourists walking, warm evening light, cultural heritage tourism"
+    + NO_TEXT,
+    "GLM": "futuristic AI large language model visualization, glowing neural network with streaming data forming a brain-like network, Chinese AI company concept, blue and gold digital light streams, dark background, cinematic"
+    + NO_TEXT,
+    "采血": "automated blood drawing robot with robotic arm using ultrasound guidance, futuristic medical laboratory, AI healthcare automation, clean white and blue medical environment, professional medical technology, no hands, no people"
+    + NO_TEXT,
+    "公积金": "modern residential buildings and houses with golden keys and house model, housing provident fund concept, warm sunrise light over city residential area, urban housing security theme"
+    + NO_TEXT,
+    "开学": "school classroom with neat desks, alarm clock on teacher desk, backpacks and textbooks, morning sunlight through windows, fresh start of school term concept, warm and bright atmosphere, no people"
+    + NO_TEXT,
+    "场地自行车": "indoor velodrome track cycling race, four cyclists in tight formation chasing on steep banked wooden track, motion blur, dramatic arena lights, professional cycling competition, dynamic sports photography"
+    + NO_TEXT,
+    "朱雀": "reusable rocket landing upright on landing pad with landing legs deployed, launch site in Gobi desert, exhaust smoke and dust, golden evening light, commercial spaceflight milestone, cinematic aerospace photography"
+    + NO_TEXT,
+    "任务管理器": "modern computer desktop screen showing a sleek performance monitoring dashboard with glowing blue bar charts and resource usage graphs, neural processing unit activity visualization, dark elegant interface on monitor, futuristic system monitoring software concept, sharp focus, clean minimal tech photography, no people"
+    + NO_TEXT,
+    # ===== 历史定制 =====
     "豆包": "modern Windows desktop computer screen showing a virtual desktop session with cursor and highlighted UI elements, AI agent operating the computer, glowing cursor pointer hovering over application windows, automation concept, blue ambient glow, no people, no text, no words, no letters, no numbers, no logos, no UI text"
     + NO_TEXT,
     "汽车出口": "massive car carrier ship loaded with new energy vehicles docked at busy container port, rows of colorful new cars on dock waiting for export, cranes and shipping containers in background, China automotive export concept, golden hour lighting, aerial perspective, no text, no words, no letters, no numbers, no signage"

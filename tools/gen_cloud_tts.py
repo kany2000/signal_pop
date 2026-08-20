@@ -17,10 +17,13 @@
 输出与 win_pipeline_tts 完全一致：audio/tts.wav + audio/tts_segments.json（float 时长列表）
 """
 import sys, os, json, time, base64, hashlib, hmac, struct, wave, subprocess
-from datetime import datetime
+from datetime import datetime, timedelta
 from email.utils import formatdate
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# 触发 config._load_dotenv() 注入 .env 密钥（豆包/讯飞）
+sys.path.insert(0, PROJECT_ROOT)
+import config  # noqa: E402, F401
 FFMPEG = os.path.join(PROJECT_ROOT, "bin", "ffmpeg-9.0.1-essentials_build", "bin", "ffmpeg.exe")
 
 BACKEND = os.environ.get("SIGNAL_POP_TTS_BACKEND", "volcengine")
@@ -202,6 +205,20 @@ def xunfei_synthesize(text, voice, out_mp3):
 
 
 # ================= 统一合成 + 时长 =================
+def _safe_remove(path):
+    """删除文件（兼容 Windows 沙箱回收站不可用场景：ctypes 直调 DeleteFileW）。"""
+    import ctypes
+    try:
+        if os.path.exists(path):
+            if not ctypes.windll.kernel32.DeleteFileW(os.path.abspath(path)):
+                os.remove(path)
+    except Exception:
+        try:
+            os.remove(path)
+        except Exception:
+            pass
+
+
 def synthesize_one(idx, label, text, voice, audio_dir):
     mp3 = os.path.join(audio_dir, f"_s{idx:03d}.mp3")
     for attempt in range(3):
@@ -242,7 +259,7 @@ def gen_tts(items_path, output_wav, pub_date_fmt="2026年07月25日", pub_weekda
         wav = mp3.replace(".mp3", ".wav")
         subprocess.run([FFMPEG, "-y", "-i", mp3, "-acodec", "pcm_s16le", "-ar", "24000", "-ac", "1", wav],
                        check=True, capture_output=True, timeout=60)
-        os.remove(mp3)
+        _safe_remove(mp3)
         with wave.open(wav, "rb") as w:
             rate = w.getframerate()
             raw = w.readframes(w.getnframes())
@@ -262,7 +279,7 @@ def gen_tts(items_path, output_wav, pub_date_fmt="2026年07月25日", pub_weekda
         for s in trimmed:
             all_pcm.extend(struct.pack("<h", s))
         durations.append(dur)
-        os.remove(wav)
+        _safe_remove(wav)
         print(f"  [{label}] {dur:.2f}s")
 
     with wave.open(output_wav, "wb") as out:
@@ -301,4 +318,7 @@ if __name__ == "__main__":
         prep = sys.argv[1] if len(sys.argv) > 1 else "20260816"
         items_path = os.path.join(PROJECT_ROOT, "output", "daily", prep, "parsed_news.json")
         wav = os.path.join(PROJECT_ROOT, "output", "daily", prep, "audio", "tts.wav")
-        gen_tts(items_path, wav)
+        pub_dt = datetime.strptime(prep, "%Y%m%d") + timedelta(days=1)
+        pub_fmt = f"{pub_dt.year}年{pub_dt.month:02d}月{pub_dt.day:02d}日"
+        wk = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"][pub_dt.weekday()]
+        gen_tts(items_path, wav, pub_date_fmt=pub_fmt, pub_weekday=wk)
