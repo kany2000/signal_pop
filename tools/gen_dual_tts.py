@@ -103,7 +103,10 @@ async def gen_tts_all(segs):
         wav = mp3.replace(".mp3", ".wav")
         subprocess.run([FFMPEG, "-y", "-i", mp3, "-acodec", "pcm_s16le", "-ar", "24000", "-ac", "1", wav],
                        check=True, capture_output=True, timeout=60)
-        os.remove(mp3)
+        try:
+            os.remove(mp3)
+        except OSError:
+            pass  # 临时 mp3 清理失败不影响 TTS 主流程（sandbox 回收站不可用时）
         with wave.open(wav, "rb") as w:
             rate = w.getframerate()
             raw = w.readframes(w.getnframes())
@@ -128,7 +131,10 @@ async def gen_tts_all(segs):
         for s in trimmed:
             all_pcm.extend(struct.pack("<h", s))
         durations.append({"dur": dur, "speaker": seg["speaker"], "text": seg["text"]})
-        os.remove(wav)
+        try:
+            os.remove(wav)
+        except OSError:
+            pass  # 临时 wav 清理失败不影响主流程
         print(f"  [{idx+1}/{len(segs)}] {seg['speaker']} {dur:.2f}s: {seg['text'][:26]}...")
 
     with wave.open(AUDIO_PATH, "wb") as out:
