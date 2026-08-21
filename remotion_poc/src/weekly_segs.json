@@ -1,0 +1,226 @@
+[
+ {
+  "speaker": "阿信",
+  "voice": "zh-CN-YunyangNeural",
+  "text": "这里是隔天信号弹·周末特别版！我是阿信——你们的\"信哥\"，负责把大事一件件报明白。",
+  "dur": 7.429291666666667,
+  "bg": "opening_bg.jpg"
+ },
+ {
+  "speaker": "小蓝",
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "text": "我是小蓝！新来的主播，负责把新闻唠出花来！",
+  "dur": 4.780583333333333,
+  "bg": "opening_bg.jpg"
+ },
+ {
+  "speaker": "阿信",
+  "voice": "zh-CN-YunyangNeural",
+  "text": "这是我们俩第一次组队，组合名叫\"信蓝组合\"——信得过的信，蓝天的蓝！",
+  "dur": 5.710708333333334,
+  "bg": "opening_bg.jpg"
+ },
+ {
+  "speaker": "小蓝",
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "text": "对！信蓝，就是\"信赖\"！靠得住的那种！本周 10 条大事，咱们一条条聊！",
+  "dur": 7.851333333333334,
+  "bg": "opening_bg.jpg"
+ },
+ {
+  "speaker": "阿信",
+  "voice": "zh-CN-YunyangNeural",
+  "text": "第 10 名，小米净水器沸腾版开售——100℃ 真开水，补贴价 2549 元。",
+  "dur": 7.118125,
+  "bg": "10.jpg"
+ },
+ {
+  "speaker": "小蓝",
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "text": "能出真开水的净水器？烧水壶看了都想转行。家电卷成这样，消费者赢麻了。",
+  "dur": 8.313666666666666,
+  "bg": "10.jpg"
+ },
+ {
+  "speaker": "阿信",
+  "voice": "zh-CN-YunyangNeural",
+  "text": "第 9 名，火狐和 Brave 宣布继续支持广告拦截插件。",
+  "dur": 4.61675,
+  "bg": "09.jpg"
+ },
+ {
+  "speaker": "小蓝",
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "text": "Chrome 和 Edge 都在\"收编\"用户，这俩选择站用户这边——浏览器自由的最后防线，得守住。",
+  "dur": 8.016916666666667,
+  "bg": "09.jpg"
+ },
+ {
+  "speaker": "阿信",
+  "voice": "zh-CN-YunyangNeural",
+  "text": "第 8 名，华硕 Armoury Crate 软件曝出 8.4 分高危漏洞。",
+  "dur": 5.007125,
+  "bg": "08.jpg"
+ },
+ {
+  "speaker": "小蓝",
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "text": "装机的老朋友\"背刺\"了——高危漏洞面前，\"请尽快更新\"真不是客套话。",
+  "dur": 6.221166666666667,
+  "bg": "08.jpg"
+ },
+ {
+  "speaker": "阿信",
+  "voice": "zh-CN-YunyangNeural",
+  "text": "第 7 名，DOTA2 国际邀请赛小组赛开打，中国战队出征。",
+  "dur": 5.176708333333333,
+  "bg": "07.jpg"
+ },
+ {
+  "speaker": "小蓝",
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "text": "TI 就是刀塔玩家的\"春晚\"，中国战队那股\"干就完了\"的劲儿，永远让人热血。",
+  "dur": 6.64975,
+  "bg": "07.jpg"
+ },
+ {
+  "speaker": "阿信",
+  "voice": "zh-CN-YunyangNeural",
+  "text": "第 6 名，张雪机车拿到红杉中国独家投资。",
+  "dur": 4.082375,
+  "bg": "06.jpg"
+ },
+ {
+  "speaker": "小蓝",
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "text": "红杉投国产摩托，看中的是\"中国硬核制造\"的升级——资本在用脚投票。",
+  "dur": 6.707833333333333,
+  "bg": "06.jpg"
+ },
+ {
+  "speaker": "阿信",
+  "voice": "zh-CN-YunyangNeural",
+  "text": "第 5 名，影石确认在开发两款可换镜头相机。",
+  "dur": 4.231,
+  "bg": "05.jpg"
+ },
+ {
+  "speaker": "小蓝",
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "text": "全景相机做到全球第一还不停手，国产影像从\"跟随\"到\"定义\"，东京开店只是起点。",
+  "dur": 7.957166666666667,
+  "bg": "05.jpg"
+ },
+ {
+  "speaker": "阿信",
+  "voice": "zh-CN-YunyangNeural",
+  "text": "第 4 名，零跑创始人说造车\"已越过最难熬的节点\"。",
+  "dur": 4.419083333333333,
+  "bg": "04.jpg"
+ },
+ {
+  "speaker": "小蓝",
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "text": "朱江明那句\"有点快乐\"，只有熬过价格战的人才懂——活下来就是胜利第一步。",
+  "dur": 6.577583333333333,
+  "bg": "04.jpg"
+ },
+ {
+  "speaker": "阿信",
+  "voice": "zh-CN-YunyangNeural",
+  "text": "第 3 名，AI 智能体公司 Manus 恢复独立运营。",
+  "dur": 4.640541666666667,
+  "bg": "03.jpg"
+ },
+ {
+  "speaker": "小蓝",
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "text": "兜兜转转回到独立跑道，创业公司保住独立就保住最大可能——故事未完，下章自己写。",
+  "dur": 8.307083333333333,
+  "bg": "03.jpg"
+ },
+ {
+  "speaker": "阿信",
+  "voice": "zh-CN-YunyangNeural",
+  "text": "第 2 名，惠州\"贞观天下\"大唐特展开幕——五馆联展，27 件国家一级文物！",
+  "dur": 6.668083333333334,
+  "bg": "02.jpg"
+ },
+ {
+  "speaker": "小蓝",
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "text": "不用去西安，家门口看贞观盛世？白陶舞马、昭陵六骏安排上，这波\"文化下基层\"诚意拉满！",
+  "dur": 9.121291666666666,
+  "bg": "02.jpg"
+ },
+ {
+  "speaker": "阿信",
+  "voice": "zh-CN-YunyangNeural",
+  "text": "第 1 名！平陆运河 9 月正式通航！",
+  "dur": 3.916375,
+  "bg": "01.jpg"
+ },
+ {
+  "speaker": "小蓝",
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "text": "一条运河，让西南出海缩短几百公里——世纪工程，本周之最当之无愧！",
+  "dur": 7.1075,
+  "bg": "01.jpg"
+ },
+ {
+  "speaker": "阿信",
+  "voice": "zh-CN-YunyangNeural",
+  "text": "颁奖时间！最震撼——平陆运河，世纪工程改写物流版图。",
+  "dur": 5.7487916666666665,
+  "bg": "00.jpg"
+ },
+ {
+  "speaker": "小蓝",
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "text": "最暖心我给零跑——造车人熬过生死关，那句\"有点快乐\"真让人动容。",
+  "dur": 6.084625,
+  "bg": "00.jpg"
+ },
+ {
+  "speaker": "阿信",
+  "voice": "zh-CN-YunyangNeural",
+  "text": "最意外——Manus 恢复独立运营，反转彻底。",
+  "dur": 3.977375,
+  "bg": "00.jpg"
+ },
+ {
+  "speaker": "阿信",
+  "voice": "zh-CN-YunyangNeural",
+  "text": "下周看点——世界机器人大会要开了，人形机器人军团集中亮相！",
+  "dur": 5.501083333333334,
+  "bg": "99.jpg"
+ },
+ {
+  "speaker": "小蓝",
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "text": "机器人开会？必须蹲！",
+  "dur": 2.824291666666667,
+  "bg": "99.jpg"
+ },
+ {
+  "speaker": "阿信",
+  "voice": "zh-CN-YunyangNeural",
+  "text": "一键三连，是我们更新制作的动力！",
+  "dur": 3.2467916666666667,
+  "bg": "ending_bg.jpg"
+ },
+ {
+  "speaker": "小蓝",
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "text": "互动话题——本周哪条你最想聊？评论区见！",
+  "dur": 4.667416666666667,
+  "bg": "ending_bg.jpg"
+ },
+ {
+  "speaker": "阿信",
+  "voice": "zh-CN-YunyangNeural",
+  "text": "我们下周见，拜拜！",
+  "dur": 1.8849166666666666,
+  "bg": "ending_bg.jpg"
+ }
+]

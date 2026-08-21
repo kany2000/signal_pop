@@ -320,6 +320,19 @@ def draw_ending_frame(pub_date_fmt):
     return img
 
 
+def ease_out_back(x, s=1.70158):
+    """easeOutBack：轻微回弹（Celebration 风格 overshoot ~10%），1.0 结尾。
+    x: 0..1 归一化进度 → 0..1 输出（可短暂 >1）。"""
+    c1 = s
+    c3 = c1 + 1
+    return 1 + c3 * (x - 1) ** 3 + c1 * (x - 1) ** 2
+
+
+def ease_out_cubic(x):
+    """easeOutCubic：平滑减速入场。"""
+    return 1 - (1 - x) ** 3
+
+
 def draw_sanlian_icon(canvas, cx, cy, kind, glow):
     """画三连图标（订阅/关注/转发）到 RGBA canvas。glow=发光强度 0..1。
     使用局部小图 + alpha_composite，避免污染全图。"""
@@ -404,11 +417,19 @@ def add_avatar_corner(img, avatar_img, size=110, center=(1750, 970), feather=8):
 
 
 def render_ending_animation(pub_date_fmt, out_dir, dur, fps=25, avatar_img=None):
-    """渲染结尾三连动画帧序列。三图标按序浮现 → 全亮保持。返回帧列表路径。"""
+    """渲染结尾三连动画帧序列（motion-design 方法论优化版）。
+
+    节奏（Corporate 人格，Celebration 轻微回弹）：
+      - 三图标 stagger 80ms（标准档），每个入场 300ms easeOutBack
+      - 光晕 alpha 用 easeOutCubic 平滑展开
+      - 总入场约 0.6s，之后全亮保持
+    """
     n = max(2, int(dur * fps))
     frames = []
-    # 动画节奏：0~35% 逐个浮现，之后全亮保持
-    appear_start, appear_end = 0.05, 0.40
+    # 动画节奏：前 0.65s 完成三连入场，之后全亮保持
+    appear_start, appear_end = 0.05, 0.05 + 0.65 / dur if dur > 0 else 0.40
+    STAGGER_S = 0.08   # 按钮间 stagger 80ms
+    ENTRY_S = 0.30     # 每个按钮入场 300ms
     cx = [700, 960, 1220]
     cy = 900
     for i in range(n):
@@ -417,10 +438,14 @@ def render_ending_animation(pub_date_fmt, out_dir, dur, fps=25, avatar_img=None)
         glows = [0.0, 0.0, 0.0]
         if t < appear_end:
             for k in range(3):
-                seg = (appear_end - appear_start) / 3
-                s = (t - appear_start) / seg
-                if s > k:
-                    glows[k] = min(1.0, (s - k) * 4)
+                start = appear_start + k * STAGGER_S
+                end = start + ENTRY_S
+                if t >= start:
+                    if t >= end:
+                        glows[k] = 1.0
+                    else:
+                        x = (t - start) / ENTRY_S
+                        glows[k] = min(1.0, max(0.0, ease_out_back(x)))
         else:
             glows = [1.0, 1.0, 1.0]
         for k, g in enumerate(glows):

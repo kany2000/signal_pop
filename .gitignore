@@ -56,3 +56,12 @@ old/
 
 # HyperFrames generated assets
 hyperframes/**
+
+# Remotion 周末版新管线
+remotion_poc/node_modules/
+remotion_poc/out/
+remotion_poc/test_assets/
+# public/ 素材是渲染必需（配图/头像），例外放行
+!remotion_poc/public/*.jpg
+!remotion_poc/public/*.png
+!remotion_poc/public/*.jpeg

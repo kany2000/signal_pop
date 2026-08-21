@@ -121,6 +121,9 @@ async def gen_tts_all(segs):
                 end = i + 1
                 break
         trimmed = samples[start:end]
+        # 男主播音量 +30%（2026-08-21 用户反馈阿信声音偏小；原 +10% 不够，提升到 +30% 让阿信接近小蓝音量）
+        if seg["speaker"] == "阿信":
+            trimmed = [max(-32768, min(32767, int(s * 1.3))) for s in trimmed]
         dur = len(trimmed) / rate
         for s in trimmed:
             all_pcm.extend(struct.pack("<h", s))
