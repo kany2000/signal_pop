@@ -14,7 +14,7 @@ import os
 import sys
 import json
 import shutil
-import subprocess
+import subprocess as _subprocess
 from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageChops
 
@@ -449,7 +449,7 @@ def encode_part_animation(frame_dir, output_mp4, dur, fps=25):
         "-r", str(fps),
         output_mp4,
     ]
-    subprocess.run(cmd, check=True, capture_output=True, timeout=180)
+    _subprocess.run(cmd, check=True, capture_output=True, timeout=180)
 
 
 def encode_part(input_png, output_mp4, dur):
@@ -474,7 +474,7 @@ def encode_part(input_png, output_mp4, dur):
         "-r", "25",
         output_mp4,
     ]
-    subprocess.run(cmd, check=True, capture_output=True, timeout=120)
+    _subprocess.run(cmd, check=True, capture_output=True, timeout=120)
 
 
 def main():
@@ -504,8 +504,7 @@ def main():
         try:
             shutil.rmtree(tmp)
         except OSError:
-            import subprocess
-            subprocess.run(["cmd", "/c", "rmdir", "/s", "/q", tmp], capture_output=True)
+            _subprocess.run(["cmd", "/c", "rmdir", "/s", "/q", tmp], capture_output=True)
     os.makedirs(tmp, exist_ok=True)
 
     # 1. 绘制所有帧 PNG
@@ -608,7 +607,7 @@ def main():
         "-shortest",
         OUTPUT_VIDEO,  # 绝对路径输出（cwd=tmp 下用 basename 会写到 tmp 目录）
     ]
-    r = subprocess.run(cmd, capture_output=True, text=True, timeout=300, cwd=tmp)
+    r = _subprocess.run(cmd, capture_output=True, text=True, timeout=300, cwd=tmp)
     if r.returncode != 0:
         print("FFMPEG STDERR:", r.stderr[-1500:])
         sys.exit(1)

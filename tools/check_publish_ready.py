@@ -119,10 +119,8 @@ if os.path.exists(pj):
 else:
     chk(False, "parsed_news.json 存在")
 
-# 7. SRT（命名规则：signal_pop_daily/weekly_yyyymmdd.en_US.srt）
-zh_srt = os.path.join(OUT, f"signal_pop_{KIND}_{PREP_DATE}.srt")
+# 7. SRT（2026-08-21 起：只要求英文外挂字幕，中文版不烧字幕）
 en_srt = os.path.join(OUT, f"signal_pop_{KIND}_{PREP_DATE}.en_US.srt")
-chk(os.path.exists(zh_srt), "中文字幕 SRT")
 chk(os.path.exists(en_srt), "英文字幕 SRT (.en_US)")
 
 # 结果
