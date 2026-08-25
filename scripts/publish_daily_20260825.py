@@ -59,10 +59,15 @@ print(f"[快手] title={ks_title[:40]}... desc_len={len(ks_desc)} tags={ks_tags}
 print(f"[B站] title={bili_title[:40]}... desc_len={len(bili_desc)}")
 
 def run(label, cmd):
+    # 清空代理环境变量：抖音/快手走直连浏览器、B站 biliup 不信任代理 MITM 证书
+    env = dict(os.environ)
+    for k in ("HTTPS_PROXY", "HTTP_PROXY", "https_proxy", "http_proxy", "ALL_PROXY", "all_proxy"):
+        env.pop(k, None)
+    env["NO_PROXY"] = "*"
     print(f"\n{'='*60}\n🚀 [{label}] 开始上传...")
     print(f"  命令: {' '.join(cmd[:8])} ...")
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=900)
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=900, env=env)
         print(f"  exit={r.returncode}")
         out = (r.stdout or "")[-1500:]
         err = (r.stderr or "")[-1500:]
@@ -75,11 +80,11 @@ def run(label, cmd):
 
 results = {}
 
-# 1. 抖音 (headless + thumbnail 3:4)
+# 1. 抖音 (headless；不用 --thumbnail：封面弹窗 dy-creator-content-modal 超时会导致失败，改用默认封面)
 results["douyin"] = run("douyin", SAU + [
     "douyin", "upload-video", "--account", ACCOUNT,
     "--file", VIDEO, "--title", dy_title, "--desc", dy_desc, "--tags", dy_tags,
-    "--thumbnail", COVER_34, "--schedule", SCHEDULE, "--headless",
+    "--schedule", SCHEDULE, "--headless",
 ])
 
 # 2. 快手 (headed + thumbnail 3:4)
