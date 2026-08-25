@@ -26,7 +26,8 @@ def build_segments(items, pub_date_fmt, pub_weekday):
         return segs
 
     segs = []
-    segs.append(("intro", f"这里是隔天信号弹，今天是{pub_date_fmt}，{pub_weekday}。欢迎收看本期信号弹，以下是本期精选的{len(items)}条核心新闻。"))
+    news_count = sum(1 for it in items if it.get("num", 0) != 0)
+    segs.append(("intro", f"这里是隔天信号弹，今天是{pub_date_fmt}，{pub_weekday}。欢迎收看本期信号弹，以下是本期精选的{news_count}条核心新闻。"))
     for i, item in enumerate(items, 1):
         n = item.get("num", i)
         if n == 0:

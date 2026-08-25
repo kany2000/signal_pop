@@ -283,8 +283,19 @@ def draw_opening_frame(items, pub_date_fmt, pub_weekday, total):
     d.text((960, 240), "隔天信号弹", fill=ACCENT, font=title_f, anchor="mm")
     # 副标题
     sub_f = fnt(36)
-    d.text((960, 340), "本期要闻播报", fill=WHITE, font=sub_f, anchor="mm")
-    d.text((960, 390), f"{pub_date_fmt} · {pub_weekday}", fill=LIGHT_GREY, font=sub_f, anchor="mm")
+    d.text((960, 330), "本期要闻播报", fill=WHITE, font=sub_f, anchor="mm")
+    # 播报日期（醒目）
+    date_f = fnt(44, bold=True)
+    d.text((960, 388), f"{pub_date_fmt} · {pub_weekday}", fill=LIGHT_GREY, font=date_f, anchor="mm")
+    # 新排期徽标：每周三更新（描边金框）
+    badge_f = fnt(26, bold=True)
+    badge_text = "已调整为 · 每周三准时更新"
+    bb = d.textbbox((0, 0), badge_text, font=badge_f)
+    bw = bb[2] - bb[0] + 40
+    bh = 44
+    bx, by = 960 - bw // 2, 432
+    d.rounded_rectangle([bx, by, bx + bw, by + bh], 22, outline=ACCENT, width=2)
+    d.text((960, by + bh // 2), badge_text, fill=ACCENT, font=badge_f, anchor="mm")
     # 介绍语
     intro_f = fnt(34)
     intros = [
@@ -299,8 +310,8 @@ def draw_opening_frame(items, pub_date_fmt, pub_weekday, total):
     return img
 
 
-def draw_ending_frame(pub_date_fmt):
-    """结尾：清晰城市夜景配图 + 品牌 + 一键三连呼吁"""
+def draw_ending_frame(pub_date_fmt, date_anim=1.0):
+    """结尾：清晰城市夜景配图 + 品牌 + 一键三连呼吁 + 播报日期动画"""
     en_bg = os.path.join(IMAGES_DIR, "ending_bg.jpg")
     if not os.path.exists(en_bg):
         en_bg = os.path.join(IMAGES_DIR, "10.jpg")
@@ -312,7 +323,34 @@ def draw_ending_frame(pub_date_fmt):
     d.ellipse([957, 149, 963, 155], fill=ACCENT)
     d.text((960, 260), "隔天信号弹", fill=ACCENT, font=fnt(72, bold=True), anchor="mm")
     d.text((960, 360), "下期见", fill=WHITE, font=fnt(48, bold=True), anchor="mm")
-    d.text((960, 430), pub_date_fmt, fill=LIGHT_GREY, font=fnt(32), anchor="mm")
+
+    # 播报日期（动画：淡入 + 轻微放大 + 金色光晕脉冲），date_anim 0..1
+    date_anim = max(0.0, min(1.0, date_anim))
+    date_alpha = int(255 * date_anim)
+    date_size = int(32 * (0.72 + 0.28 * date_anim))
+    df = fnt(date_size, bold=True)
+    date_layer = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    dl = ImageDraw.Draw(date_layer)
+    # 金色光晕：模糊的金色大字垫底（date_anim>0.3 才明显）
+    if date_anim > 0.3:
+        glow = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+        gl = ImageDraw.Draw(glow)
+        ga = int(140 * date_anim)
+        gl.text((960, 432), pub_date_fmt, fill=(255, 215, 0, ga), font=df, anchor="mm")
+        glow = glow.filter(ImageFilter.GaussianBlur(radius=16))
+        date_layer = Image.alpha_composite(date_layer, glow)
+    dl.text((960, 432), pub_date_fmt, fill=(*LIGHT_GREY, date_alpha), font=df, anchor="mm")
+    img = Image.alpha_composite(img.convert("RGBA"), date_layer).convert("RGB")
+    d = ImageDraw.Draw(img)
+    # 每周三更新 徽标
+    badge_f = fnt(24, bold=True)
+    bt = "每周三 · 准时更新"
+    bb = d.textbbox((0, 0), bt, font=badge_f)
+    bw = bb[2] - bb[0] + 36
+    bx, by = 960 - bw // 2, 478
+    d.rounded_rectangle([bx, by, bx + bw, by + 40], 20, outline=ACCENT, width=2)
+    d.text((960, by + 20), bt, fill=ACCENT, font=badge_f, anchor="mm")
+
     # 一键三连呼吁（替代原"今天主播：图图"）
     d.text((960, 600), "您的一键三连", fill=ACCENT, font=fnt(40, bold=True), anchor="mm")
     d.text((960, 660), "是我们更新制作的动力", fill=WHITE, font=fnt(32), anchor="mm")
@@ -434,7 +472,10 @@ def render_ending_animation(pub_date_fmt, out_dir, dur, fps=25, avatar_img=None)
     cy = 900
     for i in range(n):
         t = i / n
-        img = draw_ending_frame(pub_date_fmt).convert("RGBA")
+        t_sec = i / fps
+        # 播报日期：前 ~0.6s 回弹放大淡入（与三连错峰，强化"最后动画效果"）
+        date_anim = ease_out_back(min(1.0, t_sec / 0.6))
+        img = draw_ending_frame(pub_date_fmt, date_anim=date_anim).convert("RGBA")
         glows = [0.0, 0.0, 0.0]
         if t < appear_end:
             for k in range(3):

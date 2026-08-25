@@ -7,7 +7,7 @@ Signal Pop 目前有两条独立产线，面向不同节奏与形态：
 | 维度 | 平日版（每周三播出，周二制作） | 周末特别版 · 信蓝组合（每周六播出，周五制作） |
 |------|----------------|----------------------|
 | 形态 | AI 新闻简报（女主播播报） | 双人对话脱口秀（阿信 + 小蓝） |
-| 选题 | 10 条（经济/文旅/科技/民生/体育/新质生产力） | 15 条 TOP15 倒计时 + 本周之最 + 下周看点 |
+| 选题 | 15 条（经济3/文旅2/科技3/新质生产力1/民生3/体育1 + 末条AI指南1/电脑操作指南1） | 15 条 TOP15 倒计时 + 本周之最 + 下周看点 |
 | 渲染 | ffmpeg 合成（传统管线） | **Remotion** 程序化渲染（`remotion_poc/`） |
 | 声音 | 单女声（豆包 / edge-tts 兜底） | 双人（阿信男声报新闻 + 小蓝女声点评，阿信音量 +30%） |
 | 封面 | AI 女主播封面 | 双人分屏，三风格可切换（见下文） |
@@ -50,7 +50,7 @@ signal_pop/
 ├── remotion_poc/             # 周末版 Remotion 工程（React + TypeScript）
 │   ├── src/
 │   │   ├── WeeklyTalk.tsx    # 双人对话脱口秀主组件（配图轮换/一键三连/说话高亮）
-│   │   ├── DailyNews.tsx     # 每日版主组件（开场/历史/新闻×N/结尾三连，stagger+ken-burns+标题滑入，头像遮水印）
+│   │   ├── DailyNews.tsx     # 每日版主组件（开场/历史/新闻×N/结尾三连，stagger+ken-burns+标题滑入，开场播报日期打屏+结尾日期盖章动画，头像遮水印）
 │   │   ├── Root.tsx / NewsSlide.tsx / index.ts
 │   │   ├── weekly_segs.json  # Remotion 消费的分镜数据（export_weekly_remotion.py 产出）
 │   │   ├── daily_segs.json   # 每日版分镜数据（export_daily_remotion.py 产出）

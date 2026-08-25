@@ -106,29 +106,29 @@ def main():
     # 1. 抖音
     files["douyin.md"] = f"""标题：{M_D}信号弹｜{title_all}！{n}条核心新闻
 
-简介：每天3分钟，了解今天发生的{n}件大事！
+简介：每期3分钟，了解本周发生的{n}件大事！
 
 {history_text}📱 本期看点：
 """ + "\n".join(f"{i+1}️⃣ {s}" for i, s in enumerate(shorts)) + f"""
 
-#隔天信号弹 #每日新闻 #今日热点 #新闻播报 #热点新闻 #科技资讯 #AI新闻 #新闻早报 #每日播报 #时政要闻 #民生新闻
+#隔天信号弹 #每周新闻 #今日热点 #新闻播报 #热点新闻 #科技资讯 #AI新闻 #新闻早报 #每周播报 #时政要闻 #民生新闻
 
 正文：
-隔天信号弹，每天为你精选{n}条核心新闻。"""
+隔天信号弹，每周三为你精选{n}条核心新闻。"""
 
     # 2. 快手
     CIRC = "①②③④⑤⑥⑦⑧⑨⑩"
     files["kuaishou.md"] = f"""标题：{M_D}信号弹｜{n}条核心新闻：{title_all}
 
-简介：每天3分钟，听遍天下事！今天{n}条新闻全在这里👇
+简介：每期3分钟，听遍天下事！本周{n}条新闻全在这里👇
 
 🔥 本期热点：
 """ + "\n".join(f"{CIRC[i] if i < len(CIRC) else i+1} {s}" for i, s in enumerate(shorts)) + f"""
 
-#隔天信号弹 #新闻早报 #热点 #今日新闻 #每日播报 #科技 #财经 #民生 #社会 #资讯
+#隔天信号弹 #新闻早报 #热点 #今日新闻 #每周播报 #科技 #财经 #民生 #社会 #资讯
 
 正文：
-隔天信号弹，每天为你精选{n}条核心新闻。"""
+隔天信号弹，每周三为你精选{n}条核心新闻。"""
 
     # 3. B站
     files["bilibili.md"] = f"""【{M_D}信号弹】{title_all}｜{n}条核心新闻
@@ -136,32 +136,32 @@ def main():
 📌 本期{n}条新闻：
 """ + "\n".join(timeline_lines) + f"""
 
-每天3分钟，纵览天下事。记得三连支持一下~
+每期3分钟，纵览天下事。记得三连支持一下~
 
-#隔天信号弹 #每日新闻 #新闻早报 #科技 #财经 #民生 #资讯
+#隔天信号弹 #每周新闻 #新闻早报 #科技 #财经 #民生 #资讯
 
 （以下为视频文案，供字幕参考）
 这里是隔天信号弹，今天是{PUB_DATE_FMT}，{PUB_WEEKDAY}。"""
 
     # 4. 小红书
-    files["xiaohongshu.md"] = f"""今天{n}条新闻，3分钟看完 📺✨
+    files["xiaohongshu.md"] = f"""本期{n}条新闻，3分钟看完 📺✨
 
 早上好呀宝子们☀️ 今天的信号弹来咯～
-每天8点，3分钟带你速览今日大事👇
+每周三8点，3分钟带你速览本周大事👇
 
 """ + history_text + "\n".join(f"{CIRC[i] if i < len(CIRC) else i+1}️⃣ {s}" for i, s in enumerate(shorts)) + f"""
 
 你关注哪一条？评论区聊聊呀💬
 记得关注不迷路，每天8点见哦～
 
-#新闻早报 #每日新闻 #隔天信号弹 #今日热点 #科技资讯 #民生新闻 #信息差 #认知升级 #早安新闻 #新闻播报 #每日热点 #快讯"""
+#新闻早报 #每周新闻 #隔天信号弹 #今日热点 #科技资讯 #民生新闻 #信息差 #认知升级 #早安新闻 #新闻播报 #每周热点 #快讯"""
 
     # 5. 知乎
-    files["zhihu.md"] = f"""隔天信号弹 | {M_D}新闻早报（每日{n}条）
+    files["zhihu.md"] = f"""隔天信号弹 | {M_D}新闻早报（每周{n}条）
 
 """ + history_text + "\n".join(f"{i+1}. {s}" for i, s in enumerate(shorts)) + """
 
-完整内容见视频。欢迎关注，每天 8 点更新。"""
+完整内容见视频。欢迎关注，每周三 8 点更新。"""
 
     # 6. Facebook（全英文，2026-08-16 用户明确）
     # 从英文字幕提取全部英文短标题（去掉 "[Category] News." 前缀，取标题句）
@@ -195,7 +195,7 @@ def main():
 Top {n} stories today:
 """ + "\n".join(f"{i+1}. {t}" for i, t in enumerate(en_titles[:n])) + """
 
-3 minutes a day, catch up on what's happening in the world. Follow & share!
+3 minutes a week, catch up on what's happening in the world. Follow & share!
 
 #SignalPop #DailyNews #ChinaNews #Technology #News"""
 
@@ -205,7 +205,7 @@ Top {n} stories today:
 Today's Top {n}:
 """ + "\n".join(f"{i+1}. {t}" for i, t in enumerate(en_titles[:n])) + """
 
-Every day in 3 minutes, catch up on the world.
+Every week in 3 minutes, catch up on the world.
 SignalPop,DailyNews,China,Technology,News,DailyNews"""
 
     # 8. Twitter / X（英文、# 话题、280 字符内紧凑版）——取前3条英文标题

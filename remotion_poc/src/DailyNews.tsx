@@ -28,6 +28,12 @@ const PANEL_W = 384;
 const BG = "#10151c";
 
 const easeOut = Easing.out(Easing.cubic);
+// easeOutBack：轻微回弹（Celebration 风格 overshoot ~10%），用于「播报日期」盖章动画
+const easeOutBack = (x: number) => {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+};
 
 // ---------- 左上品牌条 ----------
 const BrandBar: React.FC<{ text: string }> = ({ text }) => (
@@ -88,10 +94,16 @@ const IntroSlide: React.FC<{ seg: DailySeg; pubDate: string; weekday: string; to
         <div style={{ fontSize: 86, fontWeight: "bold", color: GOLD, fontFamily: "Noto Sans SC, sans-serif", letterSpacing: 6, opacity: titleIn, transform: `translateY(${(1 - titleIn) * 30}px)` }}>
           隔天信号弹
         </div>
-        <div style={{ marginTop: 24, fontSize: 36, color: WHITE, fontFamily: "Noto Sans SC, sans-serif", opacity: subIn, transform: `translateY(${(1 - subIn) * 24}px)` }}>
+        <div style={{ marginTop: 24, fontSize: 40, fontWeight: "bold", color: WHITE, fontFamily: "Noto Sans SC, sans-serif", opacity: subIn, transform: `translateY(${(1 - subIn) * 24}px)` }}>
           {pubDate} · {weekday}
         </div>
-        <div style={{ marginTop: 18, fontSize: 26, color: LIGHT_GREY, fontFamily: "Noto Sans SC, sans-serif", opacity: subIn }}>
+        {/* 新排期徽标：已调整为每周三播出 */}
+        <div style={{ marginTop: 16, fontFamily: "Noto Sans SC, sans-serif", opacity: subIn, transform: `translateY(${(1 - subIn) * 18}px)` }}>
+          <span style={{ padding: "8px 22px", background: "rgba(255,215,0,0.15)", border: `1px solid ${GOLD}`, borderRadius: 999, fontSize: 22, color: GOLD, letterSpacing: 1 }}>
+            已调整为 · 每周三准时更新
+          </span>
+        </div>
+        <div style={{ marginTop: 16, fontSize: 26, color: LIGHT_GREY, fontFamily: "Noto Sans SC, sans-serif", opacity: subIn }}>
           本期精选 {total} 条核心新闻
         </div>
         <div style={{ width: 520, height: 5, background: GOLD, marginTop: 34, opacity: lineIn }} />
@@ -187,13 +199,19 @@ const NewsSlide: React.FC<{ seg: DailySeg; avatar?: string }> = ({ seg, avatar }
 };
 
 // ---------- 结尾三连段（金钮 stagger 浮现 + 呼吸光晕，持续到片尾）----------
-const OutroSlide: React.FC<{ seg: DailySeg; avatar?: string }> = ({ seg, avatar }) => {
+const OutroSlide: React.FC<{ seg: DailySeg; pubDate: string; weekday: string; avatar?: string }> = ({ seg, pubDate, weekday, avatar }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const t = frame / fps;
 
   const ken = interpolate(t, [0, seg.dur], [1.0, 1.05], { extrapolateRight: "clamp", easing: easeOut });
   const titleIn = interpolate(frame, [0, 18], [0, 1], { extrapolateRight: "clamp", easing: easeOut });
+
+  // 「播报日期」盖章动画：三连之后（约 1.2s 起）回弹放大 + 金色光晕脉冲，持续到片尾
+  const dsProg = interpolate(t, [1.2, 1.95], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const dsScale = 0.6 + 0.4 * easeOutBack(dsProg);
+  const dsAlpha = interpolate(t, [1.2, 1.6], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const dsGlow = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin((t - 1.6) * Math.PI * 1.1));
 
   const sanlianCx = [560, 960, 1360];
   const sanlianIcons = ["订阅", "关注", "转发"];
@@ -237,6 +255,26 @@ const OutroSlide: React.FC<{ seg: DailySeg; avatar?: string }> = ({ seg, avatar 
       <div style={{ position: "absolute", bottom: 70, left: 0, right: 0, textAlign: "center", fontSize: 26, color: LIGHT_GREY, fontFamily: "Noto Sans SC, sans-serif", opacity: titleIn }}>
         感谢您的关注，我们下期见~
       </div>
+      {/* 播报日期盖章动画（本节目已调整为每周三播出） */}
+      <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", opacity: dsAlpha, pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: 690, left: 0, right: 0, textAlign: "center", transform: `scale(${dsScale})` }}>
+          <div style={{ fontSize: 28, color: GOLD, fontFamily: "Noto Sans SC, sans-serif", letterSpacing: 2 }}>
+            本期播出 · 每周三准时更新
+          </div>
+          <div
+            style={{
+              marginTop: 8,
+              fontSize: 48,
+              fontWeight: "bold",
+              color: WHITE,
+              fontFamily: "Noto Sans SC, sans-serif",
+              textShadow: `0 0 ${18 + 22 * Math.max(0, dsGlow)}px ${GOLD}`,
+            }}
+          >
+            {pubDate} · {weekday}
+          </div>
+        </div>
+      </AbsoluteFill>
       <AvatarCorner avatar={avatar} />
     </AbsoluteFill>
   );
@@ -270,7 +308,7 @@ export const DailyNews: React.FC<{
     case "history":
       return <HistorySlide seg={cur} avatar={avatar} />;
     case "outro":
-      return <OutroSlide seg={cur} avatar={avatar} />;
+      return <OutroSlide seg={cur} pubDate={pubDate} weekday={weekday} avatar={avatar} />;
     default:
       return <NewsSlide seg={cur} avatar={avatar} />;
   }
