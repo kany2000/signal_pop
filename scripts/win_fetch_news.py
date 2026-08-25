@@ -8,20 +8,17 @@ OUTPUT_DIR = "E:/projects/signal_pop/output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # 以综合 / 科技 / 财经 / 民生类媒体为主，规避政治重源（BBC中文、路透、联合国等）
+# 2026-08-23 复核：剔除 8 个长期失效源（404/超时/连接重置），保留并新增已验证可用源。
+# 当前可用源：新浪/IT之家/少数派/中新网/量子位/36氪/钛媒体/人民网（共 8 家，满足媒体≥5家）。
 FEEDS = [
-    {"name": "腾讯新闻", "url": "https://news.qq.com/newsrss.xml"},
     {"name": "新浪新闻", "url": "https://rss.sina.com.cn/news/china/focus15.xml"},
-    {"name": "36氪", "url": "https://36kr.com/feed"},
+    {"name": "36氪", "url": "https://www.36kr.com/feed"},
     {"name": "IT之家", "url": "https://www.ithome.com/rss/"},
     {"name": "少数派", "url": "https://sspai.com/feed"},
-    {"name": "澎湃新闻", "url": "https://www.thepaper.cn/rss/default.xml"},
     {"name": "中国新闻网", "url": "https://www.chinanews.com/rss/scroll-news.xml"},
-    {"name": "央视网", "url": "https://news.cctv.com/rss/index.shtml?launcher=1"},
-    {"name": "网易科技", "url": "https://tech.163.com/rss/"},
-    {"name": "虎嗅", "url": "https://www.huxiu.com/rss/0.xml"},
-    {"name": "机器之心", "url": "https://www.jiqizhixin.com/feed"},
     {"name": "量子位", "url": "https://www.qbitai.com/feed"},
-    {"name": "界面新闻", "url": "https://www.jiemian.com/rss.html"},
+    {"name": "钛媒体", "url": "https://www.tmtpost.com/rss.xml"},
+    {"name": "人民网", "url": "http://www.people.com.cn/rss/politics.xml"},
 ]
 
 def fetch_feed(feed):

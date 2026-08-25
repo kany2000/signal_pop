@@ -67,9 +67,9 @@ with ThreadPoolExecutor(max_workers=2) as executor:
 | 任务名 | Job ID | 计划 | 方式 | 状态 |
 |--------|--------|------|------|------|
 | signal-pop-monitor | 9967e8b8c86f | `*/10 * * * *` | Monitor (human-in-the-loop) | 已启用 |
-| signal-pop-weekly | 7968abe94f69 | `0 9 * * 6` (周六 09:00) | Weekly 生成 | 已启用 |
-| signal-pop-daily-news | 02d2c8d722bb | `30 8 * * 1,3,5` | 脚本方式 (兼容) | 已启用 |
-| signal-pop-weekly-news | b231e16a2ec3 | `0 9 * * 6` | 脚本方式 (兼容) | 已启用 |
-| signal-pop-daily-check | d065a67164a0 | `0 9 * * 1,3,5` | 健康检查 | 已启用 |
+| signal-pop-weekly | 7968abe94f69 | `0 9 * * 5` (周五 09:00) | Weekly 生成 | 已启用 |
+| signal-pop-daily-news | 02d2c8d722bb | `30 8 * * 2` (周二) | 脚本方式 (兼容) | 已启用 |
+| signal-pop-weekly-news | b231e16a2ec3 | `0 9 * * 5` (周五) | 脚本方式 (兼容) | 已启用 |
+| signal-pop-daily-check | d065a67164a0 | `0 9 * * 2` (周二) | 健康检查 | 已启用 |
 
 > **推荐流程**: Monitor 方式为主。虾小图在发布日将 `filtered_news.json` 放入 `/home/kan/shared/signal_pop/`，monitor 任务在 10 分钟内自动完成全流水线。脚本方式 cron 保留作为兼容/回退。

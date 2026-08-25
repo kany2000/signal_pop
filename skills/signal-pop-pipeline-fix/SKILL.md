@@ -137,14 +137,14 @@ english_words / total_words > 0.7 and no_chinese
 | 任务名 | Job ID | 计划 | 方式 |
 |--------|--------|------|------|
 | signal-pop-monitor | 9967e8b8c86f | `*/10 * * * *` | Monitor: 监控 shared 目录 filtered_news.json |
-| signal-pop-weekly | 7968abe94f69 | `0 9 * * 6` (周六 09:00) | Weekly: 生成带观点的周报 |
+| signal-pop-weekly | 7968abe94f69 | `0 9 * * 5` (周五 09:00) | Weekly: 生成带观点的周报 |
 
 **预存 Cron 任务 (脚本方式，保留兼容)**
 | 任务名 | 计划 | 方式 |
 |--------|------|------|
-| signal-pop-daily-news | `30 8 * * 1,3,5` (周一三五 08:30) | 脚本: `scripts/generate_audio_one.sh` |
-| signal-pop-weekly-news | `0 9 * * 6` (周六 09:00) | 脚本: `scripts/generate_audio_one.sh weekly` |
-| signal-pop-daily-check | `0 9 * * 1,3,5` (周一三五 09:00) | 健康检查 daily-news |
+| signal-pop-daily-news | `30 8 * * 2` (周二 08:30) | 脚本: `scripts/generate_audio_one.sh` |
+| signal-pop-weekly-news | `0 9 * * 5` (周五 09:00) | 脚本: `scripts/generate_audio_one.sh weekly` |
+| signal-pop-daily-check | `0 9 * * 2` (周二 09:00) | 健康检查 daily-news |
 
 > **优先级**: Monitor 方式 (human-in-the-loop) 为主流程，脚本方式保留作为回退。虾小图在 shared 目录投放 `filtered_news.json` 即触发 monitor 流水线。
 
@@ -231,8 +231,8 @@ fi
 
 ### 定时任务无需变更
 现有 Cron 任务直接调用 `scripts/generate_audio_only.sh`，逻辑内部已兼容：
-- `signal-pop-daily-news` (02d2c8d722bb): 周一三五 08:30
-- `signal-pop-weekly-news` (b231e16a2ec3): 周六 09:00
+- `signal-pop-daily-news` (02d2c8d722bb): 周二 08:30
+- `signal-pop-weekly-news` (b231e16a2ec3): 周五 09:00
 
 ---
 

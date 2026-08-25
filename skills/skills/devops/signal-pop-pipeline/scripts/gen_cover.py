@@ -62,7 +62,7 @@ def generate_cover(date_str: str, episode: int, output_path: str, news_items: li
 
     # 主标题 - 左上
     draw.text((120, 140), "隔天信号弹", fill='#FFFFFF', font=title_font, stroke_width=2, stroke_fill='#00B4FF')
-    draw.text((120, 250), "Signal Pop · 每日硬核资讯", fill='#00E5FF', font=sub_font)
+    draw.text((120, 250), "Signal Pop · 每周硬核资讯", fill='#00E5FF', font=sub_font)
 
     # 日期标签 - 右上
     draw.text((1920 - 320, 140), date_str, fill='#FFFFFF', font=date_font, anchor='rt')
@@ -93,7 +93,7 @@ def generate_cover(date_str: str, episode: int, output_path: str, news_items: li
 
     # 底部品牌行
     draw.line([(120, 1000), (1800, 1000)], fill='#00B4FF', width=1)
-    draw.text((120, 1010), "隔天信号弹  ·  虾小图主播  ·  每周一三五 14:00 定时放送", fill='#6699CC', font=sub_font)
+    draw.text((120, 1010), "隔天信号弹  ·  虾小图主播  ·  每周三 14:00 定时放送", fill='#6699CC', font=sub_font)
 
     # 右下角二维码占位
     qr_size = 120

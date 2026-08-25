@@ -1,11 +1,11 @@
 ---
 name: signal-pop-daily-video
-description: Signal Pop 每日新闻视频生产流水线（2026-07 现行可用）— 新闻稿txt → 配图(Pollinations AI) → TTS(MiMo) → build_daily_video.py 渲染(PIL/FFmpeg) → HTTP上传 → (分发)。
+description: Signal Pop 新闻视频生产流水线（2026-07 现行可用）— 新闻稿txt → 配图(Pollinations AI) → TTS(MiMo) → build_daily_video.py 渲染(PIL/FFmpeg) → HTTP上传 → (分发)。
 tags: [signal-pop, video-pipeline, daily-video, video-generation, image-generation, tts, ffmpeg, OpenMontage]
 trigger: 用户说 "做视频" / "渲染" / "发片" / "视频出错" / "修复视频" / "配图" 等
 ---
 
-# Signal Pop 每日新闻视频生产流水线 (2026-07 现行)
+# Signal Pop 新闻视频生产流水线 (2026-07 现行)
 
 **状态**：✅ 2026-07-09 验证定型，涵盖配图、TTS、渲染、上传及 Playwright 浏览器兼容问题；✅ 2026-07-10 修复发布日期：脚本生成/TTS 阶段已改为「制作日+1天」作为视频开头播报日期（news 制作于周日/二/四/五，视频标注发布日=制作日+1）。✅ 2026-07-12 新增「视觉提示词」格式支持、开场图每期换新规则、风格轮盘主题切换、地理配图准确性要求。
 

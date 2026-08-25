@@ -15,19 +15,18 @@ from datetime import datetime, timedelta
 from dateutil import parser as dtparser
 import time
 
-OUTPUT_DIR = "/home/kan/signal_pop/data"
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # RSS 订阅源
 FEEDS = [
-    {"name": "腾讯新闻", "url": "https://news.qq.com/newsrss.xml"},
-    {"name": "新浪新闻", "url": "https://rss.sina.com.cn/news/china/focus15.xml"},
-    {"name": "澎湃新闻", "url": "https://www.thepaper.cn/rss/default.xml"},
-    {"name": "36kr", "url": "https://36kr.com/feed"},
+    {"name": "IT之家", "url": "https://www.ithome.com/rss/"},
+    {"name": "36氪", "url": "https://www.36kr.com/feed"},
+    {"name": "钛媒体", "url": "https://www.tmtpost.com/rss.xml"},
+    {"name": "少数派", "url": "https://sspai.com/feed"},
+    {"name": "量子位", "url": "https://www.qbitai.com/feed"},
     {"name": "BBC中文", "url": "https://feeds.bbci.co.uk/zhongwen/simp/rss.xml"},
     {"name": "BBC英文", "url": "https://feeds.bbci.co.uk/news/rss.xml"},
-    {"name": "路透中文", "url": "https://feeds.reuters.com/reuters/CNTopStories"},
-    {"name": "联合国新闻", "url": "https://news.un.org/feed/subscribe/zh/news/beat/science-technology/feed"},
 ]
 
 MAX_AGE_HOURS = 48

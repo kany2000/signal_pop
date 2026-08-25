@@ -81,7 +81,7 @@ def find_new_videos(state):
 def build_upload_cmd(platform, video_path, cover_path, meta):
     """构建 sau 上传命令"""
     title = meta.get("title", f"隔天信号弹 {datetime.now().strftime('%m.%d')}")
-    desc = meta.get("desc", "每日硬核资讯，十条直达核心。")
+    desc = meta.get("desc", "每周硬核资讯，十条直达核心。")
     tags = meta.get("tags", "隔天信号弹,科技资讯,AI,新闻")
     if isinstance(tags, list):
         tags = ",".join(tags)

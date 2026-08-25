@@ -244,7 +244,7 @@ export DOUYIN_COOKIE_AUTH_HEADLESS=true
 - 背景：深蓝渐变 (`#0A1628` 起)
 - 装饰：右上光晕、左下一角装饰线条
 - 主标题：「隔天信号弹」白色粗体 + 蓝色描边
-- 副标题：「Signal Pop · 每日硬核资讯」青色
+- 副标题：「Signal Pop · 每周硬核资讯」青色
 - 右上角：日期 `YYYY.MM.DD` + 星期 + 期数
 - 中部：10条新闻编号列表（蓝色圆圈编号 + 白色标题文字）
 - 底部品牌行 + 发布信息
@@ -585,7 +585,7 @@ python3 -c "import json; s=json.load(open('output/daily/signal_pop_daily_YYYYMMD
 ### 新闻配图生成（Pollinations AI，免费无Key）
 
 - **脚本**：`/home/kan/shared/signal_pop/scripts/gen_news_images.py` — 读取 `archive/signal_pop_daily_YYYYMMDD.txt`，解析10条新闻标题，为每条生成1280×720配图，保存到 `archive/img_YYYYMMDD/`
-- **Cron**：`signal-pop-daily-images` (09:00 周一三五，新闻稿出后一小时)
+- **Cron**：`signal-pop-daily-images` (09:00 周二，新闻稿出后一小时)
 - **技术细节**：必须带 `User-Agent` + `Referer` 头，否则403
 - **重复图坑**：相同 prompt 不加 `seed` → Pollinations 返回同图。`keyword_map` 关键词可能跨条命中致多条同prompt。**修**：URL 加 `&seed={n*37}` + `build_prompt(title, index)` 每条追加标题差异化部分
 - **免费替代方案**：Bing Image Creator (~15次/天)、Playground AI (500张/天)、Leonardo.ai (150 tokens/天)、Hugging Face Spaces

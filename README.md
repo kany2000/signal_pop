@@ -4,7 +4,7 @@
 
 Signal Pop 目前有两条独立产线，面向不同节奏与形态：
 
-| 维度 | 每日版（工作日） | 周末特别版 · 信蓝组合 |
+| 维度 | 平日版（每周三播出，周二制作） | 周末特别版 · 信蓝组合（每周六播出，周五制作） |
 |------|----------------|----------------------|
 | 形态 | AI 新闻简报（女主播播报） | 双人对话脱口秀（阿信 + 小蓝） |
 | 选题 | 10 条（经济/文旅/科技/民生/体育/新质生产力） | 15 条 TOP15 倒计时 + 本周之最 + 下周看点 |
@@ -38,6 +38,9 @@ signal_pop/
 │   ├── gen_weekly_en_srt.py       # 周末版英文外挂字幕（en_US.srt）
 │   ├── export_weekly_remotion.py  # 周末版分镜导出 → weekly_segs.json
 │   ├── remotion_weekly_build.py   # 周末版 Remotion 渲染 + ffmpeg 合并（CRF26）
+│   ├── export_daily_remotion.py   # 每日版分镜导出 → daily_segs.json + 配图复制到 public/
+│   ├── remotion_daily_build.py    # 每日版 Remotion 渲染 + 音频合并（CRF26，支持 --render）
+│   ├── gen_daily_en_srt.py        # 每日版英文外挂字幕（en_US.srt，基于音频时长生成）
 │   ├── check_publish_ready.py      # 发布前质检（全过才可发布）
 │   ├── publish_weekly_*.py / publish_daily_*.py  # 各平台发布脚本
 │   ├── gen_cloud_tts.py / gen_srt.py / gen_en_srt.py  # TTS / 字幕通用工具
@@ -47,8 +50,10 @@ signal_pop/
 ├── remotion_poc/             # 周末版 Remotion 工程（React + TypeScript）
 │   ├── src/
 │   │   ├── WeeklyTalk.tsx    # 双人对话脱口秀主组件（配图轮换/一键三连/说话高亮）
+│   │   ├── DailyNews.tsx     # 每日版主组件（开场/历史/新闻×N/结尾三连，stagger+ken-burns+标题滑入，头像遮水印）
 │   │   ├── Root.tsx / NewsSlide.tsx / index.ts
 │   │   ├── weekly_segs.json  # Remotion 消费的分镜数据（export_weekly_remotion.py 产出）
+│   │   ├── daily_segs.json   # 每日版分镜数据（export_daily_remotion.py 产出）
 │   │   └── news.json
 │   ├── public/               # 渲染素材（配图/主播头像，例外放行入库）
 │   ├── package.json / remotion.config.ts / tsconfig.json
@@ -98,16 +103,33 @@ cp .env.example .env
 | `FFMPEG_PATH` | ffmpeg 可执行文件路径 | bin/ffmpeg-9.0.1 |
 | `SIGNAL_POP_LOG_LEVEL` | 日志级别 | INFO |
 
-### 2. 每日版（工作日）
+### 2. 平日版（每周三播出，周二制作）
 
 ```bash
-# 统一管线入口（跨平台）
+# 统一管线入口（跨平台，ffmpeg 分屏传统管线，CRF26）
 python run_pipeline.py
 python run_pipeline.py --skip-images     # 已有图片时跳过配图
 SIGNAL_POP_PREP_DATE=20260821 python run_pipeline.py
 
 # Windows 一键管线
 python scripts/win_pipeline_run.py
+```
+
+#### 每日版 Remotion 动效管线（增强，默认兜底为 ffmpeg 分屏）
+
+下期起每日版默认走 Remotion 动效管线（stagger / ken-burns / 标题滑入），与原 ffmpeg 分屏管线并存：
+
+```bash
+# 1) 导出分镜数据（parsed_news + tts_segments + 配图 → daily_segs.json，配图复制到 public/）
+python tools/export_daily_remotion.py 20260823
+
+# 2) Remotion 渲染画面轨（静音 mp4）
+cd remotion_poc && npm install   # 首次
+npx remotion render DailyNews out/DailyNews_silent.mp4 --codec=h264 \
+  --browser-executable="C:/Program Files/Google/Chrome/Application/chrome.exe"
+
+# 3) 合并 TTS 音频 + CRF26 压缩 → signal_pop_daily_20260823.mp4
+python tools/remotion_daily_build.py 20260823 --render
 ```
 
 ### 3. 周末特别版（信蓝组合）
@@ -166,8 +188,10 @@ python tools/remotion_weekly_build.py 20260821
 ## 关键约定（长期规则）
 
 - 选题配额与媒体多样性、地域配比（国内/国际）按各产线既定约束执行。
-- 「历史上的今天」只用国内事件；新闻时效 48h；避开已用题材与政治敏感红线。
+- 「历史上的今天」只用国内事件（科技/文化/民生），且**日期必须与发布日对齐**（= 制作日 + 1），不是制作日。
 - 配图：汽车/电子产品优先真实网络图；OS/科技类突出软件系统主题。
+- **配图水印铁律**：SenseNova 配图右下角带「日日新 sensenova」水印，**生成后保留原始带水印原图，由用户用工具自行清除**；管线不在配图阶段做任何水印模糊/inpaint 处理。用户清完并确认后，才进入 TTS/视频渲染；视频中用主播头像遮水印位。
+- **视频编码对齐**：每日版与周末版统一 `libx264 CRF26`（-preset fast -pix_fmt yuv420p），1080p 约 275kb/s（10 分钟视频 ≈ 22MB）。
 - 密钥只走 `.env`，禁止硬编码；`output/` 产物与 `*.mp4/*.wav/*.png/*.jpg/*.srt` 按 `.gitignore` 不入库（仅 `remotion_poc/public/` 素材例外放行）。
 - 代码规范：`black --line-length=120`、`flake8`；改动前先完整重读项目（README/scripts/tools/历史）再动手。
 

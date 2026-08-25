@@ -42,10 +42,10 @@ def make_cover_4x3(date_str, output, news_items=None):
     num_font   = load_font(NOTO_BOLD, DEV_BOLD, 18)
 
     draw.text((100, 120), "隔天信号弹", fill='#FFFFFF', font=title_font, stroke_width=2, stroke_fill='#00B4FF')
-    draw.text((100, 210), "Signal Pop · 每日硬核资讯", fill='#00E5FF', font=sub_font)
+    draw.text((100, 210), "Signal Pop · 每周硬核资讯", fill='#00E5FF', font=sub_font)
 
     draw.text((W - 60, 120), date_str, fill='#FFFFFF', font=date_font, anchor='rt')
-    draw.text((W - 60, 175), "周一 · 10条新闻", fill='#88CCFF', font=sub_font, anchor='rt')
+    draw.text((W - 60, 175), "周三 · 10条新闻", fill='#88CCFF', font=sub_font, anchor='rt')
 
     if news_items is None:
         news_items = [f"新闻 {i+1}" for i in range(10)]
@@ -64,7 +64,7 @@ def make_cover_4x3(date_str, output, news_items=None):
 
     # 底部品牌行 — 缩短文本避免右侧裁切
     draw.line([(80, 1000), (W-80, 1000)], fill='#00B4FF', width=1)
-    draw.text((80, 1015), "隔天信号弹 · 虾小图主播 · 每周一三五放送", fill='#6699CC', font=sub_font)
+    draw.text((80, 1015), "隔天信号弹 · 虾小图主播 · 每周三放送", fill='#6699CC', font=sub_font)
 
     Path(output).parent.mkdir(parents=True, exist_ok=True)
     img.save(output, 'PNG', quality=95)

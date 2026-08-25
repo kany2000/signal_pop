@@ -119,7 +119,7 @@ def make_promo():
 
     hud_corners(draw)
 
-    draw.text((60, 45), "每周一三五 · 周六特别版", fill=(0, 200, 255), font=fnt(18, True))
+    draw.text((60, 45), "每周三 · 周六特别版", fill=(0, 200, 255), font=fnt(18, True))
 
     anchor = get_anchor()
     paste_anchor(bg, anchor)
@@ -137,9 +137,9 @@ def make_promo():
 
     # 副标题
     sub_font = fnt(28, bold=False)
-    draw.text((tx, 270), "每周一三五 · 周六特别版", fill=(100, 220, 255), font=sub_font)
+    draw.text((tx, 270), "每周三 · 周六特别版", fill=(100, 220, 255), font=sub_font)
     for ox, oy in [(1, 1), (-1, 1)]:
-        draw.text((tx + ox, 270 + oy), "每周一三五 · 周六特别版", fill=(0, 100, 150, 60), font=sub_font)
+        draw.text((tx + ox, 270 + oy), "每周三 · 周六特别版", fill=(0, 100, 150, 60), font=sub_font)
 
     # 金色装饰线
     for x in range(tx, tx + 400):
@@ -153,7 +153,7 @@ def make_promo():
 
     # 特性
     features = [
-        "✦ 每周一三五 · 平日新闻",
+        "✦ 每周三 · 平日新闻",
         "✦ 每周六 · 周末特别版",
         "✦ 科技 · 财经 · 民生 · 国际",
         "✦ 主播AI语音播报",
@@ -166,7 +166,7 @@ def make_promo():
 
     # 底部
     ft = fnt(16, bold=False)
-    draw.text((40, H - 35), "隔天信号弹 · 每周一三五", fill=(100, 120, 150), font=ft)
+    draw.text((40, H - 35), "隔天信号弹 · 每周三", fill=(100, 120, 150), font=ft)
     draw.text((W - 40, H - 35), "关注获取最新资讯", fill=(100, 120, 150), font=ft, anchor="rt")
 
     return bg.convert("RGB")

@@ -461,7 +461,7 @@ def render_ending_animation(pub_date_fmt, out_dir, dur, fps=25, avatar_img=None)
 
 
 def encode_part_animation(frame_dir, output_mp4, dur, fps=25):
-    """把帧序列编码为精确时长 mp4（动画版）。"""
+    """把帧序列编码为精确时长 mp4（动画版）。CRF 26（2026-08-23 用户长期规则：对齐周末版 Remotion，控制体积）。"""
     pattern = os.path.join(frame_dir, "an_%04d.png").replace("\\", "/")
     cmd = [
         FFMPEG, "-y",
@@ -469,7 +469,7 @@ def encode_part_animation(frame_dir, output_mp4, dur, fps=25):
         "-i", pattern,
         "-c:v", "libx264",
         "-preset", "fast",
-        "-crf", "20",
+        "-crf", "26",
         "-pix_fmt", "yuv420p",
         "-r", str(fps),
         output_mp4,
@@ -479,7 +479,7 @@ def encode_part_animation(frame_dir, output_mp4, dur, fps=25):
 
 def encode_part(input_png, output_mp4, dur):
     """把一张静态 PNG 编码为精确时长 dur 的 mp4（每段独立编码，绕过 -loop 时长 bug）。
-    先用 PIL 规范化重存（规避个别 PNG 触发 libx264 崩溃），再编码。"""
+    先用 PIL 规范化重存（规避个别 PNG 触发 libx264 崩溃），再编码。CRF 26（2026-08-23 用户长期规则）。"""
     from PIL import Image as _PILImage
     # 规范化：RGB 重存
     _img = _PILImage.open(input_png).convert("RGB")
@@ -493,7 +493,7 @@ def encode_part(input_png, output_mp4, dur):
         "-i", _norm,
         "-c:v", "libx264",
         "-preset", "fast",
-        "-crf", "22",
+        "-crf", "26",
         "-tune", "stillimage",
         "-pix_fmt", "yuv420p",
         "-r", "25",
