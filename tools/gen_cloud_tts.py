@@ -84,16 +84,16 @@ def build_segments(items, pub_date_fmt, pub_weekday):
 
 
 # ================= 火山引擎豆包语音（V3 HTTP unidirectional，AppID + Access Token 鉴权） =================
-def volc_synthesize(text, voice, out_mp3, resource_id="seed-tts-2.0"):
-    """豆包语音合成大模型 2.0（seed-tts-2.0）。
+def volc_synthesize(text, voice, out_mp3, resource_id="volc.seedtts.default"):
+    """豆包语音合成大模型 2.0（volc.seedtts.default，App ID 9836775755 已开通资源）。
     V3 HTTP unidirectional 接口（Chunked 流式，支持 bigtts 系列音色）。
     鉴权：X-Api-App-Id + X-Api-Access-Key（豆包语音控制台应用详情）。
     """
     import requests
-    appid = os.environ.get("DOUBAO_APP_ID", "")
-    token = os.environ.get("DOUBAO_ACCESS_TOKEN", "")
+    appid = os.environ.get("SIGNAL_POP_VOLC_APP_ID") or os.environ.get("DOUBAO_APP_ID", "")
+    token = os.environ.get("SIGNAL_POP_VOLC_ACCESS_KEY") or os.environ.get("DOUBAO_ACCESS_TOKEN", "")
     if not (appid and token):
-        raise RuntimeError("未配置 DOUBAO_APP_ID / DOUBAO_ACCESS_TOKEN（豆包语音控制台应用详情）")
+        raise RuntimeError("未配置 SIGNAL_POP_VOLC_APP_ID / SIGNAL_POP_VOLC_ACCESS_KEY（豆包语音控制台应用详情）")
     url = "https://openspeech.bytedance.com/api/v3/tts/unidirectional"
     headers = {
         "Content-Type": "application/json",
@@ -112,7 +112,7 @@ def volc_synthesize(text, voice, out_mp3, resource_id="seed-tts-2.0"):
             "audio_params": {"format": "mp3", "sample_rate": 24000},
         },
     }
-    r = requests.post(url, json=payload, headers=headers, timeout=120, stream=True)
+    r = requests.post(url, json=payload, headers=headers, timeout=45, stream=True)
     if r.status_code != 200:
         raise RuntimeError(f"火山引擎 HTTP {r.status_code}: {r.text[:300]}")
     # NDJSON 流式：每行 {"code":0,"data":"base64"}，最后 {"code":20000000}

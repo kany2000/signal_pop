@@ -65,3 +65,18 @@ remotion_poc/test_assets/
 !remotion_poc/public/*.jpg
 !remotion_poc/public/*.png
 !remotion_poc/public/*.jpeg
+
+# Agent 工具产物 / 探索性脚本（不入库）
+.freebuff/
+.kilo/
+PROJECT_UNDERSTANDING.md
+_curate_daily.py
+_dewatermark_20260823.py
+_gen_20260823_parsed.py
+_probe_feeds.py
+tools/_probe_real_images.py
+tools/_split_weekly_tts_review.py
+tools/_t_probe_now.py
+tools/_test_volc_tts.py
+tools/_translate_weekly.sh
+scripts/retry_publish_20260823.py

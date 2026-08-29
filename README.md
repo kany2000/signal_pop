@@ -7,9 +7,9 @@ Signal Pop 目前有两条独立产线，面向不同节奏与形态：
 | 维度 | 平日版（每周三播出，周二制作） | 周末特别版 · 信蓝组合（每周六播出，周五制作） |
 |------|----------------|----------------------|
 | 形态 | AI 新闻简报（女主播播报） | 双人对话脱口秀（阿信 + 小蓝） |
-| 选题 | 15 条（经济3/文旅2/科技3/新质生产力1/民生3/体育1 + 末条AI指南1/电脑操作指南1） | 15 条 TOP15 倒计时 + 本周之最 + 下周看点 |
+| 选题 | 15 条（经济3/文旅2/科技3/新质生产力1/民生3/体育1 + 末条AI指南1/电脑操作指南1） | 突发置顶 + 本周要闻(无排名) + 本周之最 + 下周看点 + 双主播观点 + 互动话题 |
 | 渲染 | ffmpeg 合成（传统管线） | **Remotion** 程序化渲染（`remotion_poc/`） |
-| 声音 | 单女声（豆包 / edge-tts 兜底） | 双人（阿信男声报新闻 + 小蓝女声点评，阿信音量 +30%） |
+| 声音 | 单女声（豆包 / edge-tts 兜底） | 双人（阿信男声报新闻 + 小蓝女声点评，逐段峰值归一化，阿信峰值 0.95 / 小蓝 0.72） |
 | 封面 | AI 女主播封面 | 双人分屏，三风格可切换（见下文） |
 | 发布 | 抖音/快手/B站自动 + 其余手动 | 抖音/快手/B站自动 + 其余手动 |
 
@@ -32,13 +32,25 @@ signal_pop/
 │   ├── tts_mimo.py / tts_google.py  # TTS（中英混排统一用 MiMo）
 │   └── parse_xiaoxiaotu.py  # 小红书解析
 ├── tools/                    # 工具与脚本（每日版 + 周末版）
-│   ├── gen_dual_tts.py       # 周末版双人 TTS（阿信段 ×1.3 音量增益）
+│   ├── weekend_pipeline.py        # 周末版主驱动（导出分镜→配图→对话稿→TTS→渲染→封面/文案/质检）
+│   ├── weekly_images.py           # 周末版配图（真实网图 + AI 图混合来源）
+│   ├── build_weekly_dialogue.py   # 周末版新闻→阿信/小蓝对话稿
+│   ├── gen_dual_tts.py            # 周末版双人 TTS（逐段峰值归一化，阿信 0.95 / 小蓝 0.72）
 │   ├── gen_weekly_talk_cover.py   # 周末版封面（split / magazine / neon 三风格）
 │   ├── gen_weekly_talk_copy.py    # 周末版 8 平台文案
 │   ├── gen_weekly_en_srt.py       # 周末版英文外挂字幕（en_US.srt）
 │   ├── export_weekly_remotion.py  # 周末版分镜导出 → weekly_segs.json
-│   ├── remotion_weekly_build.py   # 周末版 Remotion 渲染 + ffmpeg 合并（CRF26）
+│   ├── remotion_weekly_build.py   # 周末版 Remotion 渲染 + ffmpeg 合并（CRF26 + loudnorm）
+│   ├── render_weekly_segmented.sh # 周末版应急分段渲染（单次渲染被环境回收时续渲染，幂等/可续）
 │   ├── export_daily_remotion.py   # 每日版分镜导出 → daily_segs.json + 配图复制到 public/
+│   ├── remotion_daily_build.py    # 每日版 Remotion 渲染 + 音频合并（CRF26，支持 --render）
+│   ├── gen_daily_en_srt.py        # 每日版英文外挂字幕（en_US.srt，基于音频时长生成）
+│   ├── check_publish_ready.py     # 发布前质检（全过才可发布）
+│   ├── publish_weekly_*.py / publish_daily_*.py  # 各平台发布脚本
+│   ├── gen_weekly_publish_assets.py  # 周末版发布素材汇总（封面/文案/字幕打包）
+│   ├── gen_cloud_tts.py / gen_srt.py / gen_en_srt.py  # TTS / 字幕通用工具
+│   ├── gen_cover*.py / gen_hyperframes_html.py      # 封面 / HyperFrames 渲染
+│   └── win_*.py              # Windows 管线批处理脚本
 │   ├── remotion_daily_build.py    # 每日版 Remotion 渲染 + 音频合并（CRF26，支持 --render）
 │   ├── gen_daily_en_srt.py        # 每日版英文外挂字幕（en_US.srt，基于音频时长生成）
 │   ├── check_publish_ready.py      # 发布前质检（全过才可发布）
@@ -147,6 +159,17 @@ python tools/remotion_weekly_build.py 20260821
 #    可覆盖码率：python tools/remotion_weekly_build.py 20260821 --crf 30
 ```
 
+> **应急分段渲染（单次渲染被环境回收时）**：本环境后台长任务会被静默回收，单次 `remotion render` 整片（9 分钟+）可能永远落不了盘。此时改用分段脚本，把整片切成 ~33s 的短段分别渲染、最后拼接 + 整体 CRF26 重编码，规避回收。**幂等可续**：已完成的段自动跳过，任务被回收后重跑即从断点继续。
+>
+> ```bash
+> # 先正常导出分镜（export_weekly_remotion.py），再：
+> bash tools/render_weekly_segmented.sh 20260821
+> #   可选：bash tools/render_weekly_segmented.sh 20260821 1000   # 每段帧数
+> #   可选：CRF=26 bash tools/render_weekly_segmented.sh 20260821  # 覆盖码率
+> ```
+> 约束：拼接用 `-c copy` 保留各段 Remotion 编码，**最后必须用 libx264 CRF26 整体重编码一遍**（抹平接缝/统一码率），不可纯 concat 不重编码。
+>
+
 ---
 
 ## 管线流程
@@ -171,14 +194,15 @@ python tools/remotion_weekly_build.py 20260821
 
 双人对话脱口秀，阿信（男声）报新闻、小蓝（女声）点评，Remotion 程序化渲染。
 
-- **选题结构**：15 条 TOP15 倒计时 → 本周之最 → 下周看点 → 一键三连。题材以民生/科技/经济为主，游戏类配图（如《边缘行者 2》）使用真实官方图，禁止 AI 生成。
-- **音量平衡**：阿信段默认 ×1.3（+30%，`gen_dual_tts.py` 内置），避免男声偏弱。
+- **选题结构**：【突发置顶】仅真实重大事件才放 →【本周要闻】无排名播报（~14 条）→【本周之最】→【下周看点】→【双主播观点】每条新闻阿信/小蓝各一句 →【互动话题】收尾邀评。题材以民生/科技/经济为主，游戏类配图（如《边缘行者 2》）使用真实官方图，禁止 AI 生成。
+- **音量平衡**：`gen_dual_tts.py` 改为**逐段峰值归一化**（阿信峰值 0.95 / 小蓝 0.72，等效相对响度约 +30%）消除忽高忽低与削波；`remotion_weekly_build.py` 的 `merge_audio` 再叠 `ffmpeg loudnorm`（I=-14）统一整片响度。
 - **封面三风格**（`gen_weekly_talk_cover.py`，按 `STYLE` 选择）：
   - `split`：经典左右分屏 + 金色中带（兜底）
-  - `magazine`：杂志头条风（双人 + 大刊头 TOP3 预告）
-  - `neon`：**巨型数字霓虹风**（巨大「15」+ 圆形头像 + 按日期哈希轮换霓虹光晕），本期采用
+  - `magazine`：杂志头条风（双人 + 大刊头 TOP3 预告），**20260828 期采用**
+  - `neon`：**巨型数字霓虹风**（巨大「15」+ 圆形头像 + 按日期哈希轮换霓虹光晕）
 - **一键三连动画**：订阅/关注/转发金色圆钮 stagger 浮现 + 呼吸光晕，从三连段持续到片尾。
 - **视频码率**：Remotion 默认 CRF18 过大（3min ≈ 76MB），统一 `libx264 CRF26`（≈ 26MB）压缩。
+- **应急分段渲染**：单次整片渲染在本环境会被后台任务回收时，用 `bash tools/render_weekly_segmented.sh {制作日}` 分段渲染（每段 ~33s）+ 拼接 + 整体 CRF26 重编码；脚本幂等可续，总帧数自动从 `remotion_poc/src/weekly_segs.json` 计算，不硬编码。
 - **字幕规则**：中文版**不烧字幕**、不生成中文字幕；仅保留英文外挂 `signal_pop_weekly_{date}.en_US.srt`（海外平台 + 质检用）。
 - **8 平台发布矩阵**：抖音 / 快手 / B站（自动代发）+ 小红书 / 知乎 / Facebook / YouTube / Twitter（手动）；视频须经用户最终确认后才发布。
 - **发布前质检**：`python tools/check_publish_ready.py {制作日}` —— 校验视频大小、封面、8 平台文案非空、标题简介、parsed_news 条目数、英文字幕；全部通过方可发布。

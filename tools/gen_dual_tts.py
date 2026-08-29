@@ -64,7 +64,6 @@ def parse_talk(text):
 async def gen_one(idx, seg, sem, audio_dir):
     """单句合成（豆包语音 volc_synthesize，带重试；edge 兜底）。返回 mp3 路径。"""
     from gen_cloud_tts import volc_synthesize
-    import edge_tts, aiohttp
     async with sem:
         mp3 = os.path.join(audio_dir, f"_s{idx:03d}.mp3")
         last_err = None
@@ -73,6 +72,7 @@ async def gen_one(idx, seg, sem, audio_dir):
                 if BACKEND == "volcengine":
                     volc_synthesize(seg["text"], seg["voice"], mp3)
                 else:
+                    import edge_tts, aiohttp
                     conn = aiohttp.TCPConnector(resolver=aiohttp.resolver.ThreadedResolver())
                     comm = edge_tts.Communicate(seg["text"], seg["voice"], connector=conn,
                                                 connect_timeout=30, receive_timeout=120)
@@ -87,10 +87,16 @@ async def gen_one(idx, seg, sem, audio_dir):
         return None
 
 
-async def gen_tts_all(segs):
-    os.makedirs(AUDIO_DIR, exist_ok=True)
-    sem = asyncio.Semaphore(3)
-    tasks = [gen_one(i, s, sem, AUDIO_DIR) for i, s in enumerate(segs)]
+async def gen_tts_all(segs, out_dir=AUDIO_DIR):
+    os.makedirs(out_dir, exist_ok=True)
+    # 临时片段写入子目录，循环内不删除（避免 sandbox safe-delete 批量删除拦截）
+    TMP_DIR = os.path.join(out_dir, "_tmp")
+    os.makedirs(TMP_DIR, exist_ok=True)
+    audio_path = os.path.join(out_dir, "tts.wav")
+    segments_path = os.path.join(out_dir, "tts_segments.json")
+    talk_path = os.path.join(out_dir, "talk_segments.json")
+    sem = asyncio.Semaphore(2)
+    tasks = [gen_one(i, s, sem, TMP_DIR) for i, s in enumerate(segs)]
     mp3s = await asyncio.gather(*tasks)
 
     durations = []
@@ -103,10 +109,6 @@ async def gen_tts_all(segs):
         wav = mp3.replace(".mp3", ".wav")
         subprocess.run([FFMPEG, "-y", "-i", mp3, "-acodec", "pcm_s16le", "-ar", "24000", "-ac", "1", wav],
                        check=True, capture_output=True, timeout=60)
-        try:
-            os.remove(mp3)
-        except OSError:
-            pass  # 临时 mp3 清理失败不影响 TTS 主流程（sandbox 回收站不可用时）
         with wave.open(wav, "rb") as w:
             rate = w.getframerate()
             raw = w.readframes(w.getnframes())
@@ -124,31 +126,43 @@ async def gen_tts_all(segs):
                 end = i + 1
                 break
         trimmed = samples[start:end]
-        # 男主播音量 +30%（2026-08-21 用户反馈阿信声音偏小；原 +10% 不够，提升到 +30% 让阿信接近小蓝音量）
-        if seg["speaker"] == "阿信":
-            trimmed = [max(-32768, min(32767, int(s * 1.3))) for s in trimmed]
+        # 逐段峰值归一化（取代原 ×1.30 标量增益，根治"忽高忽低"）：
+        # 阿信峰值目标 0.95、小蓝 0.72，两者比 ≈1.30（保留"阿信偏响 +30%"偏好），
+        # 每段峰值统一 → 段间响度一致、且不再削波破音。
+        peak = max((abs(s) for s in trimmed), default=0)
+        target = 0.95 * 32767 if seg["speaker"] == "阿信" else 0.72 * 32767
+        if peak > 0:
+            scale = min(target / peak, 4.0)  # 上限 4x 防止极小峰值段底噪爆炸
+            trimmed = [max(-32768, min(32767, int(s * scale))) for s in trimmed]
         dur = len(trimmed) / rate
         for s in trimmed:
             all_pcm.extend(struct.pack("<h", s))
         durations.append({"dur": dur, "speaker": seg["speaker"], "text": seg["text"]})
-        try:
-            os.remove(wav)
-        except OSError:
-            pass  # 临时 wav 清理失败不影响主流程
         print(f"  [{idx+1}/{len(segs)}] {seg['speaker']} {dur:.2f}s: {seg['text'][:26]}...")
 
-    with wave.open(AUDIO_PATH, "wb") as out:
+    with wave.open(audio_path, "wb") as out:
         out.setnchannels(1)
         out.setsampwidth(2)
         out.setframerate(24000)
         out.writeframes(bytes(all_pcm))
-    json.dump(durations, open(SEGMENTS_PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-    json.dump(segs, open(TALK_PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+    json.dump(durations, open(segments_path, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+    json.dump(segs, open(talk_path, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
     total = len(all_pcm) / 48000
     print(f"\n✅ 合并音频: {total:.2f}s, {len(durations)} 段")
-    print(f"  -> {AUDIO_PATH}")
-    print(f"  -> {SEGMENTS_PATH}")
+    print(f"  -> {audio_path}")
+    print(f"  -> {segments_path}")
     return durations
+
+
+def main_with(script_path):
+    """给定对话稿路径（阿信：/小蓝： 格式）合成双主播音频。
+    音频输出目录从脚本路径自动推导：<脚本所在目录>/audio（即 output/weekly/{制作日}/audio）。
+    """
+    text = open(script_path, encoding="utf-8").read()
+    segs = parse_talk(text)
+    out_dir = os.path.join(os.path.dirname(os.path.abspath(script_path)), "audio")
+    print(f"解析 {len(segs)} 句对话 -> {out_dir}")
+    asyncio.run(gen_tts_all(segs, out_dir))
 
 
 if __name__ == "__main__":

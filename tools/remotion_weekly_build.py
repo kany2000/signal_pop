@@ -33,6 +33,7 @@ def merge_audio(video_path, audio_path, output_path, crf=26):
         "-b:a", "192k",
         "-ar", "24000",
         "-ac", "1",
+        "-af", "loudnorm=I=-14:TP=-1.5:LRA=11",  # 整片响度标准化，兜底消除段间残留波动
         "-map", "0:v:0",
         "-map", "1:a:0",
         output_path,

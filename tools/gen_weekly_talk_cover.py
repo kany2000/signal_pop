@@ -5,7 +5,7 @@
 主持人脸（阿信/小蓝 = 信蓝组合）为固定人设跨期复用（项目规则）。
 版式每周变化，避免视觉雷同。三种风格：
   - split    : 经典左右分屏 + 金色中带（原 v1/v2，兜底）
-  - magazine : 杂志头条风（双人左侧 + 大刊头 TOP15 + 本期 TOP3 标题预告）
+  - magazine : 杂志头条风（双人左侧 + 大刊头 本周15条 + 本期 TOP3 标题预告）
   - neon     : 巨型数字风（巨大"15" + 双人圆形头像 + 每周哈希轮换的霓虹光晕色）
 
 用法：python tools/gen_weekly_talk_cover.py [PREP_DATE] [STYLE] [SUFFIX]
@@ -63,6 +63,27 @@ def fnt(size, bold=True):
     return ImageFont.truetype(FONT_BOLD if bold else FONT, size)
 
 
+def fit(font, text, max_w):
+    """超过 max_w 时截断并加省略号，防止白字溢出面板（4:3 尤其易溢出）。"""
+    if font.getlength(text) <= max_w:
+        return text
+    t = text
+    while t and font.getlength(t + "…") > max_w:
+        t = t[:-1]
+    return t + "…"
+
+
+def fit_size(text, max_w, start_size, bold=True, min_size=12):
+    """从 start_size 开始缩小字号，直到 text 宽度 <= max_w，返回 (font, actual_size)。"""
+    size = start_size
+    while size > min_size:
+        font = fnt(size, bold)
+        if font.getlength(text) <= max_w:
+            return font, size
+        size = int(size * 0.92)
+    return fnt(min_size, bold), min_size
+
+
 def fit_face(face_img, w, h, blur_overlay=True):
     img = ImageOps.fit(face_img.convert("RGB"), (w, h), method=Image.LANCZOS, centering=(0.5, 0.4))
     if blur_overlay:
@@ -114,11 +135,11 @@ def add_glow(canvas, cx, cy, r, color, max_alpha=110):
     return Image.alpha_composite(canvas.convert("RGBA"), ov).convert("RGB")
 
 
-def draw_outline(d, pos, text, font, fill, outline=(20, 16, 6), w=4):
+def draw_outline(d, pos, text, font, fill, outline=(20, 16, 6), w=4, anchor="mm"):
     x, y = pos
     for ox, oy in [(-w, 0), (w, 0), (0, -w), (0, w), (-w, -w), (w, w), (-w, w), (w, -w)]:
-        d.text((x + ox, y + oy), text, fill=outline, font=font, anchor="mm")
-    d.text(pos, text, fill=fill, font=font, anchor="mm")
+        d.text((x + ox, y + oy), text, fill=outline, font=font, anchor=anchor)
+    d.text(pos, text, fill=fill, font=font, anchor=anchor)
 
 
 def rounded_panel(canvas, box, radius=28, color=PANEL, alpha=235, border=None):
@@ -130,11 +151,11 @@ def rounded_panel(canvas, box, radius=28, color=PANEL, alpha=235, border=None):
     return Image.alpha_composite(canvas.convert("RGBA"), ov).convert("RGB")
 
 
-# 本期 TOP3 头条（杂志风展示用，与新闻稿同步）
+# 本期 TOP3 头条（杂志风展示用，与新闻稿同步：取「本周之最」三条）
 TOP3 = [
-    ("01", "财政部五年加码科技投入", "研发经费超 3.9 万亿"),
-    ("02", "边缘行者 2 定档 10.20", "赛博朋克衍生动画续作"),
-    ("03", "固态电池首项国际标准", "中国牵头立项"),
+    ("01", "黄仁勋马斯克太空AI算力", "英伟达成SpaceX第六大股东"),
+    ("02", "喜马拉雅冰川崩塌致命洪水", "中尼边境160余人遇难"),
+    ("03", "常州107名应届生被劝退", "校招合规缺口引热议"),
 ]
 
 
@@ -160,7 +181,7 @@ def build_split_landscape(w, h, axin, xiaolan):
     title_size = int(center_w * 0.34)
     tf = fnt(title_size, True)
     cx = half_w + center_w // 2
-    tt = "本\n周\nTOP\n15"
+    tt = "本\n周\n15\n条"
     lines = tt.split("\n")
     lh = tf.size + 4
     y0 = (h - lh * len(lines)) // 2
@@ -170,7 +191,7 @@ def build_split_landscape(w, h, axin, xiaolan):
             d.text((cx + ox, y + oy), ln, fill=(40, 30, 10), font=tf, anchor="mm")
         d.text((cx, y), ln, fill=GOLD_BRIGHT, font=tf, anchor="mm")
     d.text((w // 2, int(h * 0.04)), "隔天信号弹 · 周末特别版", fill=GOLD, font=fnt(int(w * 0.022), True), anchor="mm")
-    d.text((w // 2, int(h * 0.075)), "信蓝组合 · 本周 TOP15 对话脱口秀", fill=LIGHT_GREY, font=fnt(int(w * 0.016)), anchor="mm")
+    d.text((w // 2, int(h * 0.075)), "信蓝组合 · 本周15条新闻闲聊", fill=LIGHT_GREY, font=fnt(int(w * 0.016)), anchor="mm")
     d.text((w // 2, h - int(h * 0.05)), f"{WEEKDAY_CN} 08:00 · {PUB_DATE_SHORT}", fill=GOLD, font=fnt(int(w * 0.024), True), anchor="mm")
     nf = fnt(int(h * 0.07), True)
     ap = (half_w // 2, h - int(h * 0.13))
@@ -209,7 +230,7 @@ def build_split_portrait(w, h, axin, xiaolan):
     ss = int(band_h * 0.20)
     tf = fnt(ts, True)
     sf = fnt(ss, True)
-    title = "本周 TOP15"
+    title = "本周15条"
     for ox, oy in [(-2, 0), (2, 0), (0, -2), (0, 2)]:
         d.text((w // 2 + ox, bcy - ts * 0.4 + oy), title, fill=(40, 30, 10), font=tf, anchor="mm")
     d.text((w // 2, bcy - ts * 0.4), title, fill=GOLD_BRIGHT, font=tf, anchor="mm")
@@ -232,91 +253,145 @@ def build_split_portrait(w, h, axin, xiaolan):
 
 # ===================== MAGAZINE =====================
 def build_magazine_landscape(w, h, axin, xiaolan):
+    """杂志横版：左区=大标题+双人头像，右区=TOP3面板，严格避免任何重叠/溢出。"""
+    margin = int(w * 0.045)
     canvas = vgrad(w, h, (14, 20, 38), (8, 12, 24))
-    canvas = add_glow(canvas, int(w * 0.25), int(h * 0.35), int(h * 0.65), AXIN_BLUE, 95)
-    canvas = add_glow(canvas, int(w * 0.85), int(h * 0.85), int(h * 0.55), XIAOLAN_PINK, 80)
+    canvas = add_glow(canvas, int(w * 0.18), int(h * 0.30), int(h * 0.60), AXIN_BLUE, 90)
+    canvas = add_glow(canvas, int(w * 0.90), int(h * 0.88), int(h * 0.50), XIAOLAN_PINK, 80)
     d = ImageDraw.Draw(canvas)
-    d.text((70, 60), "隔天信号弹 · 周末特别版", fill=GOLD, font=fnt(38, True), anchor="lm")
-    d.text((70, 108), "SIGNAL POP / WEEKEND SPECIAL", fill=LIGHT_GREY, font=fnt(20), anchor="lm")
-    # 双人圆形头像
-    fs = 330
-    ay = int(h * 0.62)
+
+    # 顶部 kicker
+    d.text((margin, int(h * 0.06)), "隔天信号弹 · 周末特别版", fill=GOLD, font=fnt(int(w * 0.021), True), anchor="lm")
+    d.text((margin, int(h * 0.115)), "SIGNAL POP · WEEKEND SPECIAL", fill=LIGHT_GREY, font=fnt(int(w * 0.012), False), anchor="lm")
+
+    # 右侧面板先算尺寸，确保不溢出
+    panel_w = int(w * 0.42)
+    px2 = w - margin
+    px1 = px2 - panel_w
+    py1 = int(h * 0.16)
+    py2 = h - int(h * 0.18)
+
+    # 左侧大标题区：宽度 = px1 左侧留出边距
+    title_max_w = px1 - margin * 2
+    title_font, _ = fit_size("本周15条", title_max_w, int(h * 0.18), bold=True)
+    title_y = int(h * 0.38)
+    draw_outline(d, (margin, title_y), "本周15条", title_font, GOLD_BRIGHT, outline=(20, 14, 4), w=max(4, int(w * 0.004)), anchor="lm")
+
+    line_y = title_y + int(title_font.size * 1.1)
+    d.line([(margin, line_y), (margin + int(title_max_w * 0.55), line_y)], fill=GOLD, width=3)
+
+    sub_font, _ = fit_size("本周要闻 · 信蓝组合盘点", title_max_w, int(h * 0.045), bold=True)
+    sub_y = line_y + int(h * 0.045)
+    d.text((margin, sub_y), "本周要闻 · 信蓝组合盘点", fill=WHITE, font=sub_font, anchor="lm")
+
+    # 底部双人头像（左下）
+    fs = min(int(h * 0.19), int((px1 - margin * 2 - int(w * 0.02)) // 2))
+    ay = h - int(h * 0.16)
+    gap = int(w * 0.02)
     a1 = circular_face(axin, fs, GOLD, 6)
     a2 = circular_face(xiaolan, fs, GOLD, 6)
-    canvas.paste(a1, (170, ay - fs // 2), a1)
-    canvas.paste(a2, (520, ay - fs // 2), a2)
-    nf = fnt(46, True)
-    draw_outline(d, (170 + fs // 2, ay + fs // 2 + 55), "阿信", nf, AXIN_BLUE, outline=(10, 20, 40), w=4)
-    draw_outline(d, (520 + fs // 2, ay + fs // 2 + 55), "小蓝", nf, XIAOLAN_PINK, outline=(30, 10, 20), w=4)
-    # 右侧大刊头面板
-    px1, py1, px2, py2 = 980, 200, w - 70, h - 160
-    canvas = rounded_panel(canvas, (px1, py1, px2, py2), radius=30, color=PANEL, alpha=225, border=GOLD)
+    canvas.paste(a1, (margin, ay - fs // 2), a1)
+    canvas.paste(a2, (margin + fs + gap, ay - fs // 2), a2)
     d = ImageDraw.Draw(canvas)
-    mh = fnt(150, True)
-    draw_outline(d, ((px1 + px2) // 2, py1 + 110), "TOP 15", mh, GOLD_BRIGHT, outline=(20, 14, 4), w=6)
-    d.text(((px1 + px2) // 2, py1 + 180), "本周大事 · 信蓝组合盘点", fill=WHITE, font=fnt(34, True), anchor="mm")
-    ty = py1 + 270
+    nf = fnt(int(w * 0.021), True)
+    draw_outline(d, (margin + fs // 2, ay + fs // 2 + int(h * 0.025)), "阿信", nf, AXIN_BLUE, outline=(10, 20, 40), w=4)
+    draw_outline(d, (margin + fs + gap + fs // 2, ay + fs // 2 + int(h * 0.025)), "小蓝", nf, XIAOLAN_PINK, outline=(30, 10, 20), w=4)
+
+    # 右侧面板
+    canvas = rounded_panel(canvas, (px1, py1, px2, py2), radius=int(w * 0.015), color=PANEL, alpha=230, border=GOLD)
+    d = ImageDraw.Draw(canvas)
+    d.text((px1 + int(w * 0.03), py1 + int(h * 0.04)), "本周之最", fill=GOLD_BRIGHT, font=fnt(int(w * 0.024), True), anchor="lm")
+    d.text((px1 + int(w * 0.16), py1 + int(h * 0.048)), "TOP 3", fill=LIGHT_GREY, font=fnt(int(w * 0.017), False), anchor="lm")
+    d.line([(px1 + int(w * 0.03), py1 + int(h * 0.095)), (px2 - int(w * 0.03), py1 + int(h * 0.095))], fill=(*GOLD, 160), width=2)
+
+    ty = py1 + int(h * 0.20)
+    step = (py2 - ty - int(h * 0.03)) // 3
+    rb = px1 + int(w * 0.05)
+    rr = int(w * 0.023)
+    tx = rb + rr + int(w * 0.03)
+    max_w = px2 - tx - int(w * 0.025)
+    tf_title = fnt(int(w * 0.023), True)
+    tf_sub = fnt(int(w * 0.014), False)
     for rank, title, sub in TOP3:
-        rb = px1 + 60
-        d.ellipse([rb - 42, ty - 42, rb + 42, ty + 42], fill=(*GOLD, 255), outline=(40, 30, 10), width=3)
-        d.text((rb, ty), rank, fill=(20, 14, 4), font=fnt(40, True), anchor="mm")
-        d.text((px1 + 130, ty - 18), title, fill=WHITE, font=fnt(36, True), anchor="lm")
-        d.text((px1 + 130, ty + 24), sub, fill=LIGHT_GREY, font=fnt(24), anchor="lm")
-        ty += 105
-    # 底部署名条
-    ov = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    od = ImageDraw.Draw(ov)
-    od.rectangle([0, h - 90, w, h], fill=(8, 10, 18, 225))
-    canvas = Image.alpha_composite(canvas.convert("RGBA"), ov).convert("RGB")
-    d = ImageDraw.Draw(canvas)
+        d.ellipse([rb - rr, ty - rr, rb + rr, ty + rr], fill=(*GOLD, 255), outline=(40, 30, 10), width=3)
+        d.text((rb, ty), rank, fill=(20, 14, 4), font=fnt(int(w * 0.026), True), anchor="mm")
+        d.text((tx, ty - int(h * 0.026)), fit(tf_title, title, max_w), fill=WHITE, font=tf_title, anchor="lm")
+        d.text((tx, ty + int(h * 0.024)), fit(tf_sub, sub, max_w), fill=LIGHT_GREY, font=tf_sub, anchor="lm")
+        ty += step
+
+    # 底部日期条
     d.rectangle([0, h - 4, w, h], fill=GOLD)
-    d.text((w // 2, h - 48), f"{PUB_DT.month}/{PUB_DT.day} {WEEKDAY_CN} 08:00 · 信蓝组合 · 每周相见", fill=GOLD, font=fnt(36, True), anchor="mm")
+    d.text((w // 2, h - int(h * 0.045)), f"{PUB_DT.month}/{PUB_DT.day} {WEEKDAY_CN} 08:00 · 信蓝组合 · 每周相见", fill=GOLD, font=fnt(int(w * 0.02), True), anchor="mm")
     return canvas
 
 
 def build_magazine_portrait(w, h, axin, xiaolan):
+    """杂志竖版：上=标题 中=双人头像 下=TOP3 面板，rank 数字用足够大的圆避免变形。"""
+    margin = int(w * 0.06)
     canvas = vgrad(w, h, (14, 20, 38), (8, 12, 24))
-    canvas = add_glow(canvas, int(w * 0.2), int(h * 0.18), int(w * 0.7), AXIN_BLUE, 90)
-    canvas = add_glow(canvas, int(w * 0.9), int(h * 0.88), int(w * 0.6), XIAOLAN_PINK, 80)
+    canvas = add_glow(canvas, int(w * 0.18), int(h * 0.12), int(w * 0.6), AXIN_BLUE, 90)
+    canvas = add_glow(canvas, int(w * 0.92), int(h * 0.92), int(w * 0.55), XIAOLAN_PINK, 80)
     d = ImageDraw.Draw(canvas)
-    d.text((w // 2, 80), "隔天信号弹 · 周末特别版", fill=GOLD, font=fnt(int(w * 0.07), True), anchor="mm")
-    d.text((w // 2, 140), "WEEKEND SPECIAL", fill=LIGHT_GREY, font=fnt(int(w * 0.04)), anchor="mm")
-    mh = fnt(int(w * 0.24), True)
-    draw_outline(d, (w // 2, 260), "TOP 15", mh, GOLD_BRIGHT, outline=(20, 14, 4), w=7)
-    d.text((w // 2, 350), "本周大事 · 信蓝组合盘点", fill=WHITE, font=fnt(int(w * 0.055), True), anchor="mm")
-    # 双人
-    fs = int(w * 0.30)
-    ay = 440
+
+    # 顶部 kicker
+    d.text((w // 2, int(h * 0.045)), "隔天信号弹 · 周末特别版", fill=GOLD, font=fnt(int(w * 0.05), True), anchor="mm")
+
+    # 大标题（居中，但字号自适应宽度）
+    title_max_w = w - margin * 2
+    title_font, _ = fit_size("本周15条", title_max_w, int(w * 0.13), bold=True)
+    title_y = int(h * 0.11)
+    draw_outline(d, (w // 2, title_y), "本周15条", title_font, GOLD_BRIGHT, outline=(20, 14, 4), w=7)
+
+    line_y = title_y + int(title_font.size * 0.7)
+    d.line([(int(w * 0.25), line_y), (int(w * 0.75), line_y)], fill=GOLD, width=3)
+
+    sub_font, _ = fit_size("本周要闻 · 信蓝组合盘点", title_max_w, int(w * 0.046), bold=True)
+    sub_y = line_y + int(h * 0.040)
+    d.text((w // 2, sub_y), "本周要闻 · 信蓝组合盘点", fill=WHITE, font=sub_font, anchor="mm")
+
+    # 中部双人头像
+    fs = min(int(h * 0.18), int((w - margin * 2 - int(w * 0.06)) // 2))
+    ay = int(h * 0.28)
     a1 = circular_face(axin, fs, GOLD, 6)
     a2 = circular_face(xiaolan, fs, GOLD, 6)
-    canvas.paste(a1, (int(w * 0.13), ay), a1)
-    canvas.paste(a2, (int(w * 0.57), ay), a2)
+    left_x = margin
+    right_x = w - margin - fs
+    canvas.paste(a1, (left_x, ay), a1)
+    canvas.paste(a2, (right_x, ay), a2)
     d = ImageDraw.Draw(canvas)
-    draw_outline(d, (int(w * 0.13) + fs // 2, ay + fs + 30), "阿信", fnt(int(w * 0.07), True), AXIN_BLUE, outline=(10, 20, 40), w=4)
-    draw_outline(d, (int(w * 0.57) + fs // 2, ay + fs + 30), "小蓝", fnt(int(w * 0.07), True), XIAOLAN_PINK, outline=(30, 10, 20), w=4)
-    # 头条面板
-    py1 = ay + fs + 110
-    px1, px2 = 50, w - 50
-    py2 = h - 140
-    canvas = rounded_panel(canvas, (px1, py1, px2, py2), radius=26, color=PANEL, alpha=225, border=GOLD)
+    nf = fnt(int(w * 0.06), True)
+    draw_outline(d, (left_x + fs // 2, ay + fs + int(h * 0.03)), "阿信", nf, AXIN_BLUE, outline=(10, 20, 40), w=4)
+    draw_outline(d, (right_x + fs // 2, ay + fs + int(h * 0.03)), "小蓝", nf, XIAOLAN_PINK, outline=(30, 10, 20), w=4)
+
+    # 底部 TOP3 面板
+    py1 = int(h * 0.53)
+    px1, px2 = int(w * 0.05), w - int(w * 0.05)
+    py2 = h - int(h * 0.13)
+    canvas = rounded_panel(canvas, (px1, py1, px2, py2), radius=int(w * 0.02), color=PANEL, alpha=230, border=GOLD)
     d = ImageDraw.Draw(canvas)
-    ty = py1 + 70
-    step = (py2 - py1 - 70) // 3
+    d.text((px1 + int(w * 0.04), py1 + int(h * 0.03)), "本周之最 TOP 3", fill=GOLD_BRIGHT, font=fnt(int(w * 0.042), True), anchor="lm")
+    d.line([(px1 + int(w * 0.04), py1 + int(h * 0.065)), (px2 - int(w * 0.04), py1 + int(h * 0.065))], fill=(*GOLD, 160), width=2)
+
+    ty = py1 + int(h * 0.10)
+    rb = px1 + int(w * 0.07)
+    rr = int(w * 0.028)
+    tx = rb + rr + int(w * 0.045)
+    max_w = px2 - tx - int(w * 0.04)
+    min_step = int(h * 0.060)
+    step = max((py2 - ty - int(h * 0.02)) // 3, min_step)
+    tf_title = fnt(int(w * 0.038), True)
+    tf_sub = fnt(int(w * 0.024), False)
+    rank_font = fnt(int(w * 0.032), True)
     for rank, title, sub in TOP3:
-        rb = px1 + 55
-        d.ellipse([rb - 36, ty - 36, rb + 36, ty + 36], fill=(*GOLD, 255), outline=(40, 30, 10), width=3)
-        d.text((rb, ty), rank, fill=(20, 14, 4), font=fnt(int(w * 0.07), True), anchor="mm")
-        d.text((px1 + 115, ty - 18), title, fill=WHITE, font=fnt(int(w * 0.055), True), anchor="lm")
-        d.text((px1 + 115, ty + 24), sub, fill=LIGHT_GREY, font=fnt(int(w * 0.038)), anchor="lm")
+        d.ellipse([rb - rr, ty - rr, rb + rr, ty + rr], fill=(*GOLD, 255), outline=(40, 30, 10), width=3)
+        d.text((rb, ty), rank, fill=(20, 14, 4), font=rank_font, anchor="mm")
+        d.text((tx, ty - int(h * 0.018)), fit(tf_title, title, max_w), fill=WHITE, font=tf_title, anchor="lm")
+        d.text((tx, ty + int(h * 0.024)), fit(tf_sub, sub, max_w), fill=LIGHT_GREY, font=tf_sub, anchor="lm")
         ty += step
-    # 底部署名
-    ov = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    od = ImageDraw.Draw(ov)
-    od.rectangle([0, h - 110, w, h], fill=(8, 10, 18, 230))
-    canvas = Image.alpha_composite(canvas.convert("RGBA"), ov).convert("RGB")
-    d = ImageDraw.Draw(canvas)
+
+    # 底部日期条
     d.rectangle([0, h - 5, w, h], fill=GOLD)
-    d.text((w // 2, h - 60), f"{PUB_DT.month}/{PUB_DT.day} {WEEKDAY_CN} 08:00 · 信蓝组合", fill=GOLD, font=fnt(int(w * 0.06), True), anchor="mm")
+    d.text((w // 2, h - int(h * 0.045)), f"{PUB_DT.month}/{PUB_DT.day} {WEEKDAY_CN} 08:00 · 信蓝组合", fill=GOLD, font=fnt(int(w * 0.055), True), anchor="mm")
     return canvas
 
 
@@ -340,8 +415,8 @@ def build_neon_landscape(w, h, axin, xiaolan):
         canvas = Image.alpha_composite(canvas.convert("RGBA"), ov).convert("RGB")
     d = ImageDraw.Draw(canvas)
     draw_outline(d, (cx, cy), "15", big, WHITE, outline=(*hue, 255), w=10)
-    d.text((cx, cy - int(h * 0.26)), "T O P", fill=(*hue, 255), font=fnt(int(h * 0.09), True), anchor="mm")
-    d.text((cx, cy + int(h * 0.22)), "本周 15 件大事 · 一报一评", fill=WHITE, font=fnt(int(h * 0.05), True), anchor="mm")
+    d.text((cx, cy - int(h * 0.26)), "本 周", fill=(*hue, 255), font=fnt(int(h * 0.09), True), anchor="mm")
+    d.text((cx, cy + int(h * 0.22)), "本周 15 条 · 一报一评", fill=WHITE, font=fnt(int(h * 0.05), True), anchor="mm")
     # 双人圆形头像
     fs = int(h * 0.22)
     fy = h - fs - 110
@@ -371,7 +446,7 @@ def build_neon_portrait(w, h, axin, xiaolan):
         canvas = Image.alpha_composite(canvas.convert("RGBA"), ov).convert("RGB")
     d = ImageDraw.Draw(canvas)
     draw_outline(d, (cx, cy), "15", big, WHITE, outline=(*hue, 255), w=8)
-    d.text((cx, cy + int(h * 0.16)), "本周 15 件大事", fill=WHITE, font=fnt(int(w * 0.07), True), anchor="mm")
+    d.text((cx, cy + int(h * 0.16)), "本周 15 条", fill=WHITE, font=fnt(int(w * 0.07), True), anchor="mm")
     # 双人
     fs = int(w * 0.28)
     fy = int(h * 0.70)
@@ -403,8 +478,8 @@ def build_avatar(axin, xiaolan, size=800, style="magazine"):
         canvas = Image.new("RGB", (size, size), (6, 8, 16))
         canvas = add_glow(canvas, size // 2, size // 2, int(size * 0.55), hue, 115)
         d = ImageDraw.Draw(canvas)
-        d.text((size // 2, size // 2 - 30), "TOP 15", font=fnt(int(size * 0.18), True), fill=(*hue, 255), anchor="mm")
-        d.text((size // 2, size // 2 + 30), "本周大事", font=fnt(int(size * 0.10), True), fill=WHITE, anchor="mm")
+        d.text((size // 2, size // 2 - 30), "本周15条", font=fnt(int(size * 0.16), True), fill=(*hue, 255), anchor="mm")
+        d.text((size // 2, size // 2 + 30), "本周要闻", font=fnt(int(size * 0.10), True), fill=WHITE, anchor="mm")
         fs = int(size * 0.30)
         a1 = circular_face(axin, fs, AXIN_BLUE, 4)
         a2 = circular_face(xiaolan, fs, XIAOLAN_PINK, 4)

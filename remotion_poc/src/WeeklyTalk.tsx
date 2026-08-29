@@ -6,6 +6,7 @@ import {
   interpolate,
   Easing,
   Img,
+  Video,
   staticFile,
   Sequence,
 } from "remotion";
@@ -16,6 +17,11 @@ export interface TalkSegment {
   text: string;
   dur: number;
   bg: string;
+  video?: string;
+  videoDur?: number;
+  isBreaking?: boolean;
+  isInteractive?: boolean;
+  cta?: boolean;
 }
 
 const AXIN_BLUE = "#3A82D2";
@@ -46,6 +52,31 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[] }> = ({ segs }) => {
   if (!cur) return <AbsoluteFill style={{ backgroundColor: "#0d1220" }} />;
 
   const localT = t - segStart;
+
+  // 突发视频窗锚点：首个突发段绝对起点 + 素材时长（用于播一次 + 末尾淡出）
+  let videoStart = -1;
+  {
+    let a = 0;
+    for (const s of segs) {
+      if (s.isBreaking && videoStart < 0) videoStart = a;
+      a += s.dur;
+    }
+  }
+  const videoSeg = segs.find((s) => s.video) || null;
+  const videoDur = videoSeg && videoSeg.videoDur ? videoSeg.videoDur : 0;
+  const videoRelFrame =
+    videoStart >= 0 ? frame - Math.round(videoStart * fps) : 0;
+  const videoLt = videoRelFrame / fps;
+  const videoFade =
+    videoSeg && videoStart >= 0 && videoDur > 0
+      ? interpolate(
+          videoLt,
+          [videoDur, videoDur + 0.8],
+          [1, 0],
+          { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+        )
+      : 1;
+
   const isAxin = cur.speaker === "阿信";
   const accent = isAxin ? AXIN_BLUE : XIAOLAN_PINK;
 
@@ -65,10 +96,14 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[] }> = ({ segs }) => {
   });
 
   // 配图背景（段切换淡入 0.4s + 轻微推近）
-  const bgFade = interpolate(localT, [0, 0.4], [0.6, 1], {
-    extrapolateRight: "clamp",
-    easing: easeOut,
-  });
+  // 开场背景直接显示；其余段从 0.85 淡入，降低切换闪烁
+  const bgFade =
+    cur.bg === "opening_bg.jpg"
+      ? 1
+      : interpolate(localT, [0, 0.4], [0.85, 1], {
+          extrapolateRight: "clamp",
+          easing: easeOut,
+        });
   const bgScale = interpolate(localT, [0, cur.dur], [1.0, 1.06], {
     extrapolateRight: "clamp",
     easing: easeOut,
@@ -81,18 +116,18 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[] }> = ({ segs }) => {
 
   const nameColor = isAxin ? "#9CC3EC" : "#F2B8D4";
 
-  // 三连动画检测：段文本含「一键三连」→ 三连图标浮现后持续显示到视频结束（CTA 常驻）
-  const isSanlian = cur.text.includes("一键三连") || cur.text.includes("三连");
+  // 三连动画检测：段文本含「一键三连」或最后 CTA 段 → 三连图标浮现后持续显示到视频结束
+  const isSanlian = cur.cta || cur.text.includes("一键三连") || cur.text.includes("三连");
   const sanlianCx = [560, 960, 1360];
   const sanlianIcons = ["订阅", "关注", "转发"];
   // 图标从三连段开始 stagger 浮现（相对三连段起始时间，而非段内）
   const sanlianSegStart = (() => {
     let acc2 = 0;
     for (const s of segs) {
-      if (s.text.includes("一键三连") || s.text.includes("三连")) return acc2;
+      if (s.cta || s.text.includes("一键三连") || s.text.includes("三连")) return acc2;
       acc2 += s.dur;
     }
-    return 0;
+    return Infinity;
   })();
   const sanlianLocalT = t - sanlianSegStart;
   const sanlianIn = (k: number) => {
@@ -109,9 +144,13 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[] }> = ({ segs }) => {
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#0d1220" }}>
-      {/* 背景配图（随段轮换，淡入过渡） */}
+      {/* 背景配图（随段轮换，淡入过渡；开场 bg 为空时渲染渐变底） */}
       <AbsoluteFill style={{ opacity: bgFade, transform: `scale(${bgScale})`, transformOrigin: "50% 40%" }}>
-        <Img src={staticFile(cur.bg)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        {cur.bg ? (
+          <Img src={staticFile(cur.bg)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <AbsoluteFill style={{ background: "radial-gradient(circle at 50% 35%, #1c2c4a 0%, #0d1220 70%)" }} />
+        )}
       </AbsoluteFill>
       <AbsoluteFill style={{ background: "rgba(8,12,24,0.62)" }} />
 
@@ -120,6 +159,81 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[] }> = ({ segs }) => {
       <div style={{ position: "absolute", top: 26, left: 0, right: 0, textAlign: "center", fontSize: 30, fontWeight: "bold", color: GOLD, fontFamily: "Noto Sans SC, sans-serif", letterSpacing: 2 }}>
         隔天信号弹 · 周末特别版
       </div>
+
+      {/* 突发 / 互动话题 徽章（红色=突发，金色=互动话题，二者不同时出现） */}
+      {(cur.isBreaking || cur.isInteractive) && (
+        <div
+          style={{
+            position: "absolute",
+            top: 100,
+            left: 60,
+            padding: "10px 28px",
+            borderRadius: 999,
+            fontSize: 30,
+            fontWeight: "bold",
+            color: "#fff",
+            fontFamily: "Noto Sans SC, sans-serif",
+            letterSpacing: 3,
+            background: cur.isBreaking
+              ? "linear-gradient(90deg,#E23B3B,#ff6b6b)"
+              : "linear-gradient(90deg,#D4AF37,#f0c75e)",
+            boxShadow: cur.isBreaking
+              ? "0 0 26px rgba(226,59,59,0.65)"
+              : "0 0 26px rgba(212,175,55,0.65)",
+          }}
+        >
+          {cur.isBreaking ? "突 发" : "互动话题"}
+        </div>
+      )}
+
+      {/* 突发消息现场视频窗（两主播中间偏上；锚定首个突发段起点播一次，末尾淡出消失；无文件不渲染） */}
+      {videoSeg && videoStart >= 0 && videoDur > 0 && (
+        <Sequence
+          from={Math.round(videoStart * fps)}
+          durationInFrames={Math.round((videoDur + 1.2) * fps)}
+        >
+          <AbsoluteFill style={{ opacity: videoFade, pointerEvents: "none" }}>
+            <div
+              style={{
+                position: "absolute",
+                left: 730,
+                top: 120,
+                width: 460,
+                height: 259,
+                borderRadius: 16,
+                overflow: "hidden",
+                border: "3px solid rgba(255,255,255,0.85)",
+                boxShadow: "0 10px 34px rgba(0,0,0,0.6)",
+                background: "#000",
+              }}
+            >
+              <Video
+                src={staticFile(videoSeg.video)}
+                muted
+                startFrom={0}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            </div>
+            <div
+              style={{
+                position: "absolute",
+                left: 730,
+                top: 80,
+                fontSize: 22,
+                fontWeight: "bold",
+                color: "#fff",
+                fontFamily: "Noto Sans SC, sans-serif",
+                background: "rgba(226,59,59,0.92)",
+                padding: "5px 16px",
+                borderRadius: 8,
+                letterSpacing: 1,
+              }}
+            >
+              现场画面
+            </div>
+          </AbsoluteFill>
+        </Sequence>
+      )}
 
       {/* 左阿信 */}
       <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", left: 0, width: 540 }}>
