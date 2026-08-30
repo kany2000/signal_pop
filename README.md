@@ -46,15 +46,9 @@ signal_pop/
 │   ├── remotion_daily_build.py    # 每日版 Remotion 渲染 + 音频合并（CRF26，支持 --render）
 │   ├── gen_daily_en_srt.py        # 每日版英文外挂字幕（en_US.srt，基于音频时长生成）
 │   ├── check_publish_ready.py     # 发布前质检（全过才可发布）
+│   ├── verify_final_video.py      # 出品自检：视频帧数 vs 分镜期望、音视频时长差校验（PASS 才交审片）
 │   ├── publish_weekly_*.py / publish_daily_*.py  # 各平台发布脚本
 │   ├── gen_weekly_publish_assets.py  # 周末版发布素材汇总（封面/文案/字幕打包）
-│   ├── gen_cloud_tts.py / gen_srt.py / gen_en_srt.py  # TTS / 字幕通用工具
-│   ├── gen_cover*.py / gen_hyperframes_html.py      # 封面 / HyperFrames 渲染
-│   └── win_*.py              # Windows 管线批处理脚本
-│   ├── remotion_daily_build.py    # 每日版 Remotion 渲染 + 音频合并（CRF26，支持 --render）
-│   ├── gen_daily_en_srt.py        # 每日版英文外挂字幕（en_US.srt，基于音频时长生成）
-│   ├── check_publish_ready.py      # 发布前质检（全过才可发布）
-│   ├── publish_weekly_*.py / publish_daily_*.py  # 各平台发布脚本
 │   ├── gen_cloud_tts.py / gen_srt.py / gen_en_srt.py  # TTS / 字幕通用工具
 │   ├── gen_cover*.py / gen_hyperframes_html.py      # 封面 / HyperFrames 渲染
 │   └── win_*.py              # Windows 管线批处理脚本
@@ -168,6 +162,7 @@ python tools/remotion_weekly_build.py 20260821
 > #   可选：CRF=26 bash tools/render_weekly_segmented.sh 20260821  # 覆盖码率
 > ```
 > 约束：拼接用 `-c copy` 保留各段 Remotion 编码，**最后必须用 libx264 CRF26 整体重编码一遍**（抹平接缝/统一码率），不可纯 concat 不重编码。
+> **内置帧数校验**（2026-08-30 起）：每段渲染后、幂等跳过时、拼接后、成片复用前均用 ffprobe 校验帧数，残缺段（如渲染中途被回收留下的半截文件）会判失败并删除，**不会再混入成片**（20260828 期末尾 28s 冻结即此根因）。
 >
 
 ---
@@ -216,6 +211,7 @@ python tools/remotion_weekly_build.py 20260821
 - 配图：汽车/电子产品优先真实网络图；OS/科技类突出软件系统主题。
 - **配图水印铁律**：SenseNova 配图右下角带「日日新 sensenova」水印，**生成后保留原始带水印原图，由用户用工具自行清除**；管线不在配图阶段做任何水印模糊/inpaint 处理。用户清完并确认后，才进入 TTS/视频渲染；视频中用主播头像遮水印位。
 - **视频编码对齐**：每日版与周末版统一 `libx264 CRF26`（-preset fast -pix_fmt yuv420p），1080p 约 275kb/s（10 分钟视频 ≈ 22MB）。
+- **出品自检（2026-08-30 起）**：成片交付/发布前必须先跑 `python tools/verify_final_video.py weekly|daily {制作日}` 自检——校验视频帧数 vs 分镜期望（拦截分段渲染残段混入导致的结尾画面缺失）、视频轨 vs 音频轨时长差（拦截定格假播）、文件 sanity；**PASS 才可交用户审片**。
 - 密钥只走 `.env`，禁止硬编码；`output/` 产物与 `*.mp4/*.wav/*.png/*.jpg/*.srt` 按 `.gitignore` 不入库（仅 `remotion_poc/public/` 素材例外放行）。
 - 代码规范：`black --line-length=120`、`flake8`；改动前先完整重读项目（README/scripts/tools/历史）再动手。
 
