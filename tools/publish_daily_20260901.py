@@ -77,7 +77,7 @@ print('\n=== B站 ===', flush=True)
 print('title:', title3[:50], flush=True)
 r3 = subprocess.run(['sau', 'bilibili', 'upload-video', '--account', 'her2home', '--file', VIDEO,
                      '--title', title3, '--desc', body3,
-                     '--tid', '249', '--schedule', f'{PUB} 08:00', '--headed'],
+                     '--tid', '249', '--schedule', f'{PUB} 08:00'],
                     capture_output=True, text=True, timeout=1800)
 print('exit=', r3.returncode, flush=True)
 print((r3.stdout or '')[-1200:], flush=True)
