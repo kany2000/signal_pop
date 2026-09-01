@@ -7,7 +7,7 @@ Signal Pop 目前有两条独立产线，面向不同节奏与形态：
 | 维度 | 平日版（每周三播出，周二制作） | 周末特别版 · 信蓝组合（每周六播出，周五制作） |
 |------|----------------|----------------------|
 | 形态 | AI 新闻简报（女主播播报） | 双人对话脱口秀（阿信 + 小蓝） |
-| 选题 | 15 条（经济3/文旅2/科技3/新质生产力1/民生3/体育1 + 末条AI指南1/电脑操作指南1） | 突发置顶 + 本周要闻(无排名) + 本周之最 + 下周看点 + 双主播观点 + 互动话题 |
+| 选题 | 10 条（经济2/文旅1/科技3/民生2/体育1/新质生产力1 + 末条固定「AI 使用指南/电脑 AI 新应用」） | 突发置顶 + 本周要闻(无排名) + 本周之最 + 下周看点 + 双主播观点 + 互动话题 |
 | 渲染 | ffmpeg 合成（传统管线） | **Remotion** 程序化渲染（`remotion_poc/`） |
 | 声音 | 单女声（豆包 / edge-tts 兜底） | 双人（阿信男声报新闻 + 小蓝女声点评，逐段峰值归一化，阿信峰值 0.95 / 小蓝 0.72） |
 | 封面 | AI 女主播封面 | 双人分屏，三风格可切换（见下文） |
@@ -121,22 +121,23 @@ SIGNAL_POP_PREP_DATE=20260821 python run_pipeline.py
 python scripts/win_pipeline_run.py
 ```
 
-#### 每日版 Remotion 动效管线（增强，默认兜底为 ffmpeg 分屏）
+#### 每日版 Remotion 动效管线（当前默认管线）
 
-下期起每日版默认走 Remotion 动效管线（stagger / ken-burns / 标题滑入），与原 ffmpeg 分屏管线并存：
+每日版默认走 Remotion 动效管线（`DailyNews.tsx`：stagger / ken-burns / 标题滑入 / 片头片尾日期打屏 / 主播头像遮水印），由 `render_daily_segmented.sh` 一体化驱动（导出分镜 → 分段渲染 → 拼接 → 合并 TTS 音频 → CRF26 重编码），幂等可续：
 
 ```bash
-# 1) 导出分镜数据（parsed_news + tts_segments + 配图 → daily_segs.json，配图复制到 public/）
-python tools/export_daily_remotion.py 20260823
+# 0) 先跑 TTS 生成 tts.wav + tts_segments.json（gen_cloud_tts.py）
+# 1) 导出分镜数据（parsed_news + tts_segments + 配图 → daily_segs.json + daily_meta.json，配图复制到 public/）
+python tools/export_daily_remotion.py 20260901
 
-# 2) Remotion 渲染画面轨（静音 mp4）
-cd remotion_poc && npm install   # 首次
-npx remotion render DailyNews out/DailyNews_silent.mp4 --codec=h264 \
-  --browser-executable="C:/Program Files/Google/Chrome/Application/chrome.exe"
+# 2) 分段渲染 + 合并音频（每段 1000 帧，约 31 分钟；中途被环境回收可重跑续渲）
+bash tools/render_daily_segmented.sh 20260901 1000
 
-# 3) 合并 TTS 音频 + CRF26 压缩 → signal_pop_daily_20260823.mp4
-python tools/remotion_daily_build.py 20260823 --render
+# 3) 成片自检（帧数 / 音视频时长差 / 文件 sanity），PASS 才交审片
+python tools/verify_final_video.py daily 20260901
 ```
+
+> `Root.tsx` 的 `defaultProps` 由 `export_daily_remotion.py` 写入的 `daily_meta.json`（pubDate / weekday / avatar）自动填充，**禁止硬编码旧日期**（2026-09-01 期曾因此踩坑：片头片尾日期错 + 旧主播头像）。
 
 ### 3. 周末特别版（信蓝组合）
 
@@ -163,6 +164,8 @@ python tools/remotion_weekly_build.py 20260821
 > ```
 > 约束：拼接用 `-c copy` 保留各段 Remotion 编码，**最后必须用 libx264 CRF26 整体重编码一遍**（抹平接缝/统一码率），不可纯 concat 不重编码。
 > **内置帧数校验**（2026-08-30 起）：每段渲染后、幂等跳过时、拼接后、成片复用前均用 ffprobe 校验帧数，残缺段（如渲染中途被回收留下的半截文件）会判失败并删除，**不会再混入成片**（20260828 期末尾 28s 冻结即此根因）。
+
+> **每日版同样适用分段渲染**：`bash tools/render_daily_segmented.sh {制作日} 1000`（每段 1000 帧，11 段 ×1000 帧 + 拼接 + 合并 `tts.wav` + CRF26 整体重编码）。每日版整段 `remotion render` 在本环境同样会被后台任务回收，必须用分段脚本，禁止整段渲染。
 >
 
 ---
@@ -210,6 +213,11 @@ python tools/remotion_weekly_build.py 20260821
 - 「历史上的今天」只用国内事件（科技/文化/民生），且**日期必须与发布日对齐**（= 制作日 + 1），不是制作日。
 - 配图：汽车/电子产品优先真实网络图；OS/科技类突出软件系统主题。
 - **配图水印铁律**：SenseNova 配图右下角带「日日新 sensenova」水印，**生成后保留原始带水印原图，由用户用工具自行清除**；管线不在配图阶段做任何水印模糊/inpaint 处理。用户清完并确认后，才进入 TTS/视频渲染；视频中用主播头像遮水印位。
+- **🔴 渲染前置硬门禁（2026-09-01 固化）**：配图生成后 AI 必须 `present_files` 交用户审图；**在用户明确回「水印已清、可以渲染」之前，禁止调用任何 render 脚本**。TTS 可先跑，但合成视频必须等确认。本期曾因 AI 提前渲染带水印旧图而触发此门禁。
+- **每日版视觉规范（12b，2026-09-01 固化）**：`DailyNews.tsx` 字号/头像——新闻标题 `46px`（固定不动）、新闻内容 `36px`、历史内容 `42px`、主播头像直径 `150px`。再微调只改这几处数值，无需重跑 `export_daily_remotion.py`。
+- **opening_bg / ending_bg 复用（4a，2026-09-01 固化）**：每期复用同一张背景图，不重复生成；基准母版 `remotion_poc/public/base_opening_bg.jpg` + `base_ending_bg.jpg`，下期制作第 1 步复制到新期 `images/`，`win_pipeline_images.py` 的 `exists→skip` 逻辑自动跳过生成。**仅当用户要求更换时才重新生成**。
+- **TTS 中文日期修复（2026-09-01）**：豆包 seed-tts-2.0 对短数字日期「X月Y日」概率性误读为英文；`gen_cloud_tts.py` 的 `_cn_month_day()` 在拼接正文前把「X月Y日」转汉字（九月一日），年份/数量词不动。重合成后 faster-whisper 复检确认无英文串音。
+- **发布三坑位（每日版/周末版通用）**：① 抖音必须 `--headed`（无头卡创作平台弹窗，失败且会误以为已发布）；② B站（`sau bilibili`）**不接受 `--headed`**，该参数只给 douyin，传错会 `exit=2`；B站偶发 `invalid peer certificate: Expired`，重试一次即过；③ **重跑整套会重复预约已成功平台**，失败平台只用 `publish_*_{yyyymmdd}_retry_<平台>.py` 单家重试。抖音/快手/B站自动代发（`sau` CLI，账号 `her2home`），知乎/小红书/Facebook/YouTube/Twitter 手动。
 - **视频编码对齐**：每日版与周末版统一 `libx264 CRF26`（-preset fast -pix_fmt yuv420p），1080p 约 275kb/s（10 分钟视频 ≈ 22MB）。
 - **出品自检（2026-08-30 起）**：成片交付/发布前必须先跑 `python tools/verify_final_video.py weekly|daily {制作日}` 自检——校验视频帧数 vs 分镜期望（拦截分段渲染残段混入导致的结尾画面缺失）、视频轨 vs 音频轨时长差（拦截定格假播）、文件 sanity；**PASS 才可交用户审片**。
 - 密钥只走 `.env`，禁止硬编码；`output/` 产物与 `*.mp4/*.wav/*.png/*.jpg/*.srt` 按 `.gitignore` 不入库（仅 `remotion_poc/public/` 素材例外放行）。
