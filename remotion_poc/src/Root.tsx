@@ -6,6 +6,7 @@ import { DailyNews, DailySeg } from "./DailyNews";
 import newsData from "./news.json";
 import weeklySegs from "./weekly_segs.json";
 import dailySegs from "./daily_segs.json";
+import dailyMeta from "./daily_meta.json";
 
 const weeklyTotal = weeklySegs.reduce((s: number, x: { dur: number }) => s + x.dur, 0);
 const dailyTotal = (dailySegs as DailySeg[]).reduce((s, x) => s + x.dur, 0);
@@ -40,9 +41,9 @@ export const RemotionRoot: React.FC = () => {
         height={1080}
         defaultProps={{
           segs: dailySegs as DailySeg[],
-          pubDate: "2026年08月24日",
-          weekday: "星期一",
-          avatar: "avatar_daily_20260823.png",
+          pubDate: dailyMeta.pubDate,
+          weekday: dailyMeta.weekday,
+          avatar: dailyMeta.avatar,
         }}
       />
     </>

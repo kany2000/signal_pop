@@ -21,7 +21,7 @@ import subprocess
 PROJECT_ROOT = "E:/projects/signal_pop"
 REMOTION_POC = os.path.join(PROJECT_ROOT, "remotion_poc")
 REMOTION_CLI = os.path.join(REMOTION_POC, "node_modules", "@remotion", "cli", "remotion-cli.js")
-NODE = "C:/Users/Administrator/.workbuddy/binaries/node/versions/22.22.2/node.exe"
+NODE = "C:/Users/Administrator/.workbuddy/binaries/node/versions/22.22.2-2/node.exe"
 CHROME = "C:/Program Files/Google/Chrome/Application/chrome.exe"
 FFMPEG = "E:/projects/signal_pop/bin/ffmpeg-9.0.1-essentials_build/bin/ffmpeg.exe"
 
@@ -33,12 +33,14 @@ def render_silent(date):
     out = os.path.join(REMOTION_POC, "out", f"DailyNews_{date}_silent.mp4")
     os.makedirs(os.path.dirname(out), exist_ok=True)
     cmd = [
-        NODE, REMOTION_CLI, "render", "DailyNews", out,
+        NODE, REMOTION_CLI, "render",
+        os.path.join(REMOTION_POC, "src", "index.ts"),
+        "DailyNews", out,
         "--codec=h264",
         f"--browser-executable={CHROME}",
     ]
     print(" ".join(cmd))
-    r = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)
+    r = subprocess.run(cmd, capture_output=True, text=True, timeout=3600, cwd=REMOTION_POC)
     print(r.stdout[-1500:])
     if r.returncode != 0:
         print("STDERR:", r.stderr[-1500:])

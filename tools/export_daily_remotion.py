@@ -117,6 +117,15 @@ def main():
         shutil.copy2(av_path, os.path.join(REMOTION_PUBLIC, avatar_src))
         print(f"  avatar -> public/{avatar_src}")
 
+    # 写 daily_meta.json（发布日期/星期/头像），供 Root.tsx defaultProps 读取，
+    # 避免硬编码过期（20260901 教训：defaultProps 停留在 8/23 POC，片头片尾日期与头像全错）
+    pub_dt = datetime.strptime(PREP_DATE, "%Y%m%d") + timedelta(days=1)
+    weekday = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"][pub_dt.weekday()]
+    pub_date_fmt = f"{pub_dt.year}年{pub_dt.month:02d}月{pub_dt.day:02d}日"
+    meta = {"pubDate": pub_date_fmt, "weekday": weekday, "avatar": avatar_src or ""}
+    with open(os.path.join(REMOTION_SRC, "daily_meta.json"), "w", encoding="utf-8") as f:
+        json.dump(meta, f, ensure_ascii=False, indent=1)
+
     segs = build_segs(items, durations, images_map)
     out = os.path.join(REMOTION_SRC, "daily_segs.json")
     with open(out, "w", encoding="utf-8") as f:
