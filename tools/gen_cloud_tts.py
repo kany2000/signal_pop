@@ -16,7 +16,7 @@
 
 输出与 win_pipeline_tts 完全一致：audio/tts.wav + audio/tts_segments.json（float 时长列表）
 """
-import sys, os, json, time, base64, hashlib, hmac, struct, wave, subprocess
+import sys, os, json, time, base64, hashlib, hmac, struct, wave, subprocess, re
 from datetime import datetime, timedelta
 from email.utils import formatdate
 
@@ -61,6 +61,25 @@ def select_voice(pub_weekday="星期六", lang="zh", speaker=None):
     return ("zh-CN-YunyangNeural" if is_weekend else "zh-CN-XiaoxiaoNeural")
 
 
+def _cn_month_day(text):
+    """月/日数字转汉字（如 9月1日 -> 九月一日），防豆包对小数字日期概率性误读成英文。
+    年份数字（如 2026年）TTS 读法稳定，保持不动。"""
+    _DIG = {"0": "零", "1": "一", "2": "二", "3": "三", "4": "四",
+            "5": "五", "6": "六", "7": "七", "8": "八", "9": "九"}
+
+    def _cn_num(s):
+        if len(s) == 1:
+            return _DIG[s]
+        if len(s) == 2:
+            if s[0] == "1":
+                return "十" + (_DIG[s[1]] if s[1] != "0" else "")
+            return _DIG[s[0]] + "十" + (_DIG[s[1]] if s[1] != "0" else "")
+        return s
+
+    return re.sub(r"(?<!\d)(\d{1,2})月(\d{1,2})日",
+                  lambda m: f"{_cn_num(m.group(1))}月{_cn_num(m.group(2))}日", text)
+
+
 def build_segments(items, pub_date_fmt, pub_weekday):
     """与 win_pipeline_tts.build_segments 完全一致的分段逻辑。"""
     if any(it.get("rank") is not None for it in items):
@@ -73,9 +92,9 @@ def build_segments(items, pub_date_fmt, pub_weekday):
     for i, item in enumerate(items, 1):
         n = item.get("num", i)
         if n == 0:
-            segs.append(("item0", f"历史上的今天。{item['full_body']}"))
+            segs.append(("item0", f"历史上的今天。{_cn_month_day(item['full_body'])}"))
             continue
-        txt = f"第{n}条，{item['section']}。{item['title']}。{item['full_body']}"
+        txt = f"第{n}条，{item['section']}。{_cn_month_day(item['title'])}。{_cn_month_day(item['full_body'])}"
         if item["opinion"]:
             txt += f".主播观点：{item['opinion']}"
         segs.append((f"item{n}", txt))

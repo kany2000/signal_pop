@@ -45,7 +45,7 @@ const BrandBar: React.FC<{ text: string }> = ({ text }) => (
   </>
 );
 
-// ---------- 右下角主播头像角标（遮 Sensenova 水印位，直径110px @ (1750,970)）----------
+// ---------- 右下角主播头像角标（遮 Sensenova 水印位，直径150px @ (1750,970)）----------
 export const AvatarCorner: React.FC<{ avatar?: string }> = ({ avatar }) => {
   if (!avatar) return null;
   const frame = useCurrentFrame();
@@ -55,10 +55,10 @@ export const AvatarCorner: React.FC<{ avatar?: string }> = ({ avatar }) => {
       <div
         style={{
           position: "absolute",
-          left: 1750 - 55,
-          top: 970 - 55,
-          width: 110,
-          height: 110,
+          left: 1750 - 75,
+          top: 970 - 75,
+          width: 150,
+          height: 150,
           borderRadius: "50%",
           background: "rgba(0,0,0,0.45)",
           display: "flex",
@@ -66,7 +66,7 @@ export const AvatarCorner: React.FC<{ avatar?: string }> = ({ avatar }) => {
           justifyContent: "center",
         }}
       >
-        <Img src={staticFile(avatar)} style={{ width: 96, height: 96, borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(255,255,255,0.85)" }} />
+        <Img src={staticFile(avatar)} style={{ width: 132, height: 132, borderRadius: "50%", objectFit: "cover", border: "3px solid rgba(255,255,255,0.9)" }} />
       </div>
     </AbsoluteFill>
   );
@@ -141,7 +141,7 @@ const HistorySlide: React.FC<{ seg: DailySeg; avatar?: string }> = ({ seg, avata
         </div>
       </AbsoluteFill>
       {/* 右侧正文 */}
-      <div style={{ position: "absolute", left: 460, right: 60, top: 110, fontSize: 30, color: LIGHT_GREY, fontFamily: "Noto Sans SC, sans-serif", textShadow: "2px 2px 0 #000", opacity: bodyIn, transform: `translateY(${(1 - bodyIn) * 20}px)`, lineHeight: 1.7 }}>
+      <div style={{ position: "absolute", left: 460, right: 60, top: 110, fontSize: 42, color: LIGHT_GREY, fontFamily: "Noto Sans SC, sans-serif", textShadow: "2px 2px 0 #000", opacity: bodyIn, transform: `translateY(${(1 - bodyIn) * 20}px)`, lineHeight: 1.6 }}>
         {seg.body}
       </div>
       <AvatarCorner avatar={avatar} />
@@ -189,7 +189,7 @@ const NewsSlide: React.FC<{ seg: DailySeg; avatar?: string }> = ({ seg, avatar }
         <div style={{ position: "absolute", left: 460, right: 50, top: 90, fontSize: 46, fontWeight: "bold", color: WHITE, fontFamily: "Noto Sans SC, sans-serif", textShadow: "3px 3px 0 #000, -3px 3px 0 #000, 3px -3px 0 #000, -3px -3px 0 #000", opacity: titleIn, transform: `translateY(${(1 - titleIn) * 40}px)`, lineHeight: 1.4 }}>
           {seg.title}
         </div>
-        <div style={{ position: "absolute", left: 460, right: 50, top: 300, fontSize: 24, color: LIGHT_GREY, fontFamily: "Noto Sans SC, sans-serif", textShadow: "2px 2px 0 #000", opacity: bodyIn, transform: `translateY(${(1 - bodyIn) * 24}px)`, lineHeight: 1.6 }}>
+        <div style={{ position: "absolute", left: 460, right: 50, top: 290, fontSize: 36, color: LIGHT_GREY, fontFamily: "Noto Sans SC, sans-serif", textShadow: "2px 2px 0 #000", opacity: bodyIn, transform: `translateY(${(1 - bodyIn) * 24}px)`, lineHeight: 1.55 }}>
           {seg.body}
         </div>
       </Sequence>
