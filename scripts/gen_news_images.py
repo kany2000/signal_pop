@@ -10,7 +10,11 @@ today = date.today().strftime("%Y%m%d")
 
 # ---------- Sensenova ----------
 SENSENOVA_URL = "https://token.sensenova.cn/v1/images/generations"
-SENSENOVA_KEY = "sk-Orks5KCFxdjhRSm7EEFY57UdykEWzWIQ"
+# 密钥只走 .env（config.SENSENOVA_API_KEY），禁止硬编码
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+from config import SENSENOVA_API_KEY as SENSENOVA_KEY  # noqa: E402
 SENSENOVA_MODEL = "sensenova-u1-fast"
 SENSENOVA_SIZE = "2752x1536"  # 16:9
 

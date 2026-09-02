@@ -20,7 +20,11 @@ FONT_REG = "C:/Windows/Fonts/msyh.ttc"
 W, H = 1920, 1080
 
 SENSENOVA_URL = "https://token.sensenova.cn/v1/images/generations"
-SENSENOVA_KEY = "sk-Orks5KCFxdjhRSm7EEFY57UdykEWzWIQ"
+# 密钥只走 .env（config.SENSENOVA_API_KEY），禁止硬编码
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+from config import SENSENOVA_API_KEY as SENSENOVA_KEY  # noqa: E402
 SENSENOVA_MODEL = "sensenova-u1-fast"
 
 ANCHOR_PROMPT = "Chinese female news anchor, professional studio portrait, short hair, wearing red blazer, elegant confident smile, modern broadcast studio with blue background, cinematic lighting, high quality, photorealistic, portrait photography, 8K, no text, no words, no letters, no numbers, no characters, no typography, no signage, no labels, no captions, no UI, no writing, no screens with text, no charts, no data displays, no any text whatsoever, completely text-free image, no monitors with text, no screens showing data"
