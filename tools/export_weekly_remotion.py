@@ -12,21 +12,30 @@ breaking_footage.mp4 复制到 remotion_poc/public，并用 ffprobe 探测真实
 
 用法: python tools/export_weekly_remotion.py [制作日YYYYMMDD]
 """
+
 import sys, os, json, shutil, subprocess
 
 PROJECT_ROOT = "E:/projects/signal_pop"
-FFPROBE = os.path.join(
-    PROJECT_ROOT, "bin", "ffmpeg-9.0.1-essentials_build", "bin", "ffprobe.exe"
-)
+FFPROBE = os.path.join(PROJECT_ROOT, "bin", "ffmpeg-9.0.1-essentials_build", "bin", "ffprobe.exe")
 
 
 def probe_duration(path):
     """返回视频真实时长（秒），失败返回 0.0"""
     try:
         out = subprocess.run(
-            [FFPROBE, "-v", "error", "-show_entries", "format=duration",
-             "-of", "default=noprint_wrappers=1:nokey=1", path],
-            capture_output=True, text=True, timeout=30,
+            [
+                FFPROBE,
+                "-v",
+                "error",
+                "-show_entries",
+                "format=duration",
+                "-of",
+                "default=noprint_wrappers=1:nokey=1",
+                path,
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
         return float(out.stdout.strip())
     except Exception as e:
@@ -45,13 +54,15 @@ def main(date):
     dur_path = os.path.join(out_dir, "audio", "tts_segments.json")
     for p in (dlg_path, talk_path, dur_path):
         if not os.path.exists(p):
-            print(f"❌ 数据不存在: {p}"); sys.exit(1)
+            print(f"❌ 数据不存在: {p}")
+            sys.exit(1)
 
     dlg = json.load(open(dlg_path, encoding="utf-8"))
     talk = json.load(open(talk_path, encoding="utf-8"))
     durs = json.load(open(dur_path, encoding="utf-8"))
     if not (len(dlg) == len(talk) == len(durs)):
-        print(f"❌ 段数不匹配: dlg={len(dlg)} talk={len(talk)} durs={len(durs)}"); sys.exit(1)
+        print(f"❌ 段数不匹配: dlg={len(dlg)} talk={len(talk)} durs={len(durs)}")
+        sys.exit(1)
 
     segs = []
     n = len(dlg)
@@ -63,18 +74,24 @@ def main(date):
         # 开场问候段 bg 为空时，若存在 opening_bg.jpg 则挂上，避免黑屏开场
         if not bg and has_opening_bg and d["speaker"] in ("阿信", "小蓝"):
             bg = "opening_bg.jpg"
-        segs.append({
-            "speaker": d["speaker"],
-            "voice": talk[i].get("voice", ""),
-            "text": d["text"],
-            "dur": durs[i]["dur"],
-            "bg": bg,
-            "video": "",
-            "videoDur": 0,
-            "isBreaking": bg == "breaking.jpg",
-            "isInteractive": bg == "interactive.jpg",
-            "cta": (i == n - 1),  # 末段触发结尾「一键三连」CTA
-        })
+        segs.append(
+            {
+                "speaker": d["speaker"],
+                "voice": talk[i].get("voice", ""),
+                "text": d["text"],
+                "dur": durs[i]["dur"],
+                "bg": bg,
+                "video": "",
+                "videoDur": 0,
+                "isBreaking": bg == "breaking.jpg",
+                "isInteractive": bg == "interactive.jpg",
+                "cta": (i == n - 1),  # 末段触发结尾「一键三连」CTA
+                # ② 数字滚动卡 / ③ 下周看点日程卡（build_weekly_dialogue 生成，
+                #    Remotion 端仅在非空时渲染对应组件）
+                "data": d.get("data") or [],
+                "agenda": d.get("agenda") or [],
+            }
+        )
 
     # public 目录先建好（视频与配图都要用）
     pub = os.path.join(PROJECT_ROOT, "remotion_poc", "public")
@@ -107,8 +124,10 @@ def main(date):
             if s["isBreaking"]:
                 s["video"] = dst_name
                 s["videoDur"] = round(vdur, 3)
-        print(f"✅ 突发视频窗已挂载: {os.path.basename(video_src)} → {dst_name} "
-              f"（{os.path.getsize(video_src)} bytes, 时长 {vdur:.2f}s）")
+        print(
+            f"✅ 突发视频窗已挂载: {os.path.basename(video_src)} → {dst_name} "
+            f"（{os.path.getsize(video_src)} bytes, 时长 {vdur:.2f}s）"
+        )
     else:
         print(f"ℹ️ 未找到 {VIDEO_DIR}/*.mp4，突发段不挂视频窗。")
 

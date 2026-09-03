@@ -12,6 +12,7 @@
 护栏：灾难/民生类用克制共情，不玩梗不抖机灵；娱乐类可轻松犀利。
 （观点为模板生成，用户可在 dialogue_script.txt 中逐句替换为更贴合的表达）
 """
+
 import json
 import os
 import sys
@@ -98,6 +99,53 @@ COMMENTS = {
 }
 
 
+def extract_stats(body, max_n=3):
+    """从「本周之最」正文自动抽取数字统计卡数据（count-up 动效用）。
+
+    用户在 parsed_news.json 的 summary 条目显式给 "data": [{num, suffix, label}]
+    时优先用用户的；否则走本函数兜底：抽 数字+单位，标签取数字前 ≤12 字上下文。
+    过滤：纯单数字（无单位）当噪声跳过；1900-2100 的裸年份跳过。
+    """
+    unit_pat = (
+        "万人|亿人|万元|亿元|亿美元|万美元|亿美元|万|亿|%|℃|美元|元|倍|人|部|种|款|"
+        "GB|TB|G|km|kg|nm|英寸|寸|帧|辆|架|艘|届|场|倍"
+    )
+    stats = []
+    for m in re.finditer(rf"(\d[\d,]*(?:\.\d+)?)\s*({unit_pat})?", body):
+        digits = m.group(1).replace(",", "")
+        unit = m.group(2) or ""
+        try:
+            num = float(digits)
+        except ValueError:
+            continue
+        if not unit and (num < 10 or 1900 <= num <= 2100):
+            continue  # 单数字噪声 / 裸年份
+        label = body[max(0, m.start() - 12) : m.start()]
+        label = re.sub(r"^[，。、；：—\-\s（）()\"\"'‘’“”]+", "", label).strip()
+        if len(label) < 2:
+            label = "本周之最"
+        stats.append(
+            {
+                "num": int(num) if num.is_integer() else num,
+                "suffix": unit,
+                "label": label[:12],
+            }
+        )
+        if len(stats) >= max_n:
+            break
+    return stats
+
+
+def split_agenda(body):
+    """「下周看点」正文 → 日程行列表（③ 日程卡用）。
+
+    优先用 parsed_news.json watch 条目显式 "agenda": [...]；否则按 ；/;
+    拆分并去掉「看点一：」类前缀。
+    """
+    rows = [x.strip() for x in re.split(r"[；;]", body) if x.strip()]
+    rows = [re.sub(r"^看点[一二三四五六七八九十0-9]+\s*[：:、.]\s*", "", r).rstrip("。") for r in rows]
+    return [r for r in rows if r]
+
 
 def build(parsed_path, out_dlg, out_seg=None):
     items = json.load(open(parsed_path, encoding="utf-8"))
@@ -128,11 +176,15 @@ def build(parsed_path, out_dlg, out_seg=None):
     sm = next((it for it in items if it["type"] == "summary"), None)
     if sm:
         add("阿信", f"本周之最——{sm['body']}", "summary.jpg")
+        # ② 数字滚动卡数据：用户显式 data 优先，否则从正文自动抽取
+        segs[-1]["data"] = sm.get("data") or extract_stats(sm["body"])
         add("小蓝", "总结得到位，这一周信息量确实大。", "summary.jpg")
 
     wt = next((it for it in items if it["type"] == "watch"), None)
     if wt:
         add("阿信", f"下周看点——{wt['body']}", "watch.jpg")
+        # ③ 日程卡数据：用户显式 agenda 优先，否则按分号拆正文
+        segs[-1]["agenda"] = wt.get("agenda") or split_agenda(wt["body"])
         add("小蓝", "这几个我蹲了，到时候接着聊。", "watch.jpg")
 
     iv = next((it for it in items if it["type"] == "interactive"), None)
@@ -149,6 +201,10 @@ def build(parsed_path, out_dlg, out_seg=None):
 
 if __name__ == "__main__":
     p = sys.argv[1]
-    o = sys.argv[2] if len(sys.argv) > 2 else os.path.join(PROJECT_ROOT, "output", "weekly", "20260828", "dialogue_script.txt")
+    o = (
+        sys.argv[2]
+        if len(sys.argv) > 2
+        else os.path.join(PROJECT_ROOT, "output", "weekly", "20260828", "dialogue_script.txt")
+    )
     s = os.path.join(os.path.dirname(o), "dialogue_segments.json")
     build(p, o, s)
