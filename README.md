@@ -10,7 +10,7 @@ Signal Pop 目前有两条独立产线，面向不同节奏与形态：
 | 选题 | 10 条（经济2/文旅1/科技3/民生2/体育1/新质生产力1 + 末条固定「AI 使用指南/电脑 AI 新应用」） | 突发置顶 + 本周要闻(无排名) + 本周之最 + 下周看点 + 双主播观点 + 互动话题 |
 | 渲染 | ffmpeg 合成（传统管线） | **Remotion** 程序化渲染（`remotion_poc/`） |
 | 声音 | 单女声（豆包 / edge-tts 兜底） | 双人（阿信男声报新闻 + 小蓝女声点评，逐段峰值归一化，阿信峰值 0.95 / 小蓝 0.72） |
-| 封面 | AI 女主播封面 | 双人分屏，三风格可切换（见下文） |
+| 封面 | AI 女主播封面（背景主题每期轮换：hud/aurora/neon/minimal/retro） | 双人封面七风格自动轮换（见下文） |
 | 发布 | 抖音/快手/B站自动 + 其余手动 | 抖音/快手/B站自动 + 其余手动 |
 
 ---
@@ -36,7 +36,7 @@ signal_pop/
 │   ├── weekly_images.py           # 周末版配图（真实网图 + AI 图混合来源）
 │   ├── build_weekly_dialogue.py   # 周末版新闻→阿信/小蓝对话稿
 │   ├── gen_dual_tts.py            # 周末版双人 TTS（逐段峰值归一化，阿信 0.95 / 小蓝 0.72）
-│   ├── gen_weekly_talk_cover.py   # 周末版封面（split / magazine / neon 三风格）
+│   ├── gen_weekly_talk_cover.py   # 周末版封面（七风格 + auto 每期轮换）
 │   ├── gen_weekly_talk_copy.py    # 周末版 8 平台文案
 │   ├── gen_weekly_en_srt.py       # 周末版英文外挂字幕（en_US.srt）
 │   ├── export_weekly_remotion.py  # 周末版分镜导出 → weekly_segs.json
@@ -194,10 +194,15 @@ python tools/remotion_weekly_build.py 20260821
 
 - **选题结构**：【突发置顶】仅真实重大事件才放 →【本周要闻】无排名播报（~14 条）→【本周之最】→【下周看点】→【双主播观点】每条新闻阿信/小蓝各一句 →【互动话题】收尾邀评。题材以民生/科技/经济为主，游戏类配图（如《边缘行者 2》）使用真实官方图，禁止 AI 生成。
 - **音量平衡**：`gen_dual_tts.py` 改为**逐段峰值归一化**（阿信峰值 0.95 / 小蓝 0.72，等效相对响度约 +30%）消除忽高忽低与削波；`remotion_weekly_build.py` 的 `merge_audio` 再叠 `ffmpeg loudnorm`（I=-14）统一整片响度。
-- **封面三风格**（`gen_weekly_talk_cover.py`，按 `STYLE` 选择）：
+- **封面七风格 + 每期自动轮换**（`gen_weekly_talk_cover.py`，2026-09-04 扩充）：
   - `split`：经典左右分屏 + 金色中带（兜底）
-  - `magazine`：杂志头条风（双人 + 大刊头 TOP3 预告），**20260828 期采用**
-  - `neon`：**巨型数字霓虹风**（巨大「15」+ 圆形头像 + 按日期哈希轮换霓虹光晕）
+  - `magazine`：杂志头条风（双人 + 大刊头 TOP3 预告）
+  - `neon`：**巨型数字霓虹风**（巨大「15」+ 圆形头像 + 霓虹光晕）
+  - `newspaper`：报纸头版风（米白纸纹 + 衬线大标题 + 黑白红三色）
+  - `popart`：波普漫画风（三色对角撞色 + 半调网点 + 爆炸星框 + 贴纸卡）
+  - `glitch`：赛博故障风（RGB 错位标题 + 扫描线 + 数据网格，标题区有保护带）
+  - `variety`：综艺大字报风（渐变底 + 爆炸星 + 超大描边字 + 旋转贴纸标签）
+  - **轮换机制**：`STYLE=auto`（默认）按制作日 md5 选风格，记录到 `output/used_cover_styles.json`，自动避开最近 2 期不撞款；每种风格内置 2-3 套配色按日期哈希再轮换。TOP3 头条自动读取本期 `parsed_news.json`（突发优先，缺失时回退占位）。传 SUFFIX 做预览时不写历史记录。
 - **一键三连动画**：订阅/关注/转发金色圆钮 stagger 浮现 + 呼吸光晕，从三连段持续到片尾。
 - **视频码率**：Remotion 默认 CRF18 过大（3min ≈ 76MB），统一 `libx264 CRF26`（≈ 26MB）压缩。
 - **应急分段渲染**：单次整片渲染在本环境会被后台任务回收时，用 `bash tools/render_weekly_segmented.sh {制作日}` 分段渲染（每段 ~33s）+ 拼接 + 整体 CRF26 重编码；脚本幂等可续，总帧数自动从 `remotion_poc/src/weekly_segs.json` 计算，不硬编码。

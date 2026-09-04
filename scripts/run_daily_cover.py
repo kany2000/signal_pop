@@ -137,28 +137,123 @@ CYAN = (0, 255, 255)
 GOLD = (255, 200, 50)
 WHITE = (255, 255, 255)
 
+# ===== 封面主题池（2026-09-04）：背景/配色/装饰随期轮换，主播形象池不受影响 =====
+DAILY_THEMES = ["hud", "aurora", "neon", "minimal", "retro"]
+USED_DAILY_THEME_FILE = "E:/projects/signal_pop/output/used_daily_cover_styles.json"
+
+THEME_DEFS = {
+    #        accent(主强调)      glow(标题辉光)      sub(副标)          dim(页脚)
+    "hud":     {"accent": (0, 200, 255), "glow": (0, 200, 255), "sub": (100, 220, 255), "dim": (100, 120, 150), "base": (10, 15, 35)},
+    "aurora":  {"accent": (70, 230, 190), "glow": (90, 160, 255), "sub": (150, 235, 215), "dim": (110, 130, 160), "base": (12, 13, 38)},
+    "neon":    {"accent": (255, 80, 210), "glow": (255, 80, 210), "sub": (200, 140, 255), "dim": (130, 110, 150), "base": (10, 8, 16)},
+    "minimal": {"accent": (240, 200, 60), "glow": (240, 200, 60), "sub": (200, 200, 205), "dim": (120, 120, 125), "base": (16, 16, 18)},
+    "retro":   {"accent": (255, 100, 130), "glow": (0, 220, 230), "sub": (255, 160, 180), "dim": (140, 120, 150), "base": (22, 10, 48)},
+}
+
+
+def _load_used_themes():
+    try:
+        with open(USED_DAILY_THEME_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def pick_theme(date_str, record=True, avoid=2):
+    """按日期哈希选封面主题，避开最近 avoid 期；与主播形象指纹互不干扰。"""
+    used = _load_used_themes()
+    recent = [used[d] for d in sorted(used.keys())[-avoid:]]
+    h = int(hashlib.md5(("theme_" + date_str).encode()).hexdigest(), 16)
+    chosen = DAILY_THEMES[h % len(DAILY_THEMES)]
+    if chosen in recent:
+        for i in range(1, len(DAILY_THEMES)):
+            s = DAILY_THEMES[(h + i) % len(DAILY_THEMES)]
+            if s not in recent:
+                chosen = s
+                break
+    if record:
+        used[date_str] = chosen
+        os.makedirs(os.path.dirname(USED_DAILY_THEME_FILE), exist_ok=True)
+        with open(USED_DAILY_THEME_FILE, "w", encoding="utf-8") as f:
+            json.dump(used, f, ensure_ascii=False, indent=2)
+    return chosen
+
+
+def _soft_glow(base, cx, cy, r, color, alpha=90):
+    """大半径柔和光晕（低分辨率放大法，快）。"""
+    w, h = base.size
+    m = Image.new("L", (w // 8, h // 8), 0)
+    ImageDraw.Draw(m).ellipse([(cx - r) // 8, (cy - r) // 8, (cx + r) // 8, (cy + r) // 8], fill=255)
+    m = m.resize((w, h), Image.BICUBIC).filter(ImageFilter.GaussianBlur(20))
+    layer = Image.new("RGB", (w, h), color)
+    mask = m.point(lambda v: v * alpha // 255)
+    return Image.composite(layer, base, mask)
+
 
 def fnt(size, bold=False):
     return ImageFont.truetype(FONT_BOLD if bold else FONT_REG, size)
 
 
-def make_bg():
-    arr = np.zeros((H, W, 3), dtype=np.uint8)
-    cx, cy = W // 3, H // 2
-    max_d = ((W // 2) ** 2 + (H // 2) ** 2) ** 0.5
-    for y in range(H):
-        for x in range(W):
-            dist = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
-            t = max(0, 1 - dist / max_d)
-            arr[y, x] = [int(10 + t * 35), int(15 + t * 30), int(35 + t * 45)]
-    bg = Image.fromarray(arr)
-    draw = ImageDraw.Draw(bg)
-    step = 60
-    for x in range(0, W, step):
-        draw.line([(x, 0), (x, H)], fill=(25, 35, 60), width=1)
-    for y in range(0, H, step):
-        draw.line([(0, y), (W, y)], fill=(25, 35, 60), width=1)
+def make_bg(theme="hud", w=W, h=H):
+    tdef = THEME_DEFS[theme]
+    if theme == "hud":
+        arr = np.zeros((h, w, 3), dtype=np.uint8)
+        cx, cy = w // 3, h // 2
+        max_d = ((w // 2) ** 2 + (h // 2) ** 2) ** 0.5
+        for y in range(h):
+            for x in range(w):
+                dist = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
+                t = max(0, 1 - dist / max_d)
+                arr[y, x] = [int(10 + t * 35), int(15 + t * 30), int(35 + t * 45)]
+        bg = Image.fromarray(arr)
+        draw = ImageDraw.Draw(bg)
+        step = 60
+        for x in range(0, w, step):
+            draw.line([(x, 0), (x, h)], fill=(25, 35, 60), width=1)
+        for y in range(0, h, step):
+            draw.line([(0, y), (w, y)], fill=(25, 35, 60), width=1)
+        return bg
+    if theme == "aurora":
+        bg = _vgrad_img(w, h, (10, 14, 36), (24, 12, 46))
+        bg = _soft_glow(bg, int(w * 0.20), int(h * 0.16), int(h * 0.95), (24, 190, 165), 110)
+        bg = _soft_glow(bg, int(w * 0.86), int(h * 0.88), int(h * 0.80), (170, 60, 210), 100)
+        bg = _soft_glow(bg, int(w * 0.55), int(h * 0.05), int(h * 0.45), (60, 110, 230), 70)
+        return bg
+    if theme == "neon":
+        bg = _vgrad_img(w, h, (10, 8, 18), (16, 10, 28))
+        bg = _soft_glow(bg, int(w * 0.15), int(h * 0.55), int(h * 0.55), (190, 40, 150), 65)
+        bg = _soft_glow(bg, int(w * 0.88), int(h * 0.25), int(h * 0.45), (80, 60, 220), 60)
+        d = ImageDraw.Draw(bg)
+        for i, col in enumerate([(255, 80, 210), (120, 90, 255), (60, 220, 220)]):
+            bx = int(w * 0.022) + i * int(w * 0.012)
+            d.rectangle([bx, int(h * 0.30), bx + int(w * 0.004), h - int(h * 0.08)], fill=col)
+        return bg
+    if theme == "minimal":
+        bg = Image.new("RGB", (w, h), (16, 16, 18))
+        d = ImageDraw.Draw(bg)
+        d.rectangle([0, int(h * 0.72), w, int(h * 0.735)], fill=tdef["accent"])
+        d.rectangle([0, 0, w, int(h * 0.012)], fill=tdef["accent"])
+        return bg
+    # retro
+    bg = _vgrad_img(w, h, (44, 12, 66), (12, 10, 44))
+    d = ImageDraw.Draw(bg)
+    for y in range(0, h, 4):
+        d.line([(0, y), (w, y)], fill=(0, 0, 0, 26))
+    cx, cy, r = int(w * 0.78), int(h * 0.30), int(h * 0.30)
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(255, 120, 90))
+    for i in range(6):
+        sy = cy + int(r * (0.1 + i * 0.16))
+        d.rectangle([cx - r, sy, cx + r, sy + int(r * 0.055)], fill=(30, 14, 52))
     return bg
+
+
+def _vgrad_img(w, h, c1, c2):
+    """快速垂直渐变（numpy 向量化）。"""
+    t = np.linspace(0.0, 1.0, h).reshape(h, 1, 1)
+    c1a = np.array(c1, dtype=np.float32).reshape(1, 1, 3)
+    c2a = np.array(c2, dtype=np.float32).reshape(1, 1, 3)
+    arr = (c1a + (c2a - c1a) * t).astype(np.uint8)
+    return Image.fromarray(np.repeat(arr, w, axis=1))
 
 
 def get_anchor(anchor_idx=None):
@@ -223,13 +318,17 @@ def hud_corners(draw):
         draw.line([(cx, cy), (cx, cy + dy * 80)], fill=CYAN, width=2)
 
 
-def make_cover(anchor_idx=None):
-    print(f"Building daily cover @ {W}x{H}...")
-    bg = make_bg().convert("RGBA")
+def make_cover(anchor_idx=None, theme="hud"):
+    tdef = THEME_DEFS[theme]
+    acc, glow, subc, dim = tdef["accent"], tdef["glow"], tdef["sub"], tdef["dim"]
+    sub_shadow = tuple(int(c * 0.45) for c in tdef["sub"]) + (60,)
+    print(f"Building daily cover @ {W}x{H} [theme={theme}]...")
+    bg = make_bg(theme).convert("RGBA")
     draw = ImageDraw.Draw(bg)
-    hud_corners(draw)
+    if theme == "hud":
+        hud_corners(draw)
 
-    draw.text((90, 60), "新闻 · 科技 · 财经", fill=(0, 200, 255), font=fnt(22, True))
+    draw.text((90, 60), "新闻 · 科技 · 财经", fill=acc, font=fnt(22, True))
 
     anchor = get_anchor(anchor_idx)
     paste_anchor(bg, anchor)
@@ -238,12 +337,12 @@ def make_cover(anchor_idx=None):
     title_font = fnt(96, bold=True)
     draw.text((tx, 240), "隔天信号弹", fill=WHITE, font=title_font)
     for ox, oy in [(3, 3), (-3, 3), (3, -3), (-3, -3)]:
-        draw.text((tx + ox, 240 + oy), "隔天信号弹", fill=(0, 200, 255, 80), font=title_font)
+        draw.text((tx + ox, 240 + oy), "隔天信号弹", fill=(*glow, 80), font=title_font)
 
     sub_font = fnt(44, bold=False)
-    draw.text((tx, 370), "每周定期新闻播报", fill=(100, 220, 255), font=sub_font)
+    draw.text((tx, 370), "每周定期新闻播报", fill=subc, font=sub_font)
     for ox, oy in [(2, 2), (-2, 2)]:
-        draw.text((tx + ox, 370 + oy), "每周定期新闻播报", fill=(0, 100, 150, 60), font=sub_font)
+        draw.text((tx + ox, 370 + oy), "每周定期新闻播报", fill=sub_shadow, font=sub_font)
 
     mark_font = fnt(38, bold=True)
     draw.text((tx, 460), "MARK哥的创想引擎", fill=GOLD, font=mark_font)
@@ -251,33 +350,21 @@ def make_cover(anchor_idx=None):
         draw.text((tx + ox, 460 + oy), "MARK哥的创想引擎", fill=(150, 100, 0, 60), font=mark_font)
 
     ft = fnt(20, bold=False)
-    draw.text((60, H - 45), f"隔天信号弹 · {PUB_DATE_SHORT}", fill=(100, 120, 150), font=ft)
-    draw.text((W - 60, H - 45), "10条核心新闻", fill=(100, 120, 150), font=ft, anchor="rt")
+    draw.text((60, H - 45), f"隔天信号弹 · {PUB_DATE_SHORT}", fill=dim, font=ft)
+    draw.text((W - 60, H - 45), "10条核心新闻", fill=dim, font=ft, anchor="rt")
 
     return bg.convert("RGB")
 
 
-def make_cover_portrait(anchor_idx=None):
+def make_cover_portrait(anchor_idx=None, theme="hud"):
     """3:4 竖版封面 1080x1440，适合手机屏幕"""
     PW, PH = 1080, 1440
-    print(f"Building portrait cover @ {PW}x{PH}...")
+    tdef = THEME_DEFS[theme]
+    acc, glow, subc, dim = tdef["accent"], tdef["glow"], tdef["sub"], tdef["dim"]
+    sub_shadow = tuple(int(c * 0.45) for c in tdef["sub"]) + (60,)
+    print(f"Building portrait cover @ {PW}x{PH} [theme={theme}]...")
 
-    # 深色背景
-    arr = np.zeros((PH, PW, 3), dtype=np.uint8)
-    cx, cy = PW // 3, PH // 3
-    max_d = (PW**2 + PH**2) ** 0.5
-    for y in range(PH):
-        for x in range(PW):
-            dist = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
-            t = max(0, 1 - dist / max_d)
-            arr[y, x] = [int(10 + t * 35), int(15 + t * 30), int(35 + t * 45)]
-    bg = Image.fromarray(arr)
-    draw = ImageDraw.Draw(bg)
-    step = 60
-    for x in range(0, PW, step):
-        draw.line([(x, 0), (x, PH)], fill=(25, 35, 60), width=1)
-    for y in range(0, PH, step):
-        draw.line([(0, y), (PW, y)], fill=(25, 35, 60), width=1)
+    bg = make_bg(theme, PW, PH)
 
 # 主播（上半部分，放大）
     anchor = get_anchor()
@@ -316,26 +403,27 @@ def make_cover_portrait(anchor_idx=None):
         od.rectangle([(0, y), (PW, y)], fill=(0, 0, 0, a))
     bg = Image.alpha_composite(bg.convert("RGBA"), overlay)
 
-    # HUD 角标
+    # HUD 角标（仅 hud 主题）
     draw = ImageDraw.Draw(bg)
-    for cx, cy, dx, dy in [(25, 25, 1, 1), (PW-25, 25, -1, 1), (25, PH-25, 1, -1), (PW-25, PH-25, -1, -1)]:
-        draw.line([(cx, cy), (cx + dx * 60, cy)], fill=CYAN, width=2)
-        draw.line([(cx, cy), (cx, cy + dy * 60)], fill=CYAN, width=2)
+    if theme == "hud":
+        for cx, cy, dx, dy in [(25, 25, 1, 1), (PW-25, 25, -1, 1), (25, PH-25, 1, -1), (PW-25, PH-25, -1, -1)]:
+            draw.line([(cx, cy), (cx + dx * 60, cy)], fill=CYAN, width=2)
+            draw.line([(cx, cy), (cx, cy + dy * 60)], fill=CYAN, width=2)
 
     # 标签
-    draw.text((60, 50), "新闻 · 科技 · 财经", fill=(0, 200, 255), font=ImageFont.truetype(FONT_BOLD if True else FONT_REG, 24))
+    draw.text((60, 50), "新闻 · 科技 · 财经", fill=acc, font=ImageFont.truetype(FONT_BOLD if True else FONT_REG, 24))
 
     # 文字区域
     tx = 80
     title_font = ImageFont.truetype(FONT_BOLD, 72)
     draw.text((tx, 700), "隔天信号弹", fill=WHITE, font=title_font)
     for ox, oy in [(2, 2), (-2, 2), (2, -2), (-2, -2)]:
-        draw.text((tx + ox, 700 + oy), "隔天信号弹", fill=(0, 200, 255, 80), font=title_font)
+        draw.text((tx + ox, 700 + oy), "隔天信号弹", fill=(*glow, 80), font=title_font)
 
     sub_font = ImageFont.truetype(FONT_REG, 34)
-    draw.text((tx, 790), "每周定期新闻播报", fill=(100, 220, 255), font=sub_font)
+    draw.text((tx, 790), "每周定期新闻播报", fill=subc, font=sub_font)
     for ox, oy in [(1, 1), (-1, 1)]:
-        draw.text((tx + ox, 790 + oy), "每周定期新闻播报", fill=(0, 100, 150, 60), font=sub_font)
+        draw.text((tx + ox, 790 + oy), "每周定期新闻播报", fill=sub_shadow, font=sub_font)
 
     mark_font = ImageFont.truetype(FONT_BOLD, 36)
     draw.text((tx, 860), "MARK哥的创想引擎", fill=GOLD, font=mark_font)
@@ -348,35 +436,39 @@ def make_cover_portrait(anchor_idx=None):
 
     # 底部
     ft = ImageFont.truetype(FONT_REG, 22)
-    draw.text((60, PH - 45), f"隔天信号弹 · {PUB_DATE_SHORT}", fill=(100, 120, 150), font=ft)
-    draw.text((PW - 60, PH - 45), "10条核心新闻", fill=(100, 120, 150), font=ft, anchor="rt")
+    draw.text((60, PH - 45), f"隔天信号弹 · {PUB_DATE_SHORT}", fill=dim, font=ft)
+    draw.text((PW - 60, PH - 45), "10条核心新闻", fill=dim, font=ft, anchor="rt")
 
     return bg.convert("RGB")
 
 
-def make_4x3(cover):
+def make_4x3(cover, theme="hud"):
     cw, ch = 1440, 1080
-    canvas = Image.new('RGB', (cw, ch), (10, 15, 35))
-    draw = ImageDraw.Draw(canvas)
-    for x in range(0, cw, 60):
-        draw.line([(x, 0), (x, ch)], fill=(25, 35, 60), width=1)
-    for y in range(0, ch, 60):
-        draw.line([(0, y), (cw, y)], fill=(25, 35, 60), width=1)
+    base = THEME_DEFS[theme]["base"]
+    canvas = Image.new('RGB', (cw, ch), base)
+    if theme == "hud":
+        draw = ImageDraw.Draw(canvas)
+        for x in range(0, cw, 60):
+            draw.line([(x, 0), (x, ch)], fill=(25, 35, 60), width=1)
+        for y in range(0, ch, 60):
+            draw.line([(0, y), (cw, y)], fill=(25, 35, 60), width=1)
     src = cover.resize((cw, int(1080 * cw / 1920)), Image.LANCZOS)
     top = (ch - src.height) // 2
     canvas.paste(src, (0, top))
     return canvas
 
 
-def make_3x4(cover):
+def make_3x4(cover, theme="hud"):
     """16:9 -> 1080x1440 (3:4 portrait), 深色画布上下扩展"""
     pw, ph = 1080, 1440
-    canvas = Image.new('RGB', (pw, ph), (10, 15, 35))
-    draw = ImageDraw.Draw(canvas)
-    for x in range(0, pw, 60):
-        draw.line([(x, 0), (x, ph)], fill=(25, 35, 60), width=1)
-    for y in range(0, ph, 60):
-        draw.line([(0, y), (pw, y)], fill=(25, 35, 60), width=1)
+    base = THEME_DEFS[theme]["base"]
+    canvas = Image.new('RGB', (pw, ph), base)
+    if theme == "hud":
+        draw = ImageDraw.Draw(canvas)
+        for x in range(0, pw, 60):
+            draw.line([(x, 0), (x, ph)], fill=(25, 35, 60), width=1)
+        for y in range(0, ph, 60):
+            draw.line([(0, y), (pw, y)], fill=(25, 35, 60), width=1)
     # Scale 16:9 to fit width 1080, then center vertically
     src = cover.resize((pw, int(1080 * pw / 1920)), Image.LANCZOS)
     top = (ph - src.height) // 2
@@ -488,17 +580,21 @@ def main():
     # 指定新锚点索引，避免重复之前用过的头像
     NEW_ANCHOR_IDX = 7
 
-    cover = make_cover(NEW_ANCHOR_IDX)
+    # 封面主题轮换（与主播形象池互不干扰）
+    theme = pick_theme(DATE)
+    print(f"[cover] theme={theme} date={DATE}")
+
+    cover = make_cover(NEW_ANCHOR_IDX, theme)
     p16 = os.path.join(OUT_DIR, f"cover_{PUB_DATE}_16x9.png")
     cover.save(p16)
     print(f"16:9 -> {p16}")
 
-    p43 = make_4x3(cover)
+    p43 = make_4x3(cover, theme)
     p43_path = os.path.join(OUT_DIR, f"cover_{PUB_DATE}_4x3.png")
     p43.save(p43_path)
     print(f"4:3 -> {p43_path}")
 
-    p34 = make_cover_portrait(NEW_ANCHOR_IDX)
+    p34 = make_cover_portrait(NEW_ANCHOR_IDX, theme)
     p34_path = os.path.join(OUT_DIR, f"cover_{PUB_DATE}_3x4.png")
     p34.save(p34_path)
     print(f"3:4 -> {p34_path}")
