@@ -179,6 +179,10 @@ breaking_title = core[0]["title"] if core else ""
 title_top3 = "、".join(shorts[:3])
 CIRC = "①②③④⑤⑥⑦⑧⑨⑩⓫⓬⓭⓮⓯"
 
+# 每期精选固定网址（口播里说"网址在视频简介里"，文案必须带出）
+PICK_URL = "https://sink.hailoutec.com/pam"
+PICK_URL_LINE = f"🔗 每期精选网址（复制到浏览器打开）：{PICK_URL}"
+
 
 def fmt_ts(sec):
     m = int(sec // 60)
@@ -230,6 +234,7 @@ def build_files():
     files["douyin.md"] = f"""标题：{M_D}信号弹｜信蓝组合周末版：{title_top3}！{n}条本周大事
 
 简介：每周六8点，阿信和小蓝陪你聊透本周{n}件大事！
+{PICK_URL_LINE}
 
 🔥 本期看点：
 """ + "\n".join(f"{i+1}️⃣ {s}" for i, s in enumerate(shorts)) + f"""
@@ -243,6 +248,7 @@ def build_files():
     files["kuaishou.md"] = f"""标题：{M_D}信号弹｜信蓝组合：{n}条本周大事：{title_top3}
 
 简介：每周六8点，听阿信小蓝唠透天下事！本周{n}条新闻全在这里👇
+{PICK_URL_LINE}
 
 🔥 本期热点：
 """ + "\n".join(f"{CIRC[i] if i < len(CIRC) else i+1} {s}" for i, s in enumerate(shorts)) + f"""
@@ -259,6 +265,7 @@ def build_files():
 """ + "\n".join(timeline) + f"""
 
 每周六8点，阿信和小蓝陪你聊透本周大事。记得三连支持一下~
+{PICK_URL_LINE}
 
 #隔天信号弹 #信蓝组合 #周末新闻 #新闻早报 #科技 #财经 #民生 #资讯
 
@@ -274,6 +281,7 @@ def build_files():
 """ + "\n".join(f"{CIRC[i] if i < len(CIRC) else i+1}️⃣ {s}" for i, s in enumerate(shorts)) + f"""
 
 你最关注哪一条？评论区聊聊呀💬
+{PICK_URL_LINE}
 记得关注不迷路，每周六8点见哦～
 
 #周末新闻 #隔天信号弹 #信蓝组合 #今日热点 #科技资讯 #民生新闻 #信息差 #认知升级 #每周热点 #快讯"""
@@ -281,9 +289,10 @@ def build_files():
     # 5. 知乎
     files["zhihu.md"] = f"""隔天信号弹 · 信蓝组合 | {M_D}周末新闻（本周{n}条）
 
-""" + "\n".join(f"{i+1}. {s}" for i, s in enumerate(shorts)) + """
+""" + "\n".join(f"{i+1}. {s}" for i, s in enumerate(shorts)) + f"""
 
-完整内容见视频。欢迎关注，每周六 8 点更新。"""
+完整内容见视频。{PICK_URL_LINE}
+欢迎关注，每周六 8 点更新。"""
 
     # 6/7/8. 海外三平台（全英文铁律：把新闻标题逐条翻译，失败重试，仍失败才告警）
     en_cache = {}
@@ -316,22 +325,33 @@ def build_files():
     if bad:
         print(f"  ⚠️ 海外平台标题仍有中文（翻译失败）: {bad}")
 
+    # 6. Facebook
     files["facebook.md"] = f"""📡 Signal Pop Weekly | {PUB_DATE_SHORT} Weekend News Briefing
 
 Top {n} stories this week (by Axin & Xiaolan):
-""" + "\n".join(f"{i+1}. {t}" for i, t in enumerate(en_titles)) + """
+""" + "\n".join(f"{i+1}. {t}" for i, t in enumerate(en_titles)) + f"""
 
 Every Saturday in 9 minutes, catch up on what's happening in the world. Follow & share!
+🔗 Featured this week: {PICK_URL}
 
 #SignalPop #WeeklyNews #ChinaNews #Technology #News"""
 
+    # 7. YouTube
     files["youtube.md"] = f"""📡 Signal Pop Weekly | {PUB_DATE_SHORT} - {n} Core News Stories
 
 This Week's Top {n}:
-""" + "\n".join(f"{i+1}. {t}" for i, t in enumerate(en_titles)) + """
+""" + "\n".join(f"{i+1}. {t}" for i, t in enumerate(en_titles)) + f"""
 
 Every Saturday on Signal Pop. Subscribe for weekly China & tech news.
+🔗 Featured this week: {PICK_URL}
 SignalPop,WeeklyNews,China,Technology,News,AI"""
+
+    # 8. Twitter（280 字符硬上限，三级兜底）
+    files["facebook.md"] = f"""📡 Signal Pop Weekly | {PUB_DATE_SHORT} Weekend News Briefing
+
+Top {n} stories this week (by Axin & Xiaolan):
+完整内容见视频。{PICK_URL_LINE}
+欢迎关注，每周六 8 点更新。"""
 
     twitter = f"""📡 Signal Pop Weekly | {n} News in 9 min
 
@@ -340,8 +360,9 @@ This week's top stories:
 🔹 {en_titles[1]}
 🔹 {en_titles[2]}
 ➕ {n-3} more in the video 👇
+🔗 {PICK_URL}
 
-#SignalPop #WeeklyNews #China #Technology #News #AI #Weather"""
+#SignalPop #WeeklyNews #China #Technology"""
     if len(twitter) > 280:
         twitter = f"""📡 Signal Pop Weekly | {n} News in 9 min
 
@@ -349,19 +370,24 @@ This week's top stories:
 🔹 {en_titles[1]}
 🔹 {en_titles[2]}
 ➕ {n-3} more in the video 👇
+🔗 {PICK_URL}
 
-#SignalPop #WeeklyNews #China #News #AI"""
+#SignalPop #China #News"""
     if len(twitter) > 280:
-        # 第三级兜底：标题各自截短到 80 字符（禁硬截断整条文案）
-        short3 = [t[:80].rstrip() + ("…" if len(t) > 80 else "") for t in en_titles[:3]]
-        twitter = f"""📡 Signal Pop Weekly | {n} News in 9 min
+        # 第三级兜底：动态收窄标题截短长度直至 ≤280（禁硬截断整条文案）
+        for cap in (80, 60, 45, 35, 25):
+            short3 = [t[:cap].rstrip() + ("…" if len(t) > cap else "") for t in en_titles[:3]]
+            twitter = f"""📡 Signal Pop Weekly | {n} News in 9 min
 
 🔹 {short3[0]}
 🔹 {short3[1]}
 🔹 {short3[2]}
 ➕ {n-3} more 👇
+🔗 {PICK_URL}
 
 #SignalPop #News"""
+            if len(twitter) <= 280:
+                break
     assert len(twitter) <= 280, f"twitter 文案超长: {len(twitter)}"
     files["twitter.md"] = twitter
 

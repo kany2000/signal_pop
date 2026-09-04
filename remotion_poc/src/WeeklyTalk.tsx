@@ -40,6 +40,9 @@ const GOLD = "#D4AF37";
 const WHITE = "#F5F5FA";
 const GREY = "#BEC6D2";
 
+// 每期精选固定网址（口播说"网址在视频简介里"，画面同步挂出）
+const PICK_URL_DISPLAY = "sink.hailoutec.com/pam";
+
 const easeOut = Easing.out(Easing.cubic);
 
 // ============ 章节转场卡（⑤对撞 + ①标题浮现） ============
@@ -609,6 +612,34 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[] }> = ({ segs }) => {
             );
           })}
         </AbsoluteFill>
+      )}
+
+      {/* 每期精选网址条（pick 段常驻，0.6s 淡入） */}
+      {chapterKeyOf(cur.bg) === "pick" && (
+        <div
+          style={{
+            position: "absolute",
+            top: 152,
+            left: "50%",
+            transform: "translateX(-50%)",
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+            padding: "14px 36px",
+            borderRadius: 999,
+            background: "rgba(138,107,224,0.92)",
+            border: "2px solid rgba(255,255,255,0.4)",
+            boxShadow: "0 0 30px rgba(138,107,224,0.55)",
+            opacity: Math.max(0, Math.min(1, localT / 0.6)),
+          }}
+        >
+          <span style={{ fontSize: 28, fontWeight: "bold", color: "#fff", fontFamily: "Noto Sans SC, sans-serif", letterSpacing: 1 }}>
+            🔗 本期精选网址
+          </span>
+          <span style={{ fontSize: 34, fontWeight: "bold", color: "#fff", fontFamily: "Consolas, monospace", letterSpacing: 1 }}>
+            {PICK_URL_DISPLAY}
+          </span>
+        </div>
       )}
 
       {/* 底部对话气泡 */}
