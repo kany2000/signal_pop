@@ -83,7 +83,7 @@ for ((i=0;i<NPARTS;i++)); do
     fi
   fi
   echo "[$(date +%H:%M:%S)] render part $i  frames=$start-$end" | tee -a "$LOG"
-  ( cd "$POC" && "$REMIX" render WeeklyTalk "$part" --frames="$start-$end" --concurrency=8 --browser-executable="$CHROME" ) >> "$LOG" 2>&1
+  ( cd "$POC" && "$REMIX" render WeeklyTalk "$part" --frames="$start-$end" --concurrency=2 --browser-executable="$CHROME" --chrome-flags="--disable-accelerated-video-decode --disable-gpu" ) >> "$LOG" 2>&1
   if [ -f "$part" ] && check_part_frames "$part" "$expected"; then
     echo "PART DONE $i $(date +%H:%M:%S)" >> "$LOG"
   else
