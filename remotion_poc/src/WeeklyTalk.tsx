@@ -45,11 +45,12 @@ const easeOut = Easing.out(Easing.cubic);
 // ============ 章节转场卡（⑤对撞 + ①标题浮现） ============
 // 按 bg 文件名自动推导章节：breaking/news_XX/summary/watch/interactive
 const CHAPTER_META: Record<string, { title: string; en: string; color: string }> = {
-  breaking: { title: "突发消息", en: "BREAKING NEWS", color: "#E23B3B" },
+  breaking: { title: "特别报道", en: "SPECIAL REPORT", color: "#E23B3B" },
   news: { title: "本周要闻", en: "THIS WEEK", color: "#3A82D2" },
   summary: { title: "本周之最", en: "WEEK'S BEST", color: "#D4AF37" },
   watch: { title: "下周看点", en: "NEXT WEEK", color: "#2FA88C" },
   interactive: { title: "互动话题", en: "TOPIC TIME", color: "#DC5A96" },
+  pick: { title: "每期精选", en: "PICK OF THE WEEK", color: "#8A6BE0" },
 };
 
 const chapterKeyOf = (bg: string): string => {

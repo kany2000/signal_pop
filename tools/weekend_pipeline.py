@@ -42,24 +42,25 @@ PUB_WEEKDAY = ["星期一", "星期二", "星期三", "星期四", "星期五", 
 #   "ai"       -> 抽象题材 AI 生成（Sensenova）
 # real 项提供 real_url 直接下载；metaphor/ai 提供 prompt 走 Sensenova
 IMAGE_PLAN = {
-    "breaking":    {"source": "real", "real_url": "https://upload.wikimedia.org/wikipedia/commons/4/4d/2023%E5%B9%B4%E6%B6%BF%E5%B7%9E%E6%B1%9B%E6%83%85_Zhuozhou_flood_01_20230802.jpg"},
-    "news01":      {"source": "ai", "prompt": "英伟达 NVIDIA 与 SpaceX 合作概念图，绿色 AI 芯片与银色可重复使用火箭并排飞向太空，地球在背景，未来科技感，无人类，无肖像，无文字，无品牌可读文字，无字母"},
-    "news02":      {"source": "ai", "prompt": "office corridor with stacked resignation documents and empty desks, corporate layoff concept, cold blue tone, documentary photography, no text, no people faces"},
-    "news03":      {"source": "metaphor", "prompt": "a glowing red 'hot search' trending topic bar on fire on a dark desk, a formal legal letter with a seal stamp and a wooden gavel beside it, dramatic red and gold lighting, NO people, NO faces, NO avatars, NO portraits, NO human silhouette, NO celebrity likeness, no readable text, metaphor for viral online gossip and legal response, news illustration style"},
-    "news04":      {"source": "ai", "prompt": "台风突袭东南沿海，狂风暴雨席卷海岸城市，巨浪拍岸，气象灾难新闻摄影，写实纪实风格，无文字"},
-    "news05":      {"source": "ai", "prompt": "advanced AI inference chip on glowing blue circuit board, golden and blue tech lighting, macro semiconductor photography, no text no readable letters no words"},
-    "news06":      {"source": "ai", "prompt": "customer service robot with a forbidden symbol, consumer rights concept, clean tech illustration, no text, no people"},
-    "news07":      {"source": "real", "real_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/MacBook_Pro_13_%28M1%2C_2020%29.jpg/1920px-MacBook_Pro_13_%28M1%2C_2020%29.jpg", "prompt": "Apple M6 chip macro photography, 2nm processor, premium tech product shot"},
-    "news08":      {"source": "ai", "prompt": "中国的人形机器人，国产双足人形机器人在现代展厅中央，宇树或优必选风格，背景简洁无人脸，产品摄影，无文字"},
-    "news09":      {"source": "real", "real_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Hot_surfaces_during_Europe%27s_heatwave_%27seen%27_by_Sentinel-3_ESA522397.jpg/1920px-Hot_surfaces_during_Europe%27s_heatwave_%27seen%27_by_Sentinel-3_ESA522397.jpg", "prompt": "Europe extreme heatwave, dry cracked land and wildfire smoke, climate disaster news photography"},
-    "news10":      {"source": "real", "real_url": "https://upload.wikimedia.org/wikipedia/commons/6/64/Shanghai_skyline_from_the_bund.jpg", "prompt": "Shanghai real estate, modern apartment buildings exterior, housing market, documentary photography"},
-    "news11":      {"source": "ai", "prompt": "happy family with baby, child allowance policy concept, warm bright tone, no text, no people faces closeup"},
-    "news12":      {"source": "ai", "prompt": "medicine box and health insurance card, new livelihood regulations concept, clean photography, no text"},
-    "news13":      {"source": "ai", "prompt": "股权套现金融隐喻，股票走势曲线与现金堆叠，金色财富意象，电影感光影，无文字无可读文字"},
-    "news14":      {"source": "real", "real_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/A_Foggy_Tale%2C_winner_of_best_narrative_film%2C_2025_Golden_Horse_Awards_01.jpg/1920px-A_Foggy_Tale%2C_winner_of_best_narrative_film%2C_2025_Golden_Horse_Awards_01.jpg", "prompt": "golden eagle award trophy on stage, Chinese TV awards ceremony, photography"},
-    "summary":     {"source": "ai", "prompt": "golden trophy cup with award ribbons on pedestal, celebration confetti, awards ceremony, no text"},
-    "watch":       {"source": "ai", "prompt": "futuristic humanoid robots lined up in exhibition hall, robotics expo, sci-fi, no text"},
-    "interactive": {"source": "ai", "prompt": "speech bubble with question mark and comment icons floating, audience interaction concept, warm gold tone, no readable text"},
+    "breaking":    {"source": "real", "real_url": "", "prompt": "OpenAI GPT-6 发布会现场，真实新闻图"},  # GPT-6 正式发布
+    "news01":      {"source": "real", "real_url": "", "prompt": "吉隆灾区救援现场，应急物资运送，真实新闻图"},  # 棉衣驰援吉隆灾区
+    "news02":      {"source": "real", "real_url": "", "prompt": "英伟达 NVIDIA 公司标志与数据中心 GPU，真实新闻图"},  # 英伟达收购 Hugging Face
+    "news03":      {"source": "metaphor", "prompt": "金融贷款隐喻，成捆美元钞票堆叠与上升的金色箭头，银行金库大门透出金光，电影感光影，无人类，无可读文字，新闻插画风格"},
+    "news04":      {"source": "real", "real_url": "", "prompt": "基因编辑猪肾移植手术，医疗手术室场景，真实新闻图"},  # 猪肾摆脱透析
+    "news05":      {"source": "real", "real_url": "", "prompt": "微信手机聊天界面特写，真实产品截图"},  # 微信单删回应
+    "news06":      {"source": "ai", "prompt": "真空中自由下落的原子干涉仪实验，激光与悬浮原子云，深蓝色物理实验室，科学摄影风格，无人类，无可读文字"},
+    "news07":      {"source": "real", "real_url": "", "prompt": "港交所上市敲钟现场，SHEIN 希音，真实新闻图"},  # SHEIN 赴港上市
+    "news08":      {"source": "real", "real_url": "", "prompt": "厄尔尼诺海表温度卫星云图，太平洋异常增温，真实气象卫星图"},  # 厄尔尼诺形成
+    "news09":      {"source": "real", "real_url": "", "prompt": "理想 MEGA 车型实拍，真实新闻图"},  # 理想 MEGA
+    "news10":      {"source": "real", "real_url": "", "prompt": "半导体晶圆厂内部，硅晶圆与洁净室，真实新闻图"},  # 华虹扩建产线
+    "news11":      {"source": "real", "real_url": "", "prompt": "全国大学生美术作品展览现场，真实新闻图"},  # 美术进京展
+    "news12":      {"source": "metaphor", "prompt": "手机上方悬浮红色盾牌与警告符号，可疑转账气泡，暗色调科技警示插画，无人类无面孔，对话气泡内无任何文字，新闻插画风格"},
+    "news13":      {"source": "real", "real_url": "", "prompt": "手机笔记本电脑平板数码产品组合陈列，开学季数码卖场，真实新闻图"},  # 数码三件套涨价
+    "news14":      {"source": "ai", "prompt": "程序员深夜书桌，显示器流动彩色代码光影，AI 助手光点悬浮屏前，蓝色科技氛围，无人类面孔，屏幕上无可读文字"},
+    "summary":     {"source": "ai", "prompt": "金色领奖台与星形奖杯，彩带飘落与聚光灯，庆典氛围，3D 渲染风格，无文字"},
+    "watch":       {"source": "ai", "prompt": "多个发光日程卡片悬浮排列于聚光舞台前，日历与望远镜意象，蓝色科技风，3D 渲染，无可读文字"},
+    "interactive": {"source": "ai", "prompt": "巨大对话气泡与点赞爱心评论图标漂浮，人群剪影仰望，暖金色调，无可读文字"},
+    "pick":        {"source": "ai", "prompt": "a cute stylized stegosaurus dinosaur in a bright modern museum hall, soft 3D render style, playful and family friendly, warm lighting, no text"},
 }
 
 
@@ -94,6 +95,8 @@ def parse_weekly_top(text):
                 cur_block = "watch"
             elif tag == "互动话题":
                 cur_block = "interactive"
+            elif tag == "每期精选":
+                cur_block = "pick"
             else:
                 cur_block = tag
             continue
@@ -110,8 +113,8 @@ def parse_weekly_top(text):
                 items.append({"type": "news", "section": section, "title": title, "body": body,
                               "img": f"news_{news_idx:02d}.jpg", "img_id": f"news{news_idx:02d}"})
             continue
-        if cur_block in ("summary", "watch", "interactive"):
-            label = {"summary": "本周之最", "watch": "下周看点", "interactive": "互动话题"}[cur_block]
+        if cur_block in ("summary", "watch", "interactive", "pick"):
+            label = {"summary": "本周之最", "watch": "下周看点", "interactive": "互动话题", "pick": "每期精选"}[cur_block]
             exist = next((it for it in items if it["type"] == cur_block), None)
             if exist:
                 exist["body"] = (exist["body"] + " " + line).strip()

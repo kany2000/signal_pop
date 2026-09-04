@@ -66,6 +66,9 @@ async def gen_one(idx, seg, sem, audio_dir):
     from gen_cloud_tts import volc_synthesize
     async with sem:
         mp3 = os.path.join(audio_dir, f"_s{idx:03d}.mp3")
+        # 断点续跑：已成功的片段直接复用（避免重跑烧豆包配额）
+        if os.path.exists(mp3) and os.path.getsize(mp3) > 1000:
+            return mp3
         last_err = None
         for attempt in range(4):
             try:

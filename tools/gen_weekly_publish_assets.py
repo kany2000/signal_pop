@@ -100,6 +100,31 @@ def build_en_srt():
         acc = end
         spk = "Axin" if d["speaker"] == "阿信" else "Xiaolan"
         pend.append({"i": i, "spk": spk, "text": d["text"], "start": start, "end": end, "en": None})
+    # 断点复用：现有 SRT 全英文且句数一致时按序复用译文，仅含中文的行才重翻（避免限流拖慢整轮）
+    # 注意：本脚本写出的 SRT 块间为单换行，必须按「序号行」扫描分块，不能按空行 split
+    old_srt = os.path.join(OUT, f"signal_pop_weekly_{PREP_DATE}.en_US.srt")
+    if os.path.exists(old_srt):
+        raw = open(old_srt, encoding="utf-8").read().splitlines()
+        old_en, i = [], 0
+        while i < len(raw):
+            if raw[i].strip().isdigit():
+                i += 1
+                if i < len(raw) and "-->" in raw[i]:
+                    i += 1
+                txt = []
+                while i < len(raw) and not raw[i].strip().isdigit() and raw[i].strip() != "":
+                    txt.append(raw[i])
+                    i += 1
+                if txt:
+                    old_en.append("\n".join(txt))
+            else:
+                i += 1
+        if len(old_en) == len(pend):
+            for p, en in zip(pend, old_en):
+                if en and not re.search(r"[\u4e00-\u9fff]", en):
+                    p["en"] = en
+            reused = sum(1 for p in pend if p["en"] is not None)
+            print(f"  [srt] 复用现有译文 {reused}/{len(pend)} 句", flush=True)
     # 逐段翻译；成功缓存，失败退避重试（限流解除后自动补齐）
     delays = [15, 30, 60, 120, 240, 300]
     round_n = 0
@@ -108,6 +133,7 @@ def build_en_srt():
         for p in pend:
             if p["en"] is not None:
                 continue
+            print(f"  [srt] 翻译段 {p['i']}: {p['text'][:20]}…", flush=True)
             t = translate_one(f'{p["spk"]}: {p["text"]}')
             if t:
                 p["en"] = t
@@ -161,33 +187,33 @@ def fmt_ts(sec):
 
 
 # B站分段时间轴（按 dialogue 段 bg 分组取起始时间）
+# label 动态从 parsed_news.json 构建（img -> 标题），避免每期硬编码漏更
+BG_LABEL_STATIC = {
+    "breaking.jpg": "特别报道",
+    "summary.jpg": "本周之最",
+    "watch.jpg": "下周看点",
+    "interactive.jpg": "互动话题",
+    "pick.jpg": "每期精选",
+}
+
+
 def build_timeline():
+    bg2label = dict(BG_LABEL_STATIC)
+    news_no = 0
+    for it in parsed:
+        img = it.get("img", "")
+        if it.get("type") == "news" and img:
+            news_no += 1
+            bg2label[img] = f"要闻{news_no} {it['title'][:18]}"
+        elif it.get("type") == "breaking" and img:
+            bg2label[img] = f"特别报道 {it['title'][:18]}"
     lines = []
     acc = 0.0
     seen = {}
     for d, du in zip(dlg, tts):
         bg = d.get("bg", "")
         if bg not in seen:
-            label = {
-                "breaking.jpg": "突发消息",
-                "news_01.jpg": "要闻1 英伟达×SpaceX",
-                "news_02.jpg": "要闻2 常州应届生劝退",
-                "news_03.jpg": "要闻3 孙宇晨长文",
-                "news_04.jpg": "要闻4 三台风袭沿海",
-                "news_05.jpg": "要闻5 OpenAI芯片",
-                "news_06.jpg": "要闻6 中消协AI客服",
-                "news_07.jpg": "要闻7 苹果M6",
-                "news_08.jpg": "要闻8 小鹏机器人",
-                "news_09.jpg": "要闻9 欧洲热浪",
-                "news_10.jpg": "要闻10 上海沪八条",
-                "news_11.jpg": "要闻11 育儿补贴",
-                "news_12.jpg": "要闻12 民生新规",
-                "news_13.jpg": "要闻13 章子怡套现",
-                "news_14.jpg": "要闻14 金鹰奖",
-                "summary.jpg": "本周之最",
-                "watch.jpg": "下周看点",
-                "interactive.jpg": "互动话题",
-            }.get(bg, bg)
+            label = bg2label.get(bg, bg)
             lines.append(f"{fmt_ts(acc)} {label}")
             seen[bg] = True
         acc += du["dur"]
@@ -259,25 +285,36 @@ def build_files():
 
 完整内容见视频。欢迎关注，每周六 8 点更新。"""
 
-    # 6/7/8. 海外三平台（英文，从英文 SRT 提取标题句）
-    en_srt = os.path.join(OUT, f"signal_pop_weekly_{PREP_DATE}.en_US.srt")
-    en_titles = []
-    if os.path.exists(en_srt):
-        blocks = re.split(r"\n\n+", open(en_srt, encoding="utf-8").read().strip())
-        for b in blocks:
-            lines = b.strip().split("\n")
-            if len(lines) >= 3:
-                t = lines[2]
-                t = re.sub(r"^(Axin|Xiaolan):\s*", "", t)
-                t = t.split(". ")[0].strip()
-                if not t.endswith("."):
-                    t += "."
-                if t:
-                    en_titles.append(t)
-    # 英文标题一般 > n 条（含开场/收尾），取要闻部分前 n 条
-    if len(en_titles) < n:
-        en_titles = [s[:60] for s in shorts[:n]]
-    en_titles = en_titles[:n]
+    # 6/7/8. 海外三平台（全英文铁律：把新闻标题逐条翻译，失败重试，仍失败才告警）
+    en_cache = {}
+    cache_path = os.path.join(OUT, "_en_title_cache.json")
+    if os.path.exists(cache_path):
+        try:
+            en_cache = json.load(open(cache_path, encoding="utf-8"))
+        except Exception:
+            en_cache = {}
+
+    def tr_title(s):
+        if s in en_cache:
+            return en_cache[s]
+        t = None
+        for _ in range(3):
+            t = translate_one(s)
+            if t:
+                break
+            time.sleep(2)
+        t = (t or s).strip()
+        if not t.endswith("."):
+            t += "."
+        if t != s:  # 仅缓存真实译文，中文 fallback 不入缓存
+            en_cache[s] = t
+            json.dump(en_cache, open(cache_path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+        return t
+
+    en_titles = [tr_title(s) for s in shorts]
+    bad = [s for s, t in zip(shorts, en_titles) if re.search(r"[\u4e00-\u9fff]", t)]
+    if bad:
+        print(f"  ⚠️ 海外平台标题仍有中文（翻译失败）: {bad}")
 
     files["facebook.md"] = f"""📡 Signal Pop Weekly | {PUB_DATE_SHORT} Weekend News Briefing
 
@@ -314,6 +351,18 @@ This week's top stories:
 ➕ {n-3} more in the video 👇
 
 #SignalPop #WeeklyNews #China #News #AI"""
+    if len(twitter) > 280:
+        # 第三级兜底：标题各自截短到 80 字符（禁硬截断整条文案）
+        short3 = [t[:80].rstrip() + ("…" if len(t) > 80 else "") for t in en_titles[:3]]
+        twitter = f"""📡 Signal Pop Weekly | {n} News in 9 min
+
+🔹 {short3[0]}
+🔹 {short3[1]}
+🔹 {short3[2]}
+➕ {n-3} more 👇
+
+#SignalPop #News"""
+    assert len(twitter) <= 280, f"twitter 文案超长: {len(twitter)}"
     files["twitter.md"] = twitter
 
     return files
@@ -321,7 +370,9 @@ This week's top stories:
 
 def main():
     os.makedirs(OUT, exist_ok=True)
+    print("[main] build_en_srt ...", flush=True)
     build_en_srt()
+    print("[main] build_files ...", flush=True)
     files = build_files()
     for name, content in files.items():
         with open(os.path.join(OUT, name), "w", encoding="utf-8") as f:
