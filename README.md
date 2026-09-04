@@ -267,6 +267,12 @@ style = get_style_for_date("20260821")
 
 `remotion_poc/` 为 React + TypeScript 工程，`WeeklyTalk.tsx` 消费 `weekly_segs.json`（每段含文本、背景图、时长）。`tools/remotion_weekly_build.py` 负责将 Remotion 渲染出的静音画面轨与双人 TTS 音频合并，并做 CRF26 压缩。
 
+**渲染环境坑（2026-09-04 期实测，长期有效）**：
+- 整片渲染走 `tools/render_weekly_segmented.sh` 分段驱动（500 帧/段）；**并发必须降到 2**，默认 8 会 Out of memory。
+- **必须禁用 Chrome 硬件解码**：`--chrome-flags="--disable-accelerated-video-decode --disable-gpu"`。否则渲染到画中画起始帧（如 frame 169）会触发 Chrome 硬解 `PIPELINE_ERROR_DISCONNECTED`，整段渲染静默失败。
+- 后台/计划任务方式启动渲染会被宿主回收（实测 54~74s 被杀），**逐段前台渲染**是唯一稳定路径；渲染完成后跑 `verify_final_video.py` 自检 PASS 再交付。
+- `tools/_cut_title_audio.py`：豆包配额耗尽时的应急工具——用 silencedetect 定位播报标题与正文重复的静音间隙，直接切割音频去掉重复标题（无需重录 TTS）。
+
 ---
 
 ## 许可
