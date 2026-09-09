@@ -88,11 +88,11 @@ const IntroSlide: React.FC<{ seg: DailySeg; pubDate: string; weekday: string; to
         <Img src={staticFile(seg.image)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       </AbsoluteFill>
       <AbsoluteFill style={{ background: "rgba(8,12,22,0.62)" }} />
-      <BrandBar text="隔天信号弹 · 每周新闻" />
+      <BrandBar text="AI语播·信号弹每周精选" />
       <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
         <div style={{ width: 520, height: 5, background: GOLD, marginBottom: 30, opacity: lineIn }} />
         <div style={{ fontSize: 86, fontWeight: "bold", color: GOLD, fontFamily: "Noto Sans SC, sans-serif", letterSpacing: 6, opacity: titleIn, transform: `translateY(${(1 - titleIn) * 30}px)` }}>
-          隔天信号弹
+          AI语播·信号弹每周精选
         </div>
         <div style={{ marginTop: 24, fontSize: 40, fontWeight: "bold", color: WHITE, fontFamily: "Noto Sans SC, sans-serif", opacity: subIn, transform: `translateY(${(1 - subIn) * 24}px)` }}>
           {pubDate} · {weekday}
@@ -137,7 +137,7 @@ const HistorySlide: React.FC<{ seg: DailySeg; avatar?: string }> = ({ seg, avata
         </div>
         <div style={{ position: "absolute", top: 262, left: 152, right: 152, height: 5, background: GOLD, opacity: titleIn }} />
         <div style={{ position: "absolute", bottom: 40, left: 0, right: 0, textAlign: "center", fontSize: 20, color: "#DCEBDC", fontFamily: "Noto Sans SC, sans-serif" }}>
-          隔天信号弹
+          AI语播·信号弹每周精选
         </div>
       </AbsoluteFill>
       {/* 右侧正文 */}
@@ -182,7 +182,7 @@ const NewsSlide: React.FC<{ seg: DailySeg; avatar?: string }> = ({ seg, avatar }
           </div>
         </div>
         <div style={{ position: "absolute", bottom: 40, left: 0, right: 0, textAlign: "center", fontSize: 20, color: "#DCEBDC", fontFamily: "Noto Sans SC, sans-serif" }}>
-          隔天信号弹
+          AI语播·信号弹每周精选
         </div>
       </AbsoluteFill>
       <Sequence from={0}>
@@ -232,7 +232,7 @@ const OutroSlide: React.FC<{ seg: DailySeg; pubDate: string; weekday: string; av
         <Img src={staticFile(seg.image)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       </AbsoluteFill>
       <AbsoluteFill style={{ background: "rgba(8,12,22,0.72)" }} />
-      <BrandBar text="隔天信号弹 · 每周新闻" />
+      <BrandBar text="AI语播·信号弹每周精选" />
       <div style={{ position: "absolute", top: 300, left: 0, right: 0, textAlign: "center", fontSize: 52, fontWeight: "bold", color: GOLD, fontFamily: "Noto Sans SC, sans-serif", opacity: titleIn, transform: `translateY(${(1 - titleIn) * 24}px)` }}>
         喜欢本期内容？一键三连支持我们！
       </div>

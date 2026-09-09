@@ -275,6 +275,51 @@ style = get_style_for_date("20260821")
 
 ---
 
+## 发布与增长增强工具（Easel 借鉴，2026-09-09）
+
+参考开源社媒 Agent [ZJU-REAL/Easel](https://github.com/ZJU-REAL/Easel) 的技能库，按「不整体迁移、按需借鉴」原则落地以下可离线运行（或待登录态启用）的能力：
+
+### 1. 横竖版转换 `tools/make_vertical.py`
+把 16:9 成片转 9:16 竖版喂抖音/快手/视频号（模糊背景填充 + 前景居中，零裁切）。
+```bash
+python tools/make_vertical.py 20260908                 # fit 模式（默认，零裁切）
+python tools/make_vertical.py 20260908 --mode cover    # cover 模式（铺满高度裁左右）
+```
+输出 `output/daily/{date}/signal_pop_daily_{date}_9x16.mp4`，CRF26 / yuv420p(tv) 与正片一致。
+
+### 2. 合规质检 `tools/quality_gate.py`（参考 Easel quality-gate / risk-scanner）
+在 `check_publish_ready.py`（完整性）之外追加**合规风险**扫描：截断残留（行尾「…/...」）、广告法绝对化用语、版权/来源提示。发现 HIGH 风险退出码 1，可接入发布门禁。
+```bash
+python tools/quality_gate.py 20260908
+python tools/quality_gate.py 20260908 --words my_risk_words.txt
+```
+
+### 3. 发布通知 `tools/publish_notify.py`（参考 Easel skill-publish-notify）
+把发布结果推送到飞书/钉钉/Slack/webhook。未配置 `PUBLISH_NOTIFY_WEBHOOK` 时只打印 payload 不阻塞。
+```bash
+python tools/publish_notify.py --date 20260908 --dry                 # 预览
+python tools/publish_notify.py --date 20260908 --format feishu       # 发送
+```
+
+### 4. 多平台自动发布（参考 Easel skill-*-upload，需登录态）
+`sau` 已管抖音/快手/B站；补 **小红书 / 知乎 / 微信视频号** 三个 Playwright 发布脚本：
+`tools/publish_xhs.py` · `tools/publish_zhihu.py` · `tools/publish_channels.py`，共享基类 `tools/_platform_publisher.py`。
+> ⚠️ 强依赖你的平台登录态：先 `playwright install chromium`，再 `python publish_xhs.py --date 20260908 --login` 手动扫码抓状态（存 `cookies/`，已 gitignore），之后方可自动发布。各平台 SELECTORS 为占位实现，站点改版后需实测修正。
+> 编排器 `tools/publish_all_daily.py` 串起 sau 三平台 + 三个 Playwright 平台，写 `publish_status.json` 并触发通知。
+
+### 5. 归因复盘 `tools/analytics_postmortem.py`（参考 Easel content-postmortem / data-tracker）
+本地可跑：解析 `publish.log` 出各平台成败 + 结合 `parsed_news.json` 做内容盘点 + 复用 `quality_gate` 给出下期改进建议，产出 `postmortem.md`。
+真实拉数（`record_snapshot` 从平台后台拉粉丝/播放/互动）为 scaffold，需 Playwright 登录态接入。
+```bash
+python tools/analytics_postmortem.py 20260908
+python tools/analytics_postmortem.py 20260908 --snapshot     # 拉数（需登录）
+```
+
+### 6. 片头/片尾增强（参考 Easel video-intro-outro）
+`remotion_poc/src/OpeningAnimation.tsx` 增加聚光扫光动效；新增 `remotion_poc/src/EndingCard.tsx`（品牌 Logo 卡 + 订阅 CTA），已在 `Root.tsx` 注册为 `EndingCard` 合成。未来管线可 `OpeningAnimation(10s) + DailyNews(正片) + EndingCard(4s)` 顺序拼接。
+
+---
+
 ## 许可
 
 MIT

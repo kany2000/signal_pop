@@ -3,6 +3,8 @@ import { Composition } from "remotion";
 import { NewsSlide } from "./NewsSlide";
 import { WeeklyTalk } from "./WeeklyTalk";
 import { DailyNews, DailySeg } from "./DailyNews";
+import { OpeningAnimation } from "./OpeningAnimation";
+import { EndingCard } from "./EndingCard";
 import newsData from "./news.json";
 import weeklySegs from "./weekly_segs.json";
 import dailySegs from "./daily_segs.json";
@@ -45,6 +47,28 @@ export const RemotionRoot: React.FC = () => {
           weekday: dailyMeta.weekday,
           avatar: dailyMeta.avatar,
         }}
+      />
+      <Composition
+        id="OpeningAnimation"
+        component={OpeningAnimation}
+        durationInFrames={300}
+        fps={30}
+        width={1920}
+        height={1080}
+        defaultProps={{
+          title: "AI语播·信号弹每周精选",
+          date: "2026年9月9日",
+          weekday: "星期三",
+        }}
+      />
+      <Composition
+        id="EndingCard"
+        component={EndingCard}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+        defaultProps={{}}
       />
     </>
   );

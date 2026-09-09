@@ -335,9 +335,9 @@ def make_cover(anchor_idx=None, theme="hud"):
 
     tx = 120
     title_font = fnt(96, bold=True)
-    draw.text((tx, 240), "隔天信号弹", fill=WHITE, font=title_font)
+    draw.text((tx, 240), "AI语播·信号弹每周精选", fill=WHITE, font=title_font)
     for ox, oy in [(3, 3), (-3, 3), (3, -3), (-3, -3)]:
-        draw.text((tx + ox, 240 + oy), "隔天信号弹", fill=(*glow, 80), font=title_font)
+        draw.text((tx + ox, 240 + oy), "AI语播·信号弹每周精选", fill=(*glow, 80), font=title_font)
 
     sub_font = fnt(44, bold=False)
     draw.text((tx, 370), "每周定期新闻播报", fill=subc, font=sub_font)
@@ -350,8 +350,8 @@ def make_cover(anchor_idx=None, theme="hud"):
         draw.text((tx + ox, 460 + oy), "MARK哥的创想引擎", fill=(150, 100, 0, 60), font=mark_font)
 
     ft = fnt(20, bold=False)
-    draw.text((60, H - 45), f"隔天信号弹 · {PUB_DATE_SHORT}", fill=dim, font=ft)
-    draw.text((W - 60, H - 45), "10条核心新闻", fill=dim, font=ft, anchor="rt")
+    draw.text((60, H - 45), f"AI语播·信号弹每周精选 · {PUB_DATE_SHORT}", fill=dim, font=ft)
+    draw.text((W - 60, H - 45), "15条核心新闻", fill=dim, font=ft, anchor="rt")
 
     return bg.convert("RGB")
 
@@ -416,9 +416,9 @@ def make_cover_portrait(anchor_idx=None, theme="hud"):
     # 文字区域
     tx = 80
     title_font = ImageFont.truetype(FONT_BOLD, 72)
-    draw.text((tx, 700), "隔天信号弹", fill=WHITE, font=title_font)
+    draw.text((tx, 700), "AI语播·信号弹每周精选", fill=WHITE, font=title_font)
     for ox, oy in [(2, 2), (-2, 2), (2, -2), (-2, -2)]:
-        draw.text((tx + ox, 700 + oy), "隔天信号弹", fill=(*glow, 80), font=title_font)
+        draw.text((tx + ox, 700 + oy), "AI语播·信号弹每周精选", fill=(*glow, 80), font=title_font)
 
     sub_font = ImageFont.truetype(FONT_REG, 34)
     draw.text((tx, 790), "每周定期新闻播报", fill=subc, font=sub_font)
@@ -436,8 +436,8 @@ def make_cover_portrait(anchor_idx=None, theme="hud"):
 
     # 底部
     ft = ImageFont.truetype(FONT_REG, 22)
-    draw.text((60, PH - 45), f"隔天信号弹 · {PUB_DATE_SHORT}", fill=dim, font=ft)
-    draw.text((PW - 60, PH - 45), "10条核心新闻", fill=dim, font=ft, anchor="rt")
+    draw.text((60, PH - 45), f"AI语播·信号弹每周精选 · {PUB_DATE_SHORT}", fill=dim, font=ft)
+    draw.text((PW - 60, PH - 45), "15条核心新闻", fill=dim, font=ft, anchor="rt")
 
     return bg.convert("RGB")
 
@@ -542,7 +542,7 @@ def make_avatar():
     canvas = Image.alpha_composite(canvas, overlay)
     draw = ImageDraw.Draw(canvas)
     label_font = fnt(28, bold=True)
-    draw.text((AV // 2, AV - strip_h // 2), "隔天信号弹", fill=GOLD, font=label_font, anchor="mm")
+    draw.text((AV // 2, AV - strip_h // 2), "AI语播·信号弹每周精选", fill=GOLD, font=label_font, anchor="mm")
 
     return canvas.convert("RGB")
 
@@ -564,24 +564,27 @@ def main():
 
     os.makedirs(OUT_DIR, exist_ok=True)
     # Clear old cache (ignore failures from sandbox safe-delete)
-    for f in os.listdir(CACHE):
-        if f.startswith("anchor_") or f.startswith("avatar_"):
-            try:
-                os.remove(os.path.join(CACHE, f))
-            except OSError:
-                # Rename to .old to bypass sandbox restrictions
-                old = os.path.join(CACHE, f)
-                new = os.path.join(CACHE, f + ".old")
+    # [KEEP_ANCHOR] 设 KEEP_ANCHOR=1 可复用已缓存主播脸（改名/微调文案时保留已确认形象）
+    if not os.environ.get("KEEP_ANCHOR"):
+        for f in os.listdir(CACHE):
+            if f.startswith("anchor_") or f.startswith("avatar_"):
                 try:
-                    os.rename(old, new)
+                    os.remove(os.path.join(CACHE, f))
                 except OSError:
-                    pass
+                    # Rename to .old to bypass sandbox restrictions
+                    old = os.path.join(CACHE, f)
+                    new = os.path.join(CACHE, f + ".old")
+                    try:
+                        os.rename(old, new)
+                    except OSError:
+                        pass
 
     # 指定新锚点索引，避免重复之前用过的头像
     NEW_ANCHOR_IDX = 7
 
     # 封面主题轮换（与主播形象池互不干扰）
-    theme = pick_theme(DATE)
+    # [DAILY_COVER_THEME] 设该环境变量可固定封面主题（改名/复用已确认封面时锁定外观）
+    theme = os.environ.get("DAILY_COVER_THEME") or pick_theme(DATE)
     print(f"[cover] theme={theme} date={DATE}")
 
     cover = make_cover(NEW_ANCHOR_IDX, theme)

@@ -42,8 +42,8 @@ def build_segs(items, durations, images_map):
     segs = []
     # intro（段 0）
     segs.append({
-        "type": "intro", "num": 0, "section": "开场", "title": "隔天信号弹",
-        "body": "这里是隔天信号弹，欢迎收看本期信号弹，以下是本期精选的核心新闻。",
+        "type": "intro", "num": 0, "section": "开场", "title": "AI语播·信号弹每周精选",
+        "body": "这里是AI语播·信号弹每周精选，欢迎收看本期精选，以下是本期精选的核心新闻。",
         "image": images_map.get("opening", opening), "dur": durations[0],
     })
     # 新闻段（durations[1..N] 对应 items 顺序：num=0 历史在前）

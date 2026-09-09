@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>科技解说视频动效拆解 Demo — Openclaw 2.0 风格</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #f78166;   /* 强调橙 */
+    --accent2: #58a6ff;  /* 科技蓝 */
+    --green: #3fb950;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    padding: 40px 20px 80px;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 28px; margin-bottom: 8px; }
+  .subtitle { color: var(--muted); margin-bottom: 32px; font-size: 14px; line-height: 1.6; }
+  .subtitle b { color: var(--accent); }
+
+  .section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 32px;
+    overflow: hidden;
+  }
+  .section-head {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .section-head h2 { font-size: 18px; }
+  .section-head .tag {
+    font-size: 12px; color: var(--accent2);
+    border: 1px solid var(--accent2);
+    border-radius: 20px; padding: 2px 12px;
+  }
+  .stage {
+    /* 16:9 舞台，模拟视频画面 */
+    aspect-ratio: 16 / 9;
+    position: relative;
+    background: linear-gradient(160deg, #0a0e14 0%, #10161f 100%);
+    overflow: hidden;
+  }
+  .replay {
+    position: absolute; right: 12px; bottom: 12px; z-index: 10;
+    background: rgba(255,255,255,0.08);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .replay:hover { background: rgba(255,255,255,0.15); }
+  .explain {
+    padding: 16px 24px;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.8;
+    border-top: 1px solid var(--border);
+  }
+  .explain code {
+    background: #0d1117; border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 6px;
+    color: var(--accent2); font-family: Consolas, monospace; font-size: 12px;
+  }
+  .explain b { color: var(--text); }
+
+  /* ============ 效果 1：逐字浮现（Kinetic Typography）============ */
+  .word {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(24px) scale(0.9);
+    filter: blur(4px);
+  }
+  .playing .word {
+    animation: wordIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation-delay: calc(var(--i) * 0.08s);
+  }
+  @keyframes wordIn {
+    to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  }
+  .kt-line {
+    position: absolute; left: 60px; right: 60px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 40px; font-weight: 700; text-align: center;
+    line-height: 1.5;
+  }
+  .kt-line .hl { color: var(--accent); }
+
+  /* ============ 效果 2：数字滚动 ============ */
+  .stat-wrap {
+    position: absolute; inset: 0;
+    display: flex; gap: 48px;
+    align-items: center; justify-content: center;
+  }
+  .stat { text-align: center; opacity: 0; }
+  .playing .stat { animation: statIn 0.6s ease forwards; animation-delay: var(--d); }
+  @keyframes statIn { to { opacity: 1; } }
+  .stat .num {
+    font-size: 64px; font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent2);
+    font-family: Consolas, monospace;
+  }
+  .stat .label { font-size: 15px; color: var(--muted); margin-top: 6px; }
+
+  /* ============ 效果 3：任务进度卡 ============ */
+  .card {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 420px;
+    background: #1a2230;
+    border: 1px solid #2a3a52;
+    border-radius: 14px;
+    padding: 20px 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .playing .card { animation: cardIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards; opacity: 0; }
+  @keyframes cardIn {
+    from { opacity: 0; transform: translate(-50%, -42%) scale(0.92); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  }
+  .card .title { font-size: 16px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .step {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 8px;
+    font-size: 14px; color: var(--muted);
+    opacity: 0; transform: translateX(-16px);
+  }
+  .playing .step {
+    animation: stepIn 0.4s ease forwards;
+    animation-delay: calc(0.5s + var(--i) * 0.45s);
+  }
+  @keyframes stepIn { to { opacity: 1; transform: translateX(0); } }
+  .step .icon { font-size: 16px; }
+  .step.done .icon::after { content: "✓"; color: var(--green); font-weight: 700; }
+  .step.run .icon::after { content: "◐"; color: var(--accent2); display: inline-block; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .step .bar {
+    flex: 1; height: 5px; background: #0d1117; border-radius: 3px; overflow: hidden;
+  }
+  .step .bar i {
+    display: block; height: 100%; width: 0;
+    background: linear-gradient(90deg, var(--accent2), var(--green));
+    border-radius: 3px;
+  }
+  .playing .step.done .bar i { animation: fill 1.2s ease-out forwards; animation-delay: calc(0.5s + var(--i) * 0.45s + 0.15s); }
+  @keyframes fill { to { width: 100%; } }
+
+  /* ============ 效果 4：Ken-Burns 缓推 + 字幕条 ============ */
+  .kb-img {
+    position: absolute; inset: -8%;
+    background:
+      linear-gradient(rgba(10,14,20,0.35), rgba(10,14,20,0.35)),
+      radial-gradient(circle at 30% 40%, #1d3a5f 0%, transparent 55%),
+      radial-gradient(circle at 70% 60%, #3a2a1d 0%, transparent 55%),
+      linear-gradient(160deg, #0a0e14, #10161f);
+    opacity: 0;
+  }
+  .playing .kb-img { animation: kenburns 6s ease-out forwards; }
+  @keyframes kenburns {
+    from { opacity: 1; transform: scale(1) translate(0, 0); }
+    to   { opacity: 1; transform: scale(1.12) translate(-1.5%, 1%); }
+  }
+  .caption {
+    position: absolute; left: 50%; bottom: 36px;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.65);
+    border: 1px solid rgba(255,255,255,0.12);
+    backdrop-filter: blur(6px);
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-size: 17px;
+    white-space: nowrap;
+    opacity: 0; translate: 0 16px;
+  }
+  .playing .caption { animation: capIn 0.45s ease 0.6s forwards; }
+  @keyframes capIn { to { opacity: 1; translate: 0 0; } }
+  .caption .kw { color: var(--accent); font-weight: 700; }
+
+  /* ============ 效果 5：镜头切分转场 ============ */
+  .split { position: absolute; inset: 0; display: flex; }
+  .split .half {
+    flex: 1; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 700;
+  }
+  .split .half.left  { background: linear-gradient(135deg, #14283f, #0d1a2b); transform: translateX(-100%); }
+  .split .half.right { background: linear-gradient(135deg, #3a2318, #241609); transform: translateX(100%); }
+  .playing .half.left  { animation: slideL 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+  .playing .half.right { animation: slideR 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.08s forwards; }
+  @keyframes slideL { to { transform: translateX(0); } }
+  @keyframes slideR { to { transform: translateX(0); } }
+  .split .center-badge {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%,-50%) scale(0);
+    background: var(--accent);
+    color: #0d1117;
+    font-size: 15px; font-weight: 800;
+    padding: 10px 26px; border-radius: 30px;
+    z-index: 5;
+  }
+  .playing .center-badge { animation: badgeIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.65s forwards; }
+  @keyframes badgeIn { to { transform: translate(-50%,-50%) scale(1); } }
+
+  /* 页脚对照表 */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; line-height: 1.6; }
+  th { background: #0d1117; color: var(--accent2); }
+  td { color: var(--muted); }
+  td:first-child { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>科技解说视频动效拆解 Demo</h1>
+  <p class="subtitle">
+    对应《Openclaw 2.0 震撼發佈》（商業本質）同类型口播解说视频的 5 种核心动效，用 <b>CSS 关键帧 + 缓动曲线</b>实现。
+    每个舞台可点 <b>▶ 重播</b>，说明区标注了实现要点与 Remotion 对应写法。
+  </p>
+
+  <!-- 效果 1 -->
+  <div class="section" id="s1">
+    <div class="section-head"><h2>① 逐字浮现 · 关键词强调</h2><span class="tag">Kinetic Typography</span></div>
+    <div class="stage playing">
+      <div class="kt-line" data-text="它把更多精力|花在了*长期使用成本*|这个落差上"></div>
+      <button class="replay" onclick="replay('s1')">▶ 重播</button>
+    </div>
+    <div class="explain">
+      <b>实现要点</b>：每个字是独立的 <code>inline-block</code>，初始 <code>opacity:0 + translateY(24px) + blur(4px)</code>，用 <code>animation-delay: calc(var(--i) * 0.08s)</code> 逐字错峰（stagger）。缓动用 <code>cubic-bezier(0.22, 1, 0.36, 1)</code>（easeOutQuint 类），快出缓停，比 linear 高级。<br>
+      <b>Remotion 对应</b>：<code>interpolate(frame - i*2, [0,15], [24,0])</code> 逐字偏移 + <code>spring()</code> 弹性；关键词换色直接改 style。
+    </div>
+  </div>
+
+  <!-- 效果 2 -->
+  <div class="section" id="s2">
+    <div class="section-head"><h2>② 数字滚动 · 数据可视化</h2><span class="tag">Count-up</span></div>
+    <div class="stage playing">
+      <div class="stat-wrap">
+        <div class="stat" style="--d:0s"><div class="num" data-to="933">0</div><div class="label">贡献者</div></div>
+        <div class="stat" style="--d:0.25s"><div class="num" data-to="569">0</div><div class="label">首次贡献</div></div>
+        <div class="stat" style="--d:0.5s"><div class="num" data-to="16000">0</div><div class="label">合并请求</div></div>
+      </div>
+      <button class="replay" onclick="replay('s2')">▶ 重播</button>
+    </div>
+    <div class="explain">
+      <b>实现要点</b>：<code>requestAnimationFrame</code> 按 easeOutCubic 从 0 滚到目标值（1.4s），<code>font-variant-numeric: tabular-nums</code> 防数字抖动；三组数字再整体错峰入场（0/0.25/0.5s）。旁白念到哪组，哪组才入场——这是此类视频"数据感"的核心。<br>
+      <b>Remotion 对应</b>：<code>interpolate(frame, [0, 84], [0, 933], {easing: Easing.out(Easing.cubic)})</code> 取整渲染。
+    </div>
+  </div>
+
+  <!-- 效果 3 -->
+  <div class="section" id="s3">
+    <div class="section-head"><h2>③ 任务进度卡 · 状态可视化</h2><span class="tag">Progress Card</span></div>
+    <div class="stage playing">
+      <div class="card">
+        <div class="title"><span class="dot"></span>自动处理学校邮件提醒</div>
+        <div class="step done" style="--i:0"><span class="icon"></span>读取指定邮箱<span class="bar"><i></i></span></div>
+        <div class="step done" style="--i:1"><span class="icon"></span>提取活动日期<span class="bar"><i></i></span></div>
+        <div class="step done" style="--i:2"><span class="icon"></span>区分新旧事件<span class="bar"><i></i></span></div>
+        <div class="step run"  style="--i:3"><span class="icon"></span>发送 Telegram 提醒<span class="bar"><i></i></span></div>
+      </div>
+      <button class="replay" onclick="replay('s3')">▶ 重播</button>
+    </div>
+    <div class="explain">
+      <b>实现要点</b>：卡片整体 <code>scale 0.92→1 + 上移</code> 弹入（带轻微超调的 back-out 缓动）；内部步骤按 <code>--i * 0.45s</code> 逐条滑入，完成项的进度条 <code>width 0→100%</code> 同步生长，"进行中"项用 <code>◐</code> 无限旋转。进度卡呼应旁白里的"持久化进度卡"卖点。<br>
+      <b>Remotion 对应</b>：<code>Sequence</code> 嵌套 + 每步一个 <code>spring({fps, frame: frame-offset})</code>；进度条宽度用 <code>interpolate</code>。
+    </div>
+  </div>
+
+  <!-- 效果 4 -->
+  <div class="section" id="s4">
+    <div class="section-head"><h2>④ Ken-Burns 缓推 · 底图防静止</h2><span class="tag">B-roll Motion</span></div>
+    <div class="stage playing">
+      <div class="kb-img"></div>
+      <div class="caption">系统需要知道<span class="kw">此前处理了什么</span>，哪些变化值得再打扰一次</div>
+      <button class="replay" onclick="replay('s4')">▶ 重播</button>
+    </div>
+    <div class="explain">
+      <b>实现要点</b>：背景层 6 秒 <code>scale 1→1.12</code> 同时轻微位移（<code>translate(-1.5%, 1%)</code>），让静态截图/图片"活"起来——口播视频画面不闷的关键；字幕条延迟 0.6s <code>translateY(16px)→0</code> 上浮，关键词变色。真实项目里把 <code>kb-img</code> 换成 <code>background-image</code> 即可。<br>
+      <b>Remotion 对应</b>：信号弹管线已在用的 ken-burns 就是这个原理（<code>transform: scale(interpolate(frame,[0,180],[1,1.12]))</code>）。
+    </div>
+  </div>
+
+  <!-- 效果 5 -->
+  <div class="section" id="s5">
+    <div class="section-head"><h2>⑤ 双滑对撞转场 · 章节切换</h2><span class="tag">Transition</span></div>
+    <div class="stage playing">
+      <div class="split">
+        <div class="half left">模型负责"想"</div>
+        <div class="half right">Openclaw 负责"做"</div>
+        <div class="center-badge">职责分离</div>
+      </div>
+      <button class="replay" onclick="replay('s5')">▶ 重播</button>
+    </div>
+    <div class="explain">
+      <b>实现要点</b>：左右两块从两侧滑入对撞（右块延迟 0.08s 制造层次），中心徽章用带超调的 <code>cubic-bezier(0.34, 1.56, 0.64, 1)</code>（back-out）弹出——"对撞 + 弹徽章"是章节标题的经典组合，用来把旁白里的对比概念（模型 vs 执行层）可视化。<br>
+      <b>Remotion 对应</b>：两个 <code>Sequence</code> 各自 <code>translateX(interpolate(...))</code>；徽章用 <code>spring({damping: 12})</code>。
+    </div>
+  </div>
+
+  <div class="section" style="padding:20px 24px">
+    <h2 style="font-size:16px; margin-bottom:12px">工具链对照（这类视频通常怎么生产）</h2>
+    <table>
+      <tr><th>环节</th><th>剪映/CapCut 流（最快）</th><th>AE 模板流（最精致）</th><th>Remotion 流（信号弹管线，可全自动）</th></tr>
+      <tr><td>逐字字幕/关键词强调</td><td>"文字pro"自带逐字动画，跟音频自动打轴</td><td>TypeMonkey / Kinetic Typer 脚本</td><td>逐字 <code>Sequence</code> + spring（同效果①）</td></tr>
+      <tr><td>数字滚动</td><td>贴纸/文字模板</td><td>表达式 <code>ease(time)</code></td><td><code>interpolate</code> + easing（同效果②）</td></tr>
+      <tr><td>进度卡/图表</td><td>素材库模板套用</td><td>形状图层修剪路径</td><td>React 组件直接画（同效果③，逻辑可写活）</td></tr>
+      <tr><td>b-roll 缓推</td><td>关键帧缩放</td><td>父子级+摆动</td><td>ken-burns（已在管线中，同效果④）</td></tr>
+      <tr><td>章节转场</td><td>转场库一键</td><td>预合成+蒙版</td><td>对撞 Sequence（同效果⑤）</td></tr>
+    </table>
+    <p class="explain" style="border:none; padding:14px 0 0">
+      注：以上为基于旁白文本与同类频道风格的<b>通用还原</b>（原视频画面在本环境无法逐帧核实）；但 5 种效果覆盖了此类"科技产品深度解说"视频 90% 以上的动效语言。要看真实逐帧拆解，把视频文件放到项目目录即可。
+    </p>
+  </div>
+</div>
+
+<script>
+  // 效果1：把 data-text 渲染成逐字 span（| 分行，* * 包裹强调词）
+  (function () {
+    document.querySelectorAll('.kt-line').forEach(el => {
+      const parts = el.dataset.text.split('|');
+      let i = 0, html = '';
+      parts.forEach((line, li) => {
+        const strong = line.startsWith('*') && line.endsWith('*');
+        const text = strong ? line.slice(1, -1) : line;
+        html += '<div style="display:block">';
+        [...text].forEach(ch => {
+          html += `<span class="word ${strong ? 'hl' : ''}" style="--i:${i++}">${ch}</span>`;
+        });
+        html += '</div>';
+      });
+      el.innerHTML = html;
+    });
+  })();
+
+  // 效果2：数字滚动（easeOutCubic）
+  function animateNums(scope) {
+    scope.querySelectorAll('.num').forEach((el, idx) => {
+      const to = +el.dataset.to, dur = 1400, start = performance.now() + idx * 250;
+      el.textContent = '0';
+      (function tick(now) {
+        const t = Math.min(Math.max((now - start) / dur, 0), 1);
+        const eased = 1 - Math.pow(1 - t, 3);
+        el.textContent = Math.round(to * eased).toLocaleString();
+        if (t < 1) requestAnimationFrame(tick);
+      })(performance.now());
+    });
+  }
+
+  // 重播：移除 playing 强制 reflow 再加回
+  function replay(id) {
+    const s = document.getElementById(id);
+    s.classList.remove('playing');
+    void s.offsetWidth; // reflow
+    s.classList.add('playing');
+    if (id === 's2') animateNums(s);
+  }
+
+  // 初始触发
+  window.addEventListener('load', () => animateNums(document.getElementById('s2')));
+</script>
+</body>
+</html>

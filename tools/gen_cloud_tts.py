@@ -83,12 +83,12 @@ def _cn_month_day(text):
 def build_segments(items, pub_date_fmt, pub_weekday):
     """与 win_pipeline_tts.build_segments 完全一致的分段逻辑。"""
     if any(it.get("rank") is not None for it in items):
-        segs = [("intro", "这里是隔天信号弹·周末特别版！本周十大事件，倒计时揭晓——从第十名到第一名，哪条才是本周之最？")]
+        segs = [("intro", "这里是AI语播·信号弹每周精选·周末特别版！本周十大事件，倒计时揭晓——从第十名到第一名，哪条才是本周之最？")]
         for it in items:
             segs.append((f"item{it.get('num', 0)}", it["full_body"]))
         segs.append(("outro", "以上是本期信号弹周末特别版。您的一键三连，是我们更新制作的动力！互动话题：本周哪条新闻您觉得最值得关注？欢迎在评论区留言，我们下周见~"))
         return segs
-    segs = [("intro", f"这里是隔天信号弹，今天是{pub_date_fmt}，{pub_weekday}。欢迎收看本期信号弹，以下是本期精选的{len(items)}条核心新闻。")]
+    segs = [("intro", f"这里是AI语播·信号弹每周精选，今天是{pub_date_fmt}，{pub_weekday}。欢迎收看本期信号弹，以下是本期精选的{len(items)}条核心新闻。")]
     for i, item in enumerate(items, 1):
         n = item.get("num", i)
         if n == 0:
@@ -313,7 +313,7 @@ def gen_tts(items_path, output_wav, pub_date_fmt="2026年07月25日", pub_weekda
     return output_wav, durations
 
 
-def test_single(text="这里是隔天信号弹，测试云端语音合成效果。", voice=None, out="output/cloud_tts_test.mp3"):
+def test_single(text="这里是AI语播·信号弹每周精选，测试云端语音合成效果。", voice=None, out="output/cloud_tts_test.mp3"):
     """单句试听（填 Key 后先跑这个验证）。"""
     voice = voice or select_voice("星期六")
     print(f"[{BACKEND}] 试听: {voice}")
@@ -330,7 +330,7 @@ def test_single(text="这里是隔天信号弹，测试云端语音合成效果�
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "test":
         # python tools/gen_cloud_tts.py test "文本" [音色]
-        text = sys.argv[2] if len(sys.argv) > 2 else "这里是隔天信号弹，测试云端语音合成效果。"
+        text = sys.argv[2] if len(sys.argv) > 2 else "这里是AI语播·信号弹每周精选，测试云端语音合成效果。"
         voice = sys.argv[3] if len(sys.argv) > 3 else None
         test_single(text, voice)
     else:

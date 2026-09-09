@@ -30,7 +30,7 @@ SRT_EN = os.path.join(OUT_DIR, f"signal_pop_daily_{PREP_DATE}.en_US.srt")
 def build_segments_text(items):
     """与 win_pipeline_tts.build_segments 完全一致的段文本（不含 intro/outro 之外的前缀差异）。"""
     segs = []
-    segs.append(("intro", "这里是隔天信号弹，今天是发布日，欢迎收看本期信号弹，以下是本期精选的核心新闻。"))
+    segs.append(("intro", "这里是AI语播·信号弹每周精选，今天是发布日，欢迎收看本期精选，以下是本期精选的核心新闻。"))
     for item in items:
         n = item.get("num", 0)
         if n == 0:

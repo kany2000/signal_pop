@@ -104,49 +104,49 @@ def main():
     files = {}
 
     # 1. 抖音
-    files["douyin.md"] = f"""标题：{M_D}信号弹｜{title_all}！{n}条核心新闻
+    files["douyin.md"] = f"""标题：{M_D}AI语播·信号弹每周精选｜{title_all}！{n}条核心新闻
 
 简介：每期3分钟，了解本周发生的{n}件大事！
 
 {history_text}📱 本期看点：
 """ + "\n".join(f"{i+1}️⃣ {s}" for i, s in enumerate(shorts)) + f"""
 
-#隔天信号弹 #每周新闻 #今日热点 #新闻播报 #热点新闻 #科技资讯 #AI新闻 #新闻早报 #每周播报 #时政要闻 #民生新闻
+#AI语播·信号弹每周精选 #每周新闻 #今日热点 #新闻播报 #热点新闻 #科技资讯 #AI新闻 #新闻早报 #每周播报 #时政要闻 #民生新闻
 
 正文：
-隔天信号弹，每周三为你精选{n}条核心新闻。"""
+AI语播·信号弹每周精选，每周三为你精选{n}条核心新闻。"""
 
     # 2. 快手
     CIRC = "①②③④⑤⑥⑦⑧⑨⑩"
-    files["kuaishou.md"] = f"""标题：{M_D}信号弹｜{n}条核心新闻：{title_all}
+    files["kuaishou.md"] = f"""标题：{M_D}AI语播·信号弹每周精选｜{n}条核心新闻：{title_all}
 
 简介：每期3分钟，听遍天下事！本周{n}条新闻全在这里👇
 
 🔥 本期热点：
 """ + "\n".join(f"{CIRC[i] if i < len(CIRC) else i+1} {s}" for i, s in enumerate(shorts)) + f"""
 
-#隔天信号弹 #新闻早报 #热点 #今日新闻 #每周播报 #科技 #财经 #民生 #社会 #资讯
+#AI语播·信号弹每周精选 #新闻早报 #热点 #今日新闻 #每周播报 #科技 #财经 #民生 #社会 #资讯
 
 正文：
-隔天信号弹，每周三为你精选{n}条核心新闻。"""
+AI语播·信号弹每周精选，每周三为你精选{n}条核心新闻。"""
 
     # 3. B站
-    files["bilibili.md"] = f"""【{M_D}信号弹】{title_all}｜{n}条核心新闻
+    files["bilibili.md"] = f"""【{M_D}AI语播·信号弹每周精选】{title_all}｜{n}条核心新闻
 
 📌 本期{n}条新闻：
 """ + "\n".join(timeline_lines) + f"""
 
 每期3分钟，纵览天下事。记得三连支持一下~
 
-#隔天信号弹 #每周新闻 #新闻早报 #科技 #财经 #民生 #资讯
+#AI语播·信号弹每周精选 #每周新闻 #新闻早报 #科技 #财经 #民生 #资讯
 
 （以下为视频文案，供字幕参考）
-这里是隔天信号弹，今天是{PUB_DATE_FMT}，{PUB_WEEKDAY}。"""
+这里是AI语播·信号弹每周精选，今天是{PUB_DATE_FMT}，{PUB_WEEKDAY}。"""
 
     # 4. 小红书
     files["xiaohongshu.md"] = f"""本期{n}条新闻，3分钟看完 📺✨
 
-早上好呀宝子们☀️ 今天的信号弹来咯～
+早上好呀宝子们☀️ 今天的AI语播·信号弹每周精选来咯～
 每周三8点，3分钟带你速览本周大事👇
 
 """ + history_text + "\n".join(f"{CIRC[i] if i < len(CIRC) else i+1}️⃣ {s}" for i, s in enumerate(shorts)) + f"""
@@ -154,10 +154,10 @@ def main():
 你关注哪一条？评论区聊聊呀💬
 记得关注不迷路，每天8点见哦～
 
-#新闻早报 #每周新闻 #隔天信号弹 #今日热点 #科技资讯 #民生新闻 #信息差 #认知升级 #早安新闻 #新闻播报 #每周热点 #快讯"""
+#新闻早报 #每周新闻 #AI语播·信号弹每周精选 #今日热点 #科技资讯 #民生新闻 #信息差 #认知升级 #早安新闻 #新闻播报 #每周热点 #快讯"""
 
     # 5. 知乎
-    files["zhihu.md"] = f"""隔天信号弹 | {M_D}新闻早报（每周{n}条）
+    files["zhihu.md"] = f"""AI语播·信号弹每周精选 | {M_D}新闻早报（每周{n}条）
 
 """ + history_text + "\n".join(f"{i+1}. {s}" for i, s in enumerate(shorts)) + """
 
@@ -190,7 +190,7 @@ def main():
         # 兜底：英文字幕不足时用中文短标题 + 英文框架（正常情况下不会触发）
         en_titles = [s[:60] for s in shorts[:n]]
 
-    files["facebook.md"] = f"""📡 Signal Pop Daily | {PUB_DATE_SHORT} Daily News Briefing
+    files["facebook.md"] = f"""📡 Signal Pop Weekly | {PUB_DATE_SHORT} Daily News Briefing
 
 Top {n} stories today:
 """ + "\n".join(f"{i+1}. {t}" for i, t in enumerate(en_titles[:n])) + """
@@ -200,7 +200,7 @@ Top {n} stories today:
 #SignalPop #DailyNews #ChinaNews #Technology #News"""
 
     # 7. YouTube（全英文）
-    files["youtube.md"] = f"""📡 Signal Pop Daily | {PUB_DATE_SHORT} - {n} Core News Stories
+    files["youtube.md"] = f"""📡 Signal Pop Weekly | {PUB_DATE_SHORT} - {n} Core News Stories
 
 Today's Top {n}:
 """ + "\n".join(f"{i+1}. {t}" for i, t in enumerate(en_titles[:n])) + """
@@ -210,7 +210,7 @@ SignalPop,DailyNews,China,Technology,News,DailyNews"""
 
     # 8. Twitter / X（英文、# 话题、280 字符内紧凑版）——取前3条英文标题
 
-    twitter = f"""📡 Signal Pop Daily | {n} News in 3 min
+    twitter = f"""📡 Signal Pop Weekly | {n} News in 3 min
 
 Today's top stories:
 🔹 {en_titles[0]}
@@ -221,7 +221,7 @@ Today's top stories:
 #SignalPop #DailyNews #China #Technology #News #AI #Weather"""
     # 若超 280 字符，逐步压缩
     if len(twitter) > 280:
-        twitter = f"""📡 Signal Pop Daily | {n} News in 3 min
+        twitter = f"""📡 Signal Pop Weekly | {n} News in 3 min
 
 🔹 {en_titles[0]}
 🔹 {en_titles[1]}
@@ -232,7 +232,7 @@ Today's top stories:
     if len(twitter) > 280:
         # 再压：标题截断 48 字符 + 精简标签
         short_t = [t[:48].rstrip() + ("..." if len(t) > 48 else "") for t in en_titles]
-        twitter = f"""📡 Signal Pop Daily | {n} News in 3 min
+        twitter = f"""📡 Signal Pop Weekly | {n} News in 3 min
 
 🔹 {short_t[0]}
 🔹 {short_t[1]}
@@ -242,7 +242,7 @@ Today's top stories:
 #SignalPop #DailyNews #China #AI"""
     if len(twitter) > 280:
         # 最后兜底：去掉 emoji 圆点，只留纯文本
-        twitter = f"📡 Signal Pop Daily | {n} News in 3 min\n\n{en_titles[0][:55]}\n{en_titles[1][:55]}\n{en_titles[2][:55]}\n+{n-3} more in the video\n\n#SignalPop #DailyNews #China #AI"
+        twitter = f"📡 Signal Pop Weekly | {n} News in 3 min\n\n{en_titles[0][:55]}\n{en_titles[1][:55]}\n{en_titles[2][:55]}\n+{n-3} more in the video\n\n#SignalPop #DailyNews #China #AI"
     files["twitter.md"] = twitter
 
     for name, content in files.items():
