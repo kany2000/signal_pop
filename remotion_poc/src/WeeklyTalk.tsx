@@ -485,7 +485,7 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[] }> = ({ segs }) => {
         </div>
       )}
 
-      {/* 突发消息现场视频窗（两主播中间偏上；锚定首个突发段起点播一次，末尾淡出消失；无文件不渲染） */}
+      {/* 特别报道现场视频窗（两主播中间偏上；锚定首个突发段起点播一次，末尾淡出消失；无文件不渲染） */}
       {videoSeg && videoStart >= 0 && videoDur > 0 && (
         <Sequence
           from={Math.round(videoStart * fps)}

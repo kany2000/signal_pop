@@ -97,14 +97,54 @@ def main(date):
     pub = os.path.join(PROJECT_ROOT, "remotion_poc", "public")
     os.makedirs(pub, exist_ok=True)
 
-    # 突发消息现场视频（用户提供真实素材）：优先用用户指定/约定文件名
+    # 特别报道现场视频（用户提供真实素材）：规范目录 output/video/（见约定）
+    # 解析优先级：
+    #   1) parsed_news.json 中 breaking 项的显式 "video" 字段（绝对路径或文件名）
+    #   2) 规范目录 output/video/（按制作日约定文件名或首个 mp4）
+    #   3) 回退 output/weekly/<日>/videos/
     # → 归一化为 breaking_footage.mp4 → ffprobe 时长 → 挂到突发段
     # 视频窗由 WeeklyTalk.tsx 条件渲染：仅在突发段且有时长时显示，播一次末尾淡出。
+    VIDEO_CANON = os.path.join(PROJECT_ROOT, "output", "video")
     VIDEO_DIR = os.path.join(out_dir, "videos")
     video_src = None
-    if os.path.isdir(VIDEO_DIR):
+
+    # 1) parsed_news.json breaking 项显式 video 字段
+    try:
+        pn = json.load(open(os.path.join(out_dir, "parsed_news.json"), encoding="utf-8"))
+        brk = next((it for it in pn if it.get("type") == "breaking"), None)
+        if brk and brk.get("video"):
+            cand = brk["video"]
+            if os.path.isabs(cand) and os.path.exists(cand):
+                video_src = cand
+            else:
+                for base in (VIDEO_CANON, VIDEO_DIR):
+                    p = os.path.join(base, cand)
+                    if os.path.exists(p):
+                        video_src = p
+                        break
+    except Exception as e:
+        print(f"⚠️ 读取 parsed_news.json 视频字段失败: {e}")
+
+    # 2) 规范目录 output/video/（约定文件名优先，再兜底首个 mp4）
+    if not video_src and os.path.isdir(VIDEO_CANON):
         prefs = []
-        if len(sys.argv) > 2:  # 可选第 2 参数指定视频文件名
+        if len(sys.argv) > 2:
+            prefs.append(sys.argv[2])
+        prefs += [f"{date}_breaking.mp4", "iphone-duo.mp4", "breaking_footage.mp4"]
+        for name in prefs:
+            p = os.path.join(VIDEO_CANON, name)
+            if os.path.exists(p):
+                video_src = p
+                break
+        if not video_src:
+            mp4s = sorted(f for f in os.listdir(VIDEO_CANON) if f.lower().endswith(".mp4"))
+            if mp4s:
+                video_src = os.path.join(VIDEO_CANON, mp4s[0])
+
+    # 3) 回退 output/weekly/<日>/videos/
+    if not video_src and os.path.isdir(VIDEO_DIR):
+        prefs = []
+        if len(sys.argv) > 2:
             prefs.append(sys.argv[2])
         prefs += ["现场视频2.mp4", "breaking_footage.mp4"]
         for name in prefs:
@@ -112,10 +152,11 @@ def main(date):
             if os.path.exists(cand):
                 video_src = cand
                 break
-        if not video_src:  # 兜底：目录里仅一个 mp4 时直接用
+        if not video_src:
             mp4s = sorted(f for f in os.listdir(VIDEO_DIR) if f.lower().endswith(".mp4"))
             if mp4s:
                 video_src = os.path.join(VIDEO_DIR, mp4s[0])
+
     if video_src:
         dst_name = "breaking_footage.mp4"
         shutil.copy(video_src, os.path.join(pub, dst_name))
@@ -125,11 +166,11 @@ def main(date):
                 s["video"] = dst_name
                 s["videoDur"] = round(vdur, 3)
         print(
-            f"✅ 突发视频窗已挂载: {os.path.basename(video_src)} → {dst_name} "
+            f"✅ 特别报道视频窗已挂载: {os.path.basename(video_src)} → {dst_name} "
             f"（{os.path.getsize(video_src)} bytes, 时长 {vdur:.2f}s）"
         )
     else:
-        print(f"ℹ️ 未找到 {VIDEO_DIR}/*.mp4，突发段不挂视频窗。")
+        print(f"ℹ️ 未找到特别报道视频（output/video/ 与 {VIDEO_DIR}/ 均无 mp4），突发段不挂视频窗。")
 
     dst = os.path.join(PROJECT_ROOT, "remotion_poc", "src", "weekly_segs.json")
     with open(dst, "w", encoding="utf-8") as f:
