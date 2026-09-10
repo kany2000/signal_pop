@@ -58,10 +58,7 @@ IMAGE_PLAN = {
     "news13":      {"source": "real", "real_url": "", "prompt": "手机笔记本电脑平板数码产品组合陈列，开学季数码卖场，真实新闻图"},  # 数码三件套涨价
     "news14":      {"source": "ai", "prompt": "程序员深夜书桌，显示器流动彩色代码光影，AI 助手光点悬浮屏前，蓝色科技氛围，无人类面孔，屏幕上无可读文字"},
     "news15":      {"source": "real", "real_url": "", "prompt": "人民币跨境支付系统 CIPS 与外资银行签约，金融链路全球网络连接示意，蓝色科技风，真实新闻图"},  # CIPS 与 11 家外资银行签约
-    "news16":      {"source": "real", "real_url": "", "prompt": "Apple iPhone 18 Pro 实机产品摄影，钛金属机身，真实新闻图"},  # iPhone 18 Pro/Pro Max
-    "news17":      {"source": "real", "real_url": "", "prompt": "Apple Watch Series 12 与 Ultra 4 实机展示，真实产品图"},  # Apple Watch S12/Ultra 4
-    "news18":      {"source": "real", "real_url": "", "prompt": "Apple AirPods 5 实机产品摄影，真实新闻图"},  # AirPods 5
-    "news19":      {"source": "real", "real_url": "", "prompt": "苹果 CEO John Ternus 秋季发布会演讲现场，真实新闻图"},  # 后库克时代 / Ternus 首秀
+    "news16":      {"source": "real", "real_url": "", "prompt": "苹果秋季发布会全系新品阵容：iPhone 18 Pro、Apple Watch、AirPods 同台展示，真实产品图"},  # 苹果发布会全系（合并单条）
     "summary":     {"source": "ai", "prompt": "金色领奖台与星形奖杯，彩带飘落与聚光灯，庆典氛围，3D 渲染风格，无文字"},
     "watch":       {"source": "ai", "prompt": "多个发光日程卡片悬浮排列于聚光舞台前，日历与望远镜意象，蓝色科技风，3D 渲染，无可读文字"},
     "interactive": {"source": "ai", "prompt": "巨大对话气泡与点赞爱心评论图标漂浮，人群剪影仰望，暖金色调，无可读文字"},
