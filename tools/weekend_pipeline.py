@@ -42,7 +42,7 @@ PUB_WEEKDAY = ["星期一", "星期二", "星期三", "星期四", "星期五", 
 #   "ai"       -> 抽象题材 AI 生成（Sensenova）
 # real 项提供 real_url 直接下载；metaphor/ai 提供 prompt 走 Sensenova
 IMAGE_PLAN = {
-    "breaking":    {"source": "real", "real_url": "", "prompt": "苹果 iPhone Duo 折叠屏手机实机展示，7.6英寸内屏展开，产品摄影，真实新闻图"},  # iPhone Duo 折叠屏（特别报道）
+    "breaking":    {"source": "real", "real_url": "", "prompt": "苹果 iPhone Duo 折叠屏手机实机展示：钛金属机身、展开7.6英寸内屏（屏下摄像头无挖孔）、折叠5.4英寸外屏，产品摄影，真实新闻图"},  # iPhone Duo 折叠屏（特别报道）
     "news01":      {"source": "real", "real_url": "", "prompt": "吉隆灾区救援现场，应急物资运送，真实新闻图"},  # 棉衣驰援吉隆灾区
     "news02":      {"source": "real", "real_url": "", "prompt": "英伟达 NVIDIA 公司标志与数据中心 GPU，真实新闻图"},  # 英伟达收购 Hugging Face
     "news03":      {"source": "metaphor", "prompt": "金融贷款隐喻，成捆美元钞票堆叠与上升的金色箭头，银行金库大门透出金光，电影感光影，无人类，无可读文字，新闻插画风格"},
