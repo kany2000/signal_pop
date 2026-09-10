@@ -42,7 +42,7 @@ PUB_WEEKDAY = ["星期一", "星期二", "星期三", "星期四", "星期五", 
 #   "ai"       -> 抽象题材 AI 生成（Sensenova）
 # real 项提供 real_url 直接下载；metaphor/ai 提供 prompt 走 Sensenova
 IMAGE_PLAN = {
-    "breaking":    {"source": "real", "real_url": "", "prompt": "OpenAI GPT-6 发布会现场，真实新闻图"},  # GPT-6 正式发布
+    "breaking":    {"source": "real", "real_url": "", "prompt": "苹果 iPhone Duo 折叠屏手机实机展示，7.6英寸内屏展开，产品摄影，真实新闻图"},  # iPhone Duo 折叠屏（特别报道）
     "news01":      {"source": "real", "real_url": "", "prompt": "吉隆灾区救援现场，应急物资运送，真实新闻图"},  # 棉衣驰援吉隆灾区
     "news02":      {"source": "real", "real_url": "", "prompt": "英伟达 NVIDIA 公司标志与数据中心 GPU，真实新闻图"},  # 英伟达收购 Hugging Face
     "news03":      {"source": "metaphor", "prompt": "金融贷款隐喻，成捆美元钞票堆叠与上升的金色箭头，银行金库大门透出金光，电影感光影，无人类，无可读文字，新闻插画风格"},
@@ -58,6 +58,10 @@ IMAGE_PLAN = {
     "news13":      {"source": "real", "real_url": "", "prompt": "手机笔记本电脑平板数码产品组合陈列，开学季数码卖场，真实新闻图"},  # 数码三件套涨价
     "news14":      {"source": "ai", "prompt": "程序员深夜书桌，显示器流动彩色代码光影，AI 助手光点悬浮屏前，蓝色科技氛围，无人类面孔，屏幕上无可读文字"},
     "news15":      {"source": "real", "real_url": "", "prompt": "人民币跨境支付系统 CIPS 与外资银行签约，金融链路全球网络连接示意，蓝色科技风，真实新闻图"},  # CIPS 与 11 家外资银行签约
+    "news16":      {"source": "real", "real_url": "", "prompt": "Apple iPhone 18 Pro 实机产品摄影，钛金属机身，真实新闻图"},  # iPhone 18 Pro/Pro Max
+    "news17":      {"source": "real", "real_url": "", "prompt": "Apple Watch Series 12 与 Ultra 4 实机展示，真实产品图"},  # Apple Watch S12/Ultra 4
+    "news18":      {"source": "real", "real_url": "", "prompt": "Apple AirPods 5 实机产品摄影，真实新闻图"},  # AirPods 5
+    "news19":      {"source": "real", "real_url": "", "prompt": "苹果 CEO John Ternus 秋季发布会演讲现场，真实新闻图"},  # 后库克时代 / Ternus 首秀
     "summary":     {"source": "ai", "prompt": "金色领奖台与星形奖杯，彩带飘落与聚光灯，庆典氛围，3D 渲染风格，无文字"},
     "watch":       {"source": "ai", "prompt": "多个发光日程卡片悬浮排列于聚光舞台前，日历与望远镜意象，蓝色科技风，3D 渲染，无可读文字"},
     "interactive": {"source": "ai", "prompt": "巨大对话气泡与点赞爱心评论图标漂浮，人群剪影仰望，暖金色调，无可读文字"},
@@ -86,7 +90,7 @@ def parse_weekly_top(text):
             continue
         if line.startswith("【"):
             tag = line.strip("【】")
-            if tag == "突发消息":
+            if tag in ("突发消息", "特别报道"):
                 cur_block = "breaking"
             elif tag == "本周要闻":
                 cur_block = "news"
