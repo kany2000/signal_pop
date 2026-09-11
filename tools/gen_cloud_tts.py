@@ -9,7 +9,7 @@
     2) 讯飞开放平台:   xfyun.cn 在线语音合成，个人免费 1 万次调用/3 个月，粤语「小梅」最地道
 
 用法：
-  export SIGNAL_POP_TTS_BACKEND=volcengine|xunfei|qwen|edge   (默认 volcengine)
+  export SIGNAL_POP_TTS_BACKEND=qwen|xunfei|volcengine|edge   (默认 qwen，阿里云百炼免费兜底为主；讯飞免费备用；豆包/edge 再备用)
   export DASHSCOPE_API_KEY=sk-xxx                         (阿里云百炼 API Key，Qwen-TTS 用)
   export SIGNAL_POP_VOLC_API_KEY=xxx                      (火山引擎新版控制台 API Key)
   export SIGNAL_POP_XUNFEI_APPID=xxx SIGNAL_POP_XUNFEI_API_KEY=xxx SIGNAL_POP_XUNFEI_API_SECRET=xxx
@@ -27,7 +27,7 @@ sys.path.insert(0, PROJECT_ROOT)
 import config  # noqa: E402, F401
 FFMPEG = os.path.join(PROJECT_ROOT, "bin", "ffmpeg-9.0.1-essentials_build", "bin", "ffmpeg.exe")
 
-BACKEND = os.environ.get("SIGNAL_POP_TTS_BACKEND", "volcengine")
+BACKEND = os.environ.get("SIGNAL_POP_TTS_BACKEND", "qwen")
 
 # ---------- 音色映射（平日女声 / 周末男声 / 周末女声 / 粤语） ----------
 # 火山引擎豆包语音 TTS 2.0（seed-tts-2.0 大模型音色，必须 *_uranus_bigtts 结尾）

@@ -3,7 +3,7 @@
 """Signal Pop 周末特别版 · 双人对话 TTS 合成器
 解析对话稿（阿信/小蓝）→ 逐段合成（阿信=云舟男声 / 小蓝=爽快思思女声，豆包语音 2.0）→ 合并 WAV + 分段时长。
 用法：python tools/gen_dual_tts.py [PREP_DATE]
-后端：默认豆包语音（volcengine）；SIGNAL_POP_TTS_BACKEND=xunfei 走讯飞(免费兜底)、=qwen 走阿里云百炼 Qwen-TTS(免费兜底)、=edge 走 edge-tts。
+后端：默认 Qwen-TTS（阿里云百炼 qwen3-tts-flash 北京免费 11 万字符/90 天，主要）；SIGNAL_POP_TTS_BACKEND=xunfei 走讯飞(免费备用)、=volcengine 走豆包语音 2.0(配额备用)、=edge 走 edge-tts。
 """
 import os
 import sys
@@ -36,7 +36,7 @@ def _load_env():
                 os.environ.setdefault(k.strip(), v.strip())
 
 _load_env()
-BACKEND = os.environ.get("SIGNAL_POP_TTS_BACKEND", "volcengine")
+BACKEND = os.environ.get("SIGNAL_POP_TTS_BACKEND", "qwen")
 
 # 豆包语音双人音色（2026-08-16 用户认可）：阿信=云舟男 / 小蓝=爽快思思女；edge/讯飞/Qwen 兜底保留
 # 第 4 元 = Qwen-TTS 音色（阿信=Ethan 晨煦男 / 小蓝=Cherry 芊悦女）
