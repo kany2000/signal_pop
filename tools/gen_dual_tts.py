@@ -3,7 +3,7 @@
 """Signal Pop 周末特别版 · 双人对话 TTS 合成器
 解析对话稿（阿信/小蓝）→ 逐段合成（阿信=云舟男声 / 小蓝=爽快思思女声，豆包语音 2.0）→ 合并 WAV + 分段时长。
 用法：python tools/gen_dual_tts.py [PREP_DATE]
-后端：默认豆包语音（volcengine）；环境变量 SIGNAL_POP_TTS_BACKEND=edge 可回退 edge-tts。
+后端：默认豆包语音（volcengine）；SIGNAL_POP_TTS_BACKEND=xunfei 走讯飞(免费兜底)、=qwen 走阿里云百炼 Qwen-TTS(免费兜底)、=edge 走 edge-tts。
 """
 import os
 import sys
@@ -38,10 +38,11 @@ def _load_env():
 _load_env()
 BACKEND = os.environ.get("SIGNAL_POP_TTS_BACKEND", "volcengine")
 
-# 豆包语音双人音色（2026-08-16 用户认可）：阿信=云舟男 / 小蓝=爽快思思女；edge 兜底保留
+# 豆包语音双人音色（2026-08-16 用户认可）：阿信=云舟男 / 小蓝=爽快思思女；edge/讯飞/Qwen 兜底保留
+# 第 4 元 = Qwen-TTS 音色（阿信=Ethan 晨煦男 / 小蓝=Cherry 芊悦女）
 VOICES = {
-    "阿信": ("zh_male_m191_uranus_bigtts", "zh-CN-YunyangNeural"),    # 云舟 2.0 男声 / edge 男
-    "小蓝": ("zh_female_shuangkuaisisi_uranus_bigtts", "zh-CN-XiaoxiaoNeural"),  # 爽快思思 2.0 女声 / edge 女
+    "阿信": ("zh_male_m191_uranus_bigtts", "zh-CN-YunyangNeural", "x4_qianmo", "Ethan"),  # 云舟 2.0 男 / edge 男 / 讯飞钱墨男 / Qwen 晨煦男
+    "小蓝": ("zh_female_shuangkuaisisi_uranus_bigtts", "zh-CN-XiaoxiaoNeural", "x4_yezi", "Cherry"),  # 爽快思思 2.0 女 / edge 女 / 讯飞叶子女 / Qwen 芊悦女
 }
 
 
@@ -55,18 +56,18 @@ def parse_talk(text):
         for name, voices in VOICES.items():
             if line.startswith(f"{name}：") or line.startswith(f"{name}:"):
                 content = line.split("：", 1)[1] if "：" in line else line.split(":", 1)[1]
-                voice = voices[0] if BACKEND == "volcengine" else voices[1]
+                voice = voices[0] if BACKEND == "volcengine" else (voices[2] if BACKEND == "xunfei" else (voices[3] if BACKEND == "qwen" else voices[1]))
                 segs.append({"speaker": name, "voice": voice, "text": content.strip()})
                 break
     return segs
 
 
 async def gen_one(idx, seg, sem, audio_dir):
-    """单句合成（豆包语音 volc_synthesize，带重试；edge 兜底）。返回 mp3 路径。"""
-    from gen_cloud_tts import volc_synthesize
+    """单句合成（豆包语音 volc_synthesize，带重试；讯飞/Qwen/edge 兜底）。返回 mp3 路径。"""
+    from gen_cloud_tts import volc_synthesize, xunfei_synthesize, qwen_synthesize
     async with sem:
         mp3 = os.path.join(audio_dir, f"_s{idx:03d}.mp3")
-        # 断点续跑：已成功的片段直接复用（避免重跑烧豆包配额）
+        # 断点续跑：已成功的片段直接复用（避免重跑烧配额）
         if os.path.exists(mp3) and os.path.getsize(mp3) > 1000:
             return mp3
         last_err = None
@@ -74,6 +75,10 @@ async def gen_one(idx, seg, sem, audio_dir):
             try:
                 if BACKEND == "volcengine":
                     volc_synthesize(seg["text"], seg["voice"], mp3)
+                elif BACKEND == "xunfei":
+                    xunfei_synthesize(seg["text"], seg["voice"], mp3)
+                elif BACKEND == "qwen":
+                    qwen_synthesize(seg["text"], seg["voice"], mp3)
                 else:
                     import edge_tts, aiohttp
                     conn = aiohttp.TCPConnector(resolver=aiohttp.resolver.ThreadedResolver())

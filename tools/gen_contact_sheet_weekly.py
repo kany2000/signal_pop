@@ -16,8 +16,8 @@ BASE = "E:/projects/signal_pop"
 
 # 展示顺序与中文章节标签
 ORDER = [("breaking", "特别报道")]
-ORDER += [(f"news_{i:02d}", f"要闻{i:02d}") for i in range(1, 15)]
-ORDER += [("summary", "本周之最"), ("watch", "下周看点"),
+ORDER += [(f"news_{i:02d}", f"要闻{i:02d}") for i in range(1, 17)]
+ORDER += [("summary", "本周之最"),
           ("interactive", "互动话题"), ("pick", "每期精选")]
 
 

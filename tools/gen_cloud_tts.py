@@ -9,7 +9,8 @@
     2) 讯飞开放平台:   xfyun.cn 在线语音合成，个人免费 1 万次调用/3 个月，粤语「小梅」最地道
 
 用法：
-  export SIGNAL_POP_TTS_BACKEND=volcengine|xunfei|edge   (默认 edge，行为与旧版一致)
+  export SIGNAL_POP_TTS_BACKEND=volcengine|xunfei|qwen|edge   (默认 volcengine)
+  export DASHSCOPE_API_KEY=sk-xxx                         (阿里云百炼 API Key，Qwen-TTS 用)
   export SIGNAL_POP_VOLC_API_KEY=xxx                      (火山引擎新版控制台 API Key)
   export SIGNAL_POP_XUNFEI_APPID=xxx SIGNAL_POP_XUNFEI_API_KEY=xxx SIGNAL_POP_XUNFEI_API_SECRET=xxx
   python tools/gen_cloud_tts.py 20260816                  # 与 win_pipeline_tts 同接口：读 parsed_news.json -> tts.wav
@@ -40,6 +41,14 @@ XUNFEI_VOICE_WEEKEND = "x4_qianmo"                # 超拟人男声（如未开�
 XUNFEI_VOICE_YUE = "xiaomei"                      # 讯飞小梅（广东女声粤语）✅用户裁决"勉强可以用"
 # 已否掉的粤语：讯飞小月 xiaoyue（普通话读粤语"很搞笑"）、x2_xiaoyue（付费未授权）、x4_guangdong、xiaogang
 # 已否掉的平日女声候选：小何 xiaohe、贴心女声、知性女声（用户最终选 Vivi）
+# 阿里云百炼 Qwen-TTS（qwen3-tts-flash，非实时 HTTP；免费 1 万字符/90 天）
+#   音色目录见 https://help.aliyun.com/zh/model-studio/qwen-tts-voice-list
+#   阿信(男)=Ethan 晨煦（标准普通话·阳光温暖）/ 小蓝(女)=Cherry 芊悦（阳光亲切小姐姐）
+#   想换风格：阿信可换 Moon 月白(率性帅气)、Ryan 甜茶(戏感男)；小蓝可换 Serena 苏瑶(温柔)、Cixuan
+QWEN_VOICE_WEEKDAY = "Cherry"        # 平日女声
+QWEN_VOICE_WEEKEND = "Ethan"         # 周末男声·阿信
+QWEN_VOICE_WEEKEND_F = "Cherry"      # 周末女声·小蓝
+QWEN_VOICE_YUE = "Rocky"             # 粤语-阿强（如启用粤语）
 
 # 与 win_pipeline_tts 一致的音色选择规则
 def select_voice(pub_weekday="星期六", lang="zh", speaker=None):
@@ -57,6 +66,14 @@ def select_voice(pub_weekday="星期六", lang="zh", speaker=None):
         if lang == "yue":
             return XUNFEI_VOICE_YUE
         return XUNFEI_VOICE_WEEKEND if is_weekend else XUNFEI_VOICE_WEEKDAY
+    if BACKEND == "qwen":
+        if lang == "yue":
+            return QWEN_VOICE_YUE
+        if speaker == "阿信":
+            return QWEN_VOICE_WEEKEND
+        if speaker == "小蓝":
+            return QWEN_VOICE_WEEKEND_F
+        return QWEN_VOICE_WEEKEND if is_weekend else QWEN_VOICE_WEEKDAY
     # edge 兜底
     return ("zh-CN-YunyangNeural" if is_weekend else "zh-CN-XiaoxiaoNeural")
 
@@ -223,6 +240,68 @@ def xunfei_synthesize(text, voice, out_mp3):
     return out_mp3
 
 
+# ================= 阿里云百炼 Qwen-TTS（qwen3-tts-flash，非实时 HTTP） =================
+def qwen_synthesize(text, voice, out_mp3):
+    """阿里云百炼 Qwen-TTS 非实时合成（qwen3-tts-flash，免费 1 万字符/90 天）。
+    接口：POST /api/v1/services/aigc/multimodal-generation/generation
+    鉴权：Authorization: Bearer $DASHSCOPE_API_KEY
+    非流式响应里音频在 output.data[].url（data:audio/...;base64,...）或 output.audio.url（24h 临时链）。
+    """
+    import requests
+    api_key = os.environ.get("DASHSCOPE_API_KEY", "")
+    if not api_key:
+        raise RuntimeError("未配置 DASHSCOPE_API_KEY（阿里云百炼 API Key，参见 .env 说明）")
+    url = "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": "qwen3-tts-flash",
+        "input": {
+            "text": text,
+            "voice": voice,
+            "language_type": "Chinese",
+        },
+    }
+    r = requests.post(url, json=payload, headers=headers, timeout=90)
+    if r.status_code != 200:
+        try:
+            err = r.json()
+            msg = err.get("message") or err.get("code") or r.text
+        except Exception:
+            msg = r.text
+        raise RuntimeError(f"DashScope HTTP {r.status_code}: {str(msg)[:300]}")
+    resp = r.json()
+
+    def _decode(u):
+        if u.startswith("data:audio"):
+            return base64.b64decode(u.split(",", 1)[1])
+        if u.startswith("http"):
+            return requests.get(u, timeout=60).content
+        return None
+
+    # 兼容多种响应结构：output.data[] / output.audio.url
+    audio = None
+    for d in resp.get("output", {}).get("data", []):
+        if d.get("url"):
+            audio = _decode(d["url"])
+            if audio:
+                break
+        if d.get("content"):
+            audio = base64.b64decode(d["content"])
+            break
+    if audio is None:
+        audio_obj = resp.get("output", {}).get("audio")
+        if isinstance(audio_obj, dict) and audio_obj.get("url"):
+            audio = _decode(audio_obj["url"])
+    if not audio:
+        raise RuntimeError(f"DashScope 未返回音频数据: {str(resp)[:200]}")
+    with open(out_mp3, "wb") as f:
+        f.write(audio)
+    return out_mp3
+
+
 # ================= 统一合成 + 时长 =================
 def _safe_remove(path):
     """删除文件（兼容 Windows 沙箱回收站不可用场景：ctypes 直调 DeleteFileW）。"""
@@ -246,6 +325,8 @@ def synthesize_one(idx, label, text, voice, audio_dir):
                 volc_synthesize(text, voice, mp3)
             elif BACKEND == "xunfei":
                 xunfei_synthesize(text, voice, mp3)
+            elif BACKEND == "qwen":
+                qwen_synthesize(text, voice, mp3)
             else:
                 raise RuntimeError(f"未知后端: {BACKEND}")
             if os.path.getsize(mp3) > 500:
@@ -321,8 +402,10 @@ def test_single(text="这里是AI语播·信号弹每周精选，测试云端语
         volc_synthesize(text, voice, out)
     elif BACKEND == "xunfei":
         xunfei_synthesize(text, voice, out)
+    elif BACKEND == "qwen":
+        qwen_synthesize(text, voice, out)
     else:
-        raise RuntimeError("请先设置 SIGNAL_POP_TTS_BACKEND=volcengine 或 xunfei")
+        raise RuntimeError("请先设置 SIGNAL_POP_TTS_BACKEND=volcengine|xunfei|qwen")
     print(f"✅ 试听文件: {out} ({os.path.getsize(out)//1024}KB)")
     return out
 
