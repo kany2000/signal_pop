@@ -32,7 +32,10 @@ export const RemotionRoot: React.FC = () => {
         fps={30}
         width={1920}
         height={1080}
-        defaultProps={{ segs: weeklySegs }}
+        defaultProps={{
+          segs: weeklySegs,
+          pickUrl: (weeklySegs && weeklySegs[0] && weeklySegs[0].pickUrl) || "sink.hailoutec.com/pam",
+        }}
       />
       <Composition
         id="DailyNews"
@@ -51,14 +54,14 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="OpeningAnimation"
         component={OpeningAnimation}
-        durationInFrames={300}
+        durationInFrames={270}
         fps={30}
         width={1920}
         height={1080}
         defaultProps={{
           title: "AI语播·信号弹每周精选",
-          date: "2026年9月9日",
-          weekday: "星期三",
+          date: "2026年9月12日",
+          weekday: "星期六",
         }}
       />
       <Composition

@@ -40,8 +40,7 @@ const GOLD = "#D4AF37";
 const WHITE = "#F5F5FA";
 const GREY = "#BEC6D2";
 
-// 每期精选固定网址（口播说"网址在视频简介里"，画面同步挂出）
-const PICK_URL_DISPLAY = "sink.hailoutec.com/pam";
+// 每期精选网址（口播说"网址在视频简介里"，画面同步挂出）：改为由 weekly_segs.json 逐段 pickUrl 注入，逐期可配（见组件 pickUrl prop）
 
 const easeOut = Easing.out(Easing.cubic);
 
@@ -317,10 +316,14 @@ const AgendaCard: React.FC<{ items: string[]; localT: number; color: string }> =
   );
 };
 
-export const WeeklyTalk: React.FC<{ segs: TalkSegment[] }> = ({ segs }) => {
+export const WeeklyTalk: React.FC<{ segs: TalkSegment[]; pickUrl?: string }> = ({
+  segs,
+  pickUrl,
+}) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const t = frame / fps;
+  const pickUrlDisplay = pickUrl || "sink.hailoutec.com/pam";
 
   // 累计定位当前段
   let cur: TalkSegment | null = null;
@@ -637,7 +640,7 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[] }> = ({ segs }) => {
             🔗 本期精选网址
           </span>
           <span style={{ fontSize: 34, fontWeight: "bold", color: "#fff", fontFamily: "Consolas, monospace", letterSpacing: 1 }}>
-            {PICK_URL_DISPLAY}
+            {pickUrlDisplay}
           </span>
         </div>
       )}

@@ -37,6 +37,9 @@ FF="$ROOT/bin/ffmpeg-9.0.1-essentials_build/bin/ffmpeg.exe"
 FP="$ROOT/bin/ffmpeg-9.0.1-essentials_build/bin/ffprobe.exe"
 CHROME="C:/Program Files/Google/Chrome/Application/chrome.exe"
 REMIX="$POC/node_modules/.bin/remotion"
+OPENING_OUT="$OUT/opening_anim.mp4"
+PIANO="$ROOT/output/mp3/Romeo - Winds of Hope - Creative Cut - Piano.mp3"
+OPEN_FRAMES=270
 PY="C:/Users/Administrator/AppData/Local/Programs/Python/Python311/python.exe"
 LOG="$OUT/render.log"
 
@@ -48,7 +51,8 @@ if [ -n "${TOTAL_FRAMES:-}" ]; then
 else
   TOTAL=$("$PY" -c "import json;d=json.load(open(r'$POC/src/weekly_segs.json'));print(int(round(sum(x['dur'] for x in d)*30)))")
 fi
-echo "[$(date +%H:%M:%S)] TOTAL_FRAMES=$TOTAL  CHUNK=$CHUNK  CRF=$CRF" | tee -a "$LOG"
+FULL_TOTAL=$(( OPEN_FRAMES + TOTAL ))
+echo "[$(date +%H:%M:%S)] TOTAL_FRAMES=$TOTAL  OPEN_FRAMES=$OPEN_FRAMES  FULL_TOTAL=$FULL_TOTAL  CHUNK=$CHUNK  CRF=$CRF" | tee -a "$LOG"
 
 NPARTS=$(( (TOTAL + CHUNK - 1) / CHUNK ))
 
@@ -62,7 +66,20 @@ check_part_frames() {
   [ -n "$nb" ] && [ "$nb" -eq "$expected" ]
 }
 
-# 2) 逐段渲染（幂等：跳过已完成段）
+# 2) 渲染片头 OpeningAnimation（幂等）
+if [ -f "$OPENING_OUT" ] && check_part_frames "$OPENING_OUT" "$OPEN_FRAMES"; then
+  echo "[$(date +%H:%M:%S)] skip opening (already done, ${OPEN_FRAMES} frames ok)" | tee -a "$LOG"
+else
+  echo "[$(date +%H:%M:%S)] render OpeningAnimation ${OPEN_FRAMES} frames" | tee -a "$LOG"
+  rm -f "$OPENING_OUT"
+  ( cd "$POC" && "$REMIX" render OpeningAnimation "$OPENING_OUT" --concurrency=2 --browser-executable="$CHROME" --chrome-flags="--disable-accelerated-video-decode --disable-gpu" ) >> "$LOG" 2>&1
+  if ! check_part_frames "$OPENING_OUT" "$OPEN_FRAMES"; then
+    echo "!! OpeningAnimation 渲染失败或帧数不足（期望 ${OPEN_FRAMES}）" >&2
+    exit 1
+  fi
+fi
+
+# 3) 逐段渲染 WeeklyTalk（幂等：跳过已完成段）
 #    注意：Remotion --frames 接受闭区间 "start-end"（短横线），端点为帧索引，
 #          最大有效帧 = TOTAL-1（durationInFrames=TOTAL，0-based）。
 for ((i=0;i<NPARTS;i++)); do
@@ -96,31 +113,33 @@ done
 
 # 若最终成片已存在、FINAL DONE 已记录且帧数校验通过，则跳过拼接/重编码
 if [ -f "$OUT/signal_pop_weekly_$DATE.mp4" ] && grep -q "FINAL DONE" "$LOG" 2>/dev/null; then
-  if check_part_frames "$OUT/signal_pop_weekly_$DATE.mp4" "$TOTAL"; then
+  if check_part_frames "$OUT/signal_pop_weekly_$DATE.mp4" "$FULL_TOTAL"; then
     echo "[$(date +%H:%M:%S)] 成片已存在且帧数完整，跳过拼接/重编码" | tee -a "$LOG"
     exit 0
   fi
   echo "[$(date +%H:%M:%S)] 警告：成片已存在但帧数不完整，强制重建" | tee -a "$LOG"
 fi
 
-# 3) 拼接（copy）+ 整体 CRF26 重编码 + 合并 TTS
+# 4) 拼接：片头 + WeeklyTalk 各段（copy），再整体 CRF26 重编码 + 合并完整音频
 SILENT="$POC/out/WeeklyTalk_silent.mp4"
 FINAL="$OUT/signal_pop_weekly_$DATE.mp4"
 AUDIO="$OUT/audio/tts.wav"
+AUDIO_FULL="$OUT/audio/full_audio.wav"
 LIST="$OUT/concat_list.txt"
 
 : > "$LIST"
+echo "file '$OPENING_OUT'" >> "$LIST"
 for ((i=0;i<NPARTS;i++)); do
   echo "file '$OUT/part$(printf '%02d' $i).mp4'" >> "$LIST"
 done
 
-echo "[$(date +%H:%M:%S)] concat parts (copy)" | tee -a "$LOG"
+echo "[$(date +%H:%M:%S)] concat opening + parts (copy)" | tee -a "$LOG"
 "$FF" -y -f concat -safe 0 -i "$LIST" -c copy "$SILENT" >> "$LOG" 2>&1
 
-# 拼接结果校验：总帧数必须等于 TOTAL，否则禁止进入成片阶段（拦截残缺成片）
-if ! check_part_frames "$SILENT" "$TOTAL"; then
+# 拼接结果校验：总帧数必须等于 FULL_TOTAL，否则禁止进入成片阶段（拦截残缺成片）
+if ! check_part_frames "$SILENT" "$FULL_TOTAL"; then
   nb=$("$FP" -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of default=noprint_wrappers=1:nokey=1 "$SILENT" 2>/dev/null | tr -d '[:space:]\r')
-  echo "!! 拼接后帧数 $nb != 期望 $TOTAL，某段残缺，已阻止生成成片。删除对应 part 后重跑本脚本。" >&2
+  echo "!! 拼接后帧数 $nb != 期望 $FULL_TOTAL，某段残缺，已阻止生成成片。删除对应 part 后重跑本脚本。" >&2
   exit 1
 fi
 
@@ -128,9 +147,25 @@ if [ ! -f "$AUDIO" ]; then
   echo "!! 缺少 TTS 音频 $AUDIO（请先跑 gen_dual_tts.py）" >&2
   exit 1
 fi
+if [ ! -f "$PIANO" ]; then
+  echo "!! 缺少片头钢琴配乐 $PIANO" >&2
+  exit 1
+fi
+
+# 组装完整音频：前 9s 钢琴配乐 + TTS 整体延后 OPEN_FRAMES 帧
+mkdir -p "$OUT/audio"
+echo "[$(date +%H:%M:%S)] build full audio (piano 9s + tts delayed ${OPEN_FRAMES} frames)" | tee -a "$LOG"
+"$FF" -y -ss 0 -t 9 -i "$PIANO" -i "$AUDIO" -filter_complex "[0:a]aformat=sample_fmts=fltp:sample_rates=24000:channel_layouts=mono[head];[1:a]aformat=sample_fmts=fltp:sample_rates=24000:channel_layouts=mono[tail];[head][tail]concat=n=2:v=0:a=1[out]" -map "[out]" -ar 24000 -ac 1 -c:a pcm_s16le "$AUDIO_FULL" >> "$LOG" 2>&1
 
 echo "[$(date +%H:%M:%S)] re-encode CRF$CRF + merge audio" | tee -a "$LOG"
-"$FF" -y -i "$SILENT" -i "$AUDIO" -c:v libx264 -preset fast -crf "$CRF" -pix_fmt yuv420p -c:a aac -b:a 192k -ar 24000 -ac 1 -map 0:v:0 -map 1:a:0 "$FINAL" >> "$LOG" 2>&1
+"$FF" -y -i "$SILENT" -i "$AUDIO_FULL" -c:v libx264 -preset fast -crf "$CRF" -pix_fmt yuv420p -c:a aac -b:a 192k -ar 24000 -ac 1 -map 0:v:0 -map 1:a:0 "$FINAL" >> "$LOG" 2>&1
+
+# 成片帧数校验
+if ! check_part_frames "$FINAL" "$FULL_TOTAL"; then
+  nb=$("$FP" -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of default=noprint_wrappers=1:nokey=1 "$FINAL" 2>/dev/null | tr -d '[:space:]\r')
+  echo "!! 成片帧数 $nb != 期望 $FULL_TOTAL，合成异常。" >&2
+  exit 1
+fi
 
 echo "FINAL DONE $(date +%H:%M:%S)" >> "$LOG"
 echo "[$(date +%H:%M:%S)] 完成: $FINAL" | tee -a "$LOG"

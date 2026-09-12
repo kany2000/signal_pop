@@ -68,6 +68,22 @@ def main(date):
     n = len(dlg)
     opening_bg_path = os.path.join(out_dir, "images", "opening_bg.jpg")
     has_opening_bg = os.path.exists(opening_bg_path)
+
+    # 每期精选网址（片尾「本期精选网址」条 + 发布文案复用）：逐期可配。
+    # 优先级：argv[2] 显式传入 > output/weekly/<日>/pick_url.txt > 默认兜底。
+    DEFAULT_PICK_URL = "sink.hailoutec.com/pam"
+    pick_url = DEFAULT_PICK_URL
+    pick_txt = os.path.join(out_dir, "pick_url.txt")
+    if len(sys.argv) > 2 and sys.argv[2].strip():
+        pick_url = sys.argv[2].strip()
+    elif os.path.exists(pick_txt):
+        try:
+            pick_url = open(pick_txt, encoding="utf-8").read().strip()
+        except Exception:
+            pass
+    if pick_url:
+        print(f"ℹ️ 本期精选网址: {pick_url}")
+
     for i in range(n):
         d = dlg[i]
         bg = d.get("bg") or ""
@@ -86,6 +102,7 @@ def main(date):
                 "isBreaking": bg == "breaking.jpg",
                 "isInteractive": bg == "interactive.jpg",
                 "cta": (i == n - 1),  # 末段触发结尾「一键三连」CTA
+                "pickUrl": pick_url,  # 片尾每期精选网址（逐期可配）
                 # ② 数字滚动卡 / ③ 下周看点日程卡（build_weekly_dialogue 生成，
                 #    Remotion 端仅在非空时渲染对应组件）
                 "data": d.get("data") or [],

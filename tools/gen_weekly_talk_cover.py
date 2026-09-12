@@ -3,14 +3,15 @@
 """Signal Pop 周末特别版 · 双人封面生成 v4
 
 主持人脸（阿信/小蓝 = 信蓝组合）为固定人设跨期复用（项目规则）。
-版式每期轮换，保证新鲜感。七种风格：
-  - split     : 经典左右分屏 + 金色中带（原 v1/v2，兜底）
+版式每期轮换，保证新鲜感。八种方案（含开场同款 opening；split 已停用）：
+  - (split 已停用：用户 2026-09-12 否决，永久移出自动轮换池)
   - magazine  : 杂志头条风（双人左侧 + 大刊头 + 本期 TOP3 标题预告）
-  - neon      : 巨型数字风（巨大"15" + 双人圆形头像 + 霓虹光晕色）
+  - neon      : 霓虹巨型数字风（双人圆形头像 + 霓虹光晕色）
   - newspaper : 报纸头版风（米白纸纹 + 衬线大标题 + 黑白红三色）
   - popart    : 波普漫画风（高饱和撞色 + 半调网点 + 爆炸星框）
   - glitch    : 赛博故障风（RGB 错位 + 扫描线 + 数据网格）
   - variety   : 综艺大字报风（渐变底 + 爆炸贴纸 + 超大描边字）
+  - opening   : 开场动画同款（深蓝网格 + 紫粉辉光 + 爆炸星 + 信号弹，最贴正片）
 
 轮换机制（2026-09-04）：
   STYLE=auto（默认）按制作日 md5 选风格，记录到 output/used_cover_styles.json，
@@ -19,7 +20,7 @@
   TOP3 头条自动读取本期 parsed_news.json（缺失时回退内置占位）。
 
 用法：python tools/gen_weekly_talk_cover.py [PREP_DATE] [STYLE] [SUFFIX]
-  STYLE : auto | split | magazine | neon | newspaper | popart | glitch | variety
+  STYLE : auto | all | magazine | neon | newspaper | popart | glitch | variety | opening
   SUFFIX: 可选，附加到文件名做风格预览；正式出品不传 SUFFIX（输出规范名）
 """
 import os
@@ -39,9 +40,14 @@ IMAGES_DIR = os.path.join(OUT_DIR, "images")
 FONT = "C:/Windows/Fonts/msyh.ttc"
 FONT_BOLD = "C:/Windows/Fonts/msyhbd.ttc"
 
-PUB_DT = datetime.strptime(PREP_DATE, "%Y%m%d") + timedelta(days=1)
+# 播出日 = 制作日所在周的周六（周五产→次日周六，周六产→当天；往后所有周末版自动正确）
+_prep_dt = datetime.strptime(PREP_DATE, "%Y%m%d")
+PUB_DT = _prep_dt + timedelta(days=(5 - _prep_dt.weekday()) % 7)
 PUB_DATE_SHORT = f"{PUB_DT.year}.{PUB_DT.month:02d}.{PUB_DT.day:02d}"
 WEEKDAY_CN = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][PUB_DT.weekday()]
+# 本期精选条数（与正片/文案保持一致；后续可改为从 parsed_news 自动读取）
+ITEM_COUNT = 17
+CN_COUNT = f"本周{ITEM_COUNT}条"  # 例：本周17条
 
 # 调色板
 AXIN_BLUE = (58, 130, 210)
@@ -65,7 +71,8 @@ NEON_HUES = [
 ]
 
 # ===================== 风格轮换机制（2026-09-04） =====================
-COVER_STYLES = ["split", "magazine", "neon", "newspaper", "popart", "glitch", "variety"]
+# split 风格经用户 2026-09-12 明确否决，永久移出自动轮换池（不再自动出现）
+COVER_STYLES = ["magazine", "neon", "newspaper", "popart", "glitch", "variety", "opening"]
 USED_COVER_FILE = os.path.join(PROJECT_ROOT, "output", "used_cover_styles.json")
 
 
@@ -299,8 +306,8 @@ def build_split_landscape(w, h, axin, xiaolan):
             d.text((cx + ox, y + oy), ln, fill=(40, 30, 10), font=tf, anchor="mm")
         d.text((cx, y), ln, fill=GOLD_BRIGHT, font=tf, anchor="mm")
     d.text((w // 2, int(h * 0.04)), "隔天信号弹 · 周末特别版", fill=GOLD, font=fnt(int(w * 0.022), True), anchor="mm")
-    d.text((w // 2, int(h * 0.075)), "信蓝组合 · 本周15条新闻闲聊", fill=LIGHT_GREY, font=fnt(int(w * 0.016)), anchor="mm")
-    d.text((w // 2, h - int(h * 0.05)), f"{WEEKDAY_CN} 08:00 · {PUB_DATE_SHORT}", fill=GOLD, font=fnt(int(w * 0.024), True), anchor="mm")
+    d.text((w // 2, int(h * 0.075)), f"信蓝组合 · 本周{ITEM_COUNT}条新闻闲聊", fill=LIGHT_GREY, font=fnt(int(w * 0.016)), anchor="mm")
+    d.text((w // 2, h - int(h * 0.05)), f"周末 · {PUB_DATE_SHORT}", fill=GOLD, font=fnt(int(w * 0.024), True), anchor="mm")
     nf = fnt(int(h * 0.07), True)
     ap = (half_w // 2, h - int(h * 0.13))
     for ox, oy in [(-3, 0), (3, 0), (0, -3), (0, 3)]:
@@ -338,7 +345,7 @@ def build_split_portrait(w, h, axin, xiaolan):
     ss = int(band_h * 0.20)
     tf = fnt(ts, True)
     sf = fnt(ss, True)
-    title = "本周15条"
+    title = CN_COUNT
     for ox, oy in [(-2, 0), (2, 0), (0, -2), (0, 2)]:
         d.text((w // 2 + ox, bcy - ts * 0.4 + oy), title, fill=(40, 30, 10), font=tf, anchor="mm")
     d.text((w // 2, bcy - ts * 0.4), title, fill=GOLD_BRIGHT, font=tf, anchor="mm")
@@ -346,7 +353,7 @@ def build_split_portrait(w, h, axin, xiaolan):
     d.rectangle([0, 0, w, 5], fill=GOLD)
     d.text((w // 2, int(w * 0.06) + 8), "隔天信号弹 · 周末特别版", fill=GOLD, font=fnt(int(w * 0.07), True), anchor="mm")
     d.rectangle([0, h - 5, w, h], fill=GOLD)
-    d.text((w // 2, h - int(w * 0.06) - 8), f"{PUB_DT.month}/{PUB_DT.day} {WEEKDAY_CN} 08:00", fill=GOLD, font=fnt(int(w * 0.06), True), anchor="mm")
+    d.text((w // 2, h - int(w * 0.06) - 8), f"{PUB_DT.month}/{PUB_DT.day} 周末", fill=GOLD, font=fnt(int(w * 0.06), True), anchor="mm")
     nf = fnt(int(w * 0.085), True)
     ap = (int(w * 0.12), half_h - int(w * 0.06))
     for ox, oy in [(-3, 0), (3, 0), (0, -3), (0, 3)]:
@@ -381,9 +388,9 @@ def build_magazine_landscape(w, h, axin, xiaolan):
 
     # 左侧大标题区：宽度 = px1 左侧留出边距
     title_max_w = px1 - margin * 2
-    title_font, _ = fit_size("本周15条", title_max_w, int(h * 0.18), bold=True)
+    title_font, _ = fit_size(CN_COUNT, title_max_w, int(h * 0.18), bold=True)
     title_y = int(h * 0.38)
-    draw_outline(d, (margin, title_y), "本周15条", title_font, GOLD_BRIGHT, outline=(20, 14, 4), w=max(4, int(w * 0.004)), anchor="lm")
+    draw_outline(d, (margin, title_y), CN_COUNT, title_font, GOLD_BRIGHT, outline=(20, 14, 4), w=max(4, int(w * 0.004)), anchor="lm")
 
     line_y = title_y + int(title_font.size * 1.1)
     d.line([(margin, line_y), (margin + int(title_max_w * 0.55), line_y)], fill=GOLD, width=3)
@@ -429,7 +436,7 @@ def build_magazine_landscape(w, h, axin, xiaolan):
 
     # 底部日期条
     d.rectangle([0, h - 4, w, h], fill=GOLD)
-    d.text((w // 2, h - int(h * 0.045)), f"{PUB_DT.month}/{PUB_DT.day} {WEEKDAY_CN} 08:00 · 信蓝组合 · 每周相见", fill=GOLD, font=fnt(int(w * 0.02), True), anchor="mm")
+    d.text((w // 2, h - int(h * 0.045)), f"{PUB_DT.month}/{PUB_DT.day} 周末 · 信蓝组合 · 每周相见", fill=GOLD, font=fnt(int(w * 0.02), True), anchor="mm")
     return canvas
 
 
@@ -446,9 +453,9 @@ def build_magazine_portrait(w, h, axin, xiaolan):
 
     # 大标题（居中，但字号自适应宽度）
     title_max_w = w - margin * 2
-    title_font, _ = fit_size("本周15条", title_max_w, int(w * 0.13), bold=True)
+    title_font, _ = fit_size(CN_COUNT, title_max_w, int(w * 0.13), bold=True)
     title_y = int(h * 0.11)
-    draw_outline(d, (w // 2, title_y), "本周15条", title_font, GOLD_BRIGHT, outline=(20, 14, 4), w=7)
+    draw_outline(d, (w // 2, title_y), CN_COUNT, title_font, GOLD_BRIGHT, outline=(20, 14, 4), w=7)
 
     line_y = title_y + int(title_font.size * 0.7)
     d.line([(int(w * 0.25), line_y), (int(w * 0.75), line_y)], fill=GOLD, width=3)
@@ -499,7 +506,7 @@ def build_magazine_portrait(w, h, axin, xiaolan):
 
     # 底部日期条
     d.rectangle([0, h - 5, w, h], fill=GOLD)
-    d.text((w // 2, h - int(h * 0.045)), f"{PUB_DT.month}/{PUB_DT.day} {WEEKDAY_CN} 08:00 · 信蓝组合", fill=GOLD, font=fnt(int(w * 0.055), True), anchor="mm")
+    d.text((w // 2, h - int(h * 0.045)), f"{PUB_DT.month}/{PUB_DT.day} 周末 · 信蓝组合", fill=GOLD, font=fnt(int(w * 0.055), True), anchor="mm")
     return canvas
 
 
@@ -533,7 +540,7 @@ def build_neon_landscape(w, h, axin, xiaolan):
     canvas.paste(a1, (int(w * 0.05), fy), a1)
     canvas.paste(a2, (w - fs - int(w * 0.05), fy), a2)
     d = ImageDraw.Draw(canvas)
-    d.text((w // 2, h - 45), f"{PUB_DT.month}/{PUB_DT.day} {WEEKDAY_CN} 08:00", fill=(*hue, 255), font=fnt(int(w * 0.022), True), anchor="mm")
+    d.text((w // 2, h - 45), f"{PUB_DT.month}/{PUB_DT.day} 周末", fill=(*hue, 255), font=fnt(int(w * 0.022), True), anchor="mm")
     return canvas
 
 
@@ -565,7 +572,7 @@ def build_neon_portrait(w, h, axin, xiaolan):
     d = ImageDraw.Draw(canvas)
     d.text((int(w * 0.10) + fs // 2, fy + fs + 12), "阿信", fill=AXIN_BLUE, font=fnt(int(w * 0.06), True), anchor="mm")
     d.text((int(w * 0.62) + fs // 2, fy + fs + 12), "小蓝", fill=XIAOLAN_PINK, font=fnt(int(w * 0.06), True), anchor="mm")
-    d.text((w // 2, h - 55), f"{PUB_DT.month}/{PUB_DT.day} {WEEKDAY_CN} 08:00", fill=(*hue, 255), font=fnt(int(w * 0.055), True), anchor="mm")
+    d.text((w // 2, h - 55), f"{PUB_DT.month}/{PUB_DT.day} 周末", fill=(*hue, 255), font=fnt(int(w * 0.055), True), anchor="mm")
     return canvas
 
 
@@ -749,7 +756,7 @@ def build_newspaper_landscape(w, h, axin, xiaolan):
 
     # 底部黑条
     d.rectangle([m + 10, h - m - int(h * 0.055), w - m - 10, h - m - 10], fill=pal["ink"])
-    d.text((w // 2, h - m - int(h * 0.028)), f"{PUB_DT.month}/{PUB_DT.day} {WEEKDAY_CN} 08:00 准时开聊", fill=pal["bg"], font=serif_fnt(int(w * 0.018)), anchor="mm")
+    d.text((w // 2, h - m - int(h * 0.028)), f"{PUB_DT.month}/{PUB_DT.day} 周末 准时开聊", fill=pal["bg"], font=serif_fnt(int(w * 0.018)), anchor="mm")
     return canvas
 
 
@@ -807,7 +814,7 @@ def build_newspaper_portrait(w, h, axin, xiaolan):
         ty += step
 
     d.rectangle([m + 8, h - m - int(h * 0.05), w - m - 8, h - m - 8], fill=pal["ink"])
-    d.text((w // 2, h - m - int(h * 0.025)), f"{PUB_DT.month}/{PUB_DT.day} {WEEKDAY_CN} 08:00", fill=pal["bg"], font=serif_fnt(int(w * 0.030)), anchor="mm")
+    d.text((w // 2, h - m - int(h * 0.025)), f"{PUB_DT.month}/{PUB_DT.day} 周末", fill=pal["bg"], font=serif_fnt(int(w * 0.030)), anchor="mm")
     return canvas
 
 
@@ -826,7 +833,7 @@ def build_popart_landscape(w, h, axin, xiaolan):
     canvas = starburst(canvas, bx, by, int(h * 0.40), int(h * 0.27), 12, pal["b"], 255)
     d = ImageDraw.Draw(canvas)
     tf = fnt(int(h * 0.145), True)
-    draw_outline(d, (bx, by), "本周15条", tf, (255, 255, 255), outline=pal["ink"], w=max(6, int(h * 0.014)))
+    draw_outline(d, (bx, by), CN_COUNT, tf, (255, 255, 255), outline=pal["ink"], w=max(6, int(h * 0.014)))
 
     # 漫画对话气泡
     bub_w, bub_h = int(w * 0.20), int(h * 0.14)
@@ -874,7 +881,7 @@ def build_popart_portrait(w, h, axin, xiaolan):
     canvas = starburst(canvas, bx, by, int(w * 0.46), int(w * 0.31), 12, pal["b"], 255)
     d = ImageDraw.Draw(canvas)
     tf = fnt(int(w * 0.115), True)
-    draw_outline(d, (bx, by), "本周15条", tf, (255, 255, 255), outline=pal["ink"], w=max(5, int(w * 0.016)))
+    draw_outline(d, (bx, by), CN_COUNT, tf, (255, 255, 255), outline=pal["ink"], w=max(5, int(w * 0.016)))
 
     fs = int(w * 0.28)
     fy = int(h * 0.38)
@@ -897,7 +904,7 @@ def build_popart_portrait(w, h, axin, xiaolan):
         make_sticker(canvas, (xs, ys + i * (chh + int(h * 0.010)), xs + cw, ys + i * (chh + int(h * 0.010)) + chh),
                      f"{rank} {title}", sub, (255, 255, 255), pal["ink"], angle=(-3 if i % 2 else 3), radius=14)
     d = ImageDraw.Draw(canvas)
-    d.text((w // 2, h - int(h * 0.035)), f"{PUB_DT.month}/{PUB_DT.day} {WEEKDAY_CN} 08:00", fill=(255, 255, 255), font=fnt(int(w * 0.040), True), anchor="mm",
+    d.text((w // 2, h - int(h * 0.035)), f"{PUB_DT.month}/{PUB_DT.day} 周末", fill=(255, 255, 255), font=fnt(int(w * 0.040), True), anchor="mm",
            stroke_width=4, stroke_fill=pal["ink"])
     return canvas
 
@@ -918,7 +925,7 @@ def build_glitch_landscape(w, h, axin, xiaolan):
 
     cx, cy = w // 2, int(h * 0.34)
     d.text((cx, cy - int(h * 0.155)), "本 周", fill=(*pal["hue"], 255), font=fnt(int(h * 0.065), True), anchor="mm")
-    rgb_split_text(canvas, (cx, cy), "本周15条", fnt(int(h * 0.135), True), (250, 250, 255), pal["hue"], pal["warn"], int(w * 0.006))
+    rgb_split_text(canvas, (cx, cy), CN_COUNT, fnt(int(h * 0.135), True), (250, 250, 255), pal["hue"], pal["warn"], int(w * 0.006))
     d = ImageDraw.Draw(canvas)
     d.text((cx, cy + int(h * 0.115)), "SIGNAL // POP // WEEKEND", fill=(140, 140, 170), font=fnt(int(w * 0.014)), anchor="mm")
 
@@ -947,7 +954,7 @@ def build_glitch_landscape(w, h, axin, xiaolan):
         d.text((lx + int(w * 0.020), ty), f"[{rank}] {fit(tf_t, title, int(w * 0.36))}", fill=(235, 235, 245), font=tf_t, anchor="lm")
         d.text((lx + int(w * 0.020), ty + int(h * 0.030)), f">> {fit(tf_s, sub, int(w * 0.34))}", fill=(120, 120, 150), font=tf_s, anchor="lm")
         ty += int(h * 0.085)
-    d.text((w // 2, h - int(h * 0.045)), f"{PUB_DT.month}/{PUB_DT.day} {WEEKDAY_CN} 08:00", fill=(*pal["hue"], 255), font=fnt(int(w * 0.018), True), anchor="mm")
+    d.text((w // 2, h - int(h * 0.045)), f"{PUB_DT.month}/{PUB_DT.day} 周末", fill=(*pal["hue"], 255), font=fnt(int(w * 0.018), True), anchor="mm")
     return canvas
 
 
@@ -960,7 +967,7 @@ def build_glitch_portrait(w, h, axin, xiaolan):
     d.text((w // 2, int(h * 0.045)), "隔天信号弹 · 信蓝组合", fill=(150, 150, 175), font=fnt(int(w * 0.038), True), anchor="mm")
 
     cx, cy = w // 2, int(h * 0.17)
-    rgb_split_text(canvas, (cx, cy), "本周15条", fnt(int(w * 0.115), True), (250, 250, 255), pal["hue"], pal["warn"], int(w * 0.007))
+    rgb_split_text(canvas, (cx, cy), CN_COUNT, fnt(int(w * 0.115), True), (250, 250, 255), pal["hue"], pal["warn"], int(w * 0.007))
     d = ImageDraw.Draw(canvas)
 
     fs = int(w * 0.27)
@@ -983,7 +990,7 @@ def build_glitch_portrait(w, h, axin, xiaolan):
         d.text((int(w * 0.12), ty), f"[{rank}] {fit(tf_t, title, int(w * 0.72))}", fill=(235, 235, 245), font=tf_t, anchor="lm")
         d.text((int(w * 0.12), ty + int(h * 0.026)), f">> {fit(tf_s, sub, int(w * 0.70))}", fill=(120, 120, 150), font=tf_s, anchor="lm")
         ty += int(h * 0.075)
-    d.text((w // 2, h - int(h * 0.045)), f"{PUB_DT.month}/{PUB_DT.day} {WEEKDAY_CN} 08:00", fill=(*pal["hue"], 255), font=fnt(int(w * 0.042), True), anchor="mm")
+    d.text((w // 2, h - int(h * 0.045)), f"{PUB_DT.month}/{PUB_DT.day} 周末", fill=(*pal["hue"], 255), font=fnt(int(w * 0.042), True), anchor="mm")
     return canvas
 
 
@@ -997,7 +1004,7 @@ def build_variety_landscape(w, h, axin, xiaolan):
     d = ImageDraw.Draw(canvas)
 
     tf = fnt(int(h * 0.175), True)
-    draw_outline(d, (bx, by), "本周15条", tf, (255, 255, 255), outline=(24, 18, 10), w=max(8, int(h * 0.016)))
+    draw_outline(d, (bx, by), CN_COUNT, tf, (255, 255, 255), outline=(24, 18, 10), w=max(8, int(h * 0.016)))
     d.text((bx, by + int(h * 0.145)), "信蓝组合 · 周末开聊", fill=(255, 255, 255), font=fnt(int(h * 0.048), True), anchor="mm",
            stroke_width=4, stroke_fill=(24, 18, 10))
 
@@ -1039,7 +1046,7 @@ def build_variety_landscape(w, h, axin, xiaolan):
         d.text((px1 + int(w * 0.038), ty + int(h * 0.017)), fit(tf_t, title, (px2 - px1) - int(w * 0.06)), fill=(24, 18, 10), font=tf_t, anchor="lm")
         d.text((px1 + int(w * 0.038), ty + int(h * 0.041)), fit(tf_s, sub, (px2 - px1) - int(w * 0.06)), fill=(110, 100, 90), font=tf_s, anchor="lm")
         ty += int(h * 0.075)
-    d.text((w // 2, h - int(h * 0.032)), f"{PUB_DT.month}/{PUB_DT.day} {WEEKDAY_CN} 08:00", fill=(255, 255, 255), font=fnt(int(w * 0.018), True), anchor="mm",
+    d.text((w // 2, h - int(h * 0.032)), f"{PUB_DT.month}/{PUB_DT.day} 周末", fill=(255, 255, 255), font=fnt(int(w * 0.018), True), anchor="mm",
            stroke_width=3, stroke_fill=(24, 18, 10))
     return canvas
 
@@ -1052,7 +1059,7 @@ def build_variety_portrait(w, h, axin, xiaolan):
     d = ImageDraw.Draw(canvas)
 
     tf = fnt(int(w * 0.135), True)
-    draw_outline(d, (bx, by), "本周15条", tf, (255, 255, 255), outline=(24, 18, 10), w=max(6, int(w * 0.015)))
+    draw_outline(d, (bx, by), CN_COUNT, tf, (255, 255, 255), outline=(24, 18, 10), w=max(6, int(w * 0.015)))
     d.text((bx, by + int(w * 0.115)), "信蓝组合 · 周末开聊", fill=(255, 255, 255), font=fnt(int(w * 0.045), True), anchor="mm",
            stroke_width=3, stroke_fill=(24, 18, 10))
 
@@ -1081,12 +1088,102 @@ def build_variety_portrait(w, h, axin, xiaolan):
         d.text((px1 + int(w * 0.075), ty + int(h * 0.019)), fit(tf_t, title, (px2 - px1) - int(w * 0.10)), fill=(24, 18, 10), font=tf_t, anchor="lm")
         d.text((px1 + int(w * 0.075), ty + int(h * 0.043)), fit(tf_s, sub, (px2 - px1) - int(w * 0.10)), fill=(110, 100, 90), font=tf_s, anchor="lm")
         ty += int(h * 0.082)
-    d.text((w // 2, h - int(h * 0.033)), f"{PUB_DT.month}/{PUB_DT.day} {WEEKDAY_CN} 08:00", fill=(255, 255, 255), font=fnt(int(w * 0.040), True), anchor="mm",
+    d.text((w // 2, h - int(h * 0.033)), f"{PUB_DT.month}/{PUB_DT.day} 周末", fill=(255, 255, 255), font=fnt(int(w * 0.040), True), anchor="mm",
            stroke_width=4, stroke_fill=(24, 18, 10))
     return canvas
 
 
 # ===================== AVATAR =====================
+# ===================== OPENING（与开场动画同视觉语言） =====================
+OPENING_NAVY = (10, 14, 39)
+OPENING_BLUE = (55, 225, 255)
+OPENING_PINK = (255, 79, 216)
+OPENING_YEL = (255, 226, 61)
+OPENING_PURPLE = (138, 107, 224)
+OPENING_WHITE = (245, 247, 255)
+
+
+def _opening_base(w, h):
+    """深蓝科技底 + 霓虹网格 + 紫粉辉光 + 漫画速度线 + 半调网点。"""
+    import math
+    canvas = Image.new("RGB", (w, h), OPENING_NAVY)
+    d = ImageDraw.Draw(canvas)
+    grid = 80
+    gl = (*OPENING_BLUE, 26)
+    for x in range(0, w + 1, grid):
+        d.line([(x, 0), (x, h)], fill=gl)
+    for y in range(0, h + 1, grid):
+        d.line([(0, y), (w, y)], fill=gl)
+    canvas = add_glow(canvas, int(w * 0.5), int(h * 0.42), int(min(w, h) * 0.62), OPENING_PURPLE, 80)
+    canvas = add_glow(canvas, int(w * 0.22), int(h * 0.82), int(min(w, h) * 0.42), OPENING_PINK, 60)
+    sp = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(sp)
+    for x0 in range(-h, w, 30):
+        sd.line([(x0, 0), (x0 + int(h * 0.727) + 2, h)], fill=(255, 255, 255, 42))
+    canvas = Image.alpha_composite(canvas.convert("RGBA"), sp).convert("RGB")
+    canvas = halftone(canvas, (0, 0, w, h), OPENING_YEL, step=18, rmax=3, alpha=28)
+    return canvas
+
+
+def _opening_bars(canvas):
+    w, h = canvas.size
+    bar = Image.new("RGB", (w, 8))
+    bd = ImageDraw.Draw(bar)
+    for x in range(w):
+        t = x / w
+        col = tuple(int(OPENING_PINK[i] + (OPENING_BLUE[i] - OPENING_PINK[i]) * t) for i in range(3))
+        bd.line([(x, 0), (x, 8)], fill=col)
+    canvas.paste(bar, (0, 0))
+    canvas.paste(bar, (0, h - 8))
+    return canvas
+
+
+def build_opening_landscape(w, h, axin, xiaolan):
+    canvas = _opening_base(w, h)
+    d = ImageDraw.Draw(canvas)
+    cy = int(h * 0.40)
+    canvas = starburst(canvas, int(w * 0.5), cy, int(h * 0.36), int(h * 0.21), 12, (26, 18, 6), 230)
+    canvas = starburst(canvas, int(w * 0.5), cy, int(h * 0.33), int(h * 0.19), 12, OPENING_YEL, 235)
+    d = ImageDraw.Draw(canvas)
+    draw_outline(d, (int(w * 0.5), cy), "信蓝组合", fnt(int(h * 0.16), True), OPENING_WHITE, outline=OPENING_BLUE, w=8)
+    draw_outline(d, (int(w * 0.5), cy + int(h * 0.165)), CN_COUNT, fnt(int(h * 0.07), True), OPENING_WHITE, outline=OPENING_PINK, w=6)
+    d.text((int(w * 0.5), int(h * 0.63)), "SIGNAL POP · WEEKLY", fill=OPENING_BLUE, font=fnt(int(h * 0.045), True), anchor="mm")
+    d.text((int(w * 0.5), int(h * 0.70)), f"{PUB_DT.month}/{PUB_DT.day} 周末", fill=(207, 224, 255), font=fnt(int(h * 0.05), True), anchor="mm")
+    fs = int(h * 0.20)
+    fy = int(h * 0.75)
+    a1 = circular_face(axin, fs, OPENING_BLUE, 6)
+    a2 = circular_face(xiaolan, fs, OPENING_PINK, 6)
+    canvas.paste(a1, (int(w * 0.5) - fs - int(w * 0.03), fy), a1)
+    canvas.paste(a2, (int(w * 0.5) + int(w * 0.03), fy), a2)
+    d = ImageDraw.Draw(canvas)
+    d.text((int(w * 0.5), h - 30), "MARK哥的创想引擎 · 出品", fill=(200, 215, 245), font=fnt(int(h * 0.030), True), anchor="mm")
+    canvas = _opening_bars(canvas)
+    return canvas
+
+
+def build_opening_portrait(w, h, axin, xiaolan):
+    canvas = _opening_base(w, h)
+    d = ImageDraw.Draw(canvas)
+    cy = int(h * 0.30)
+    canvas = starburst(canvas, int(w * 0.5), cy, int(h * 0.20), int(h * 0.12), 12, (26, 18, 6), 230)
+    canvas = starburst(canvas, int(w * 0.5), cy, int(h * 0.18), int(h * 0.11), 12, OPENING_YEL, 235)
+    d = ImageDraw.Draw(canvas)
+    draw_outline(d, (int(w * 0.5), cy), "信蓝组合", fnt(int(h * 0.13), True), OPENING_WHITE, outline=OPENING_BLUE, w=8)
+    draw_outline(d, (int(w * 0.5), cy + int(h * 0.13)), CN_COUNT, fnt(int(h * 0.06), True), OPENING_WHITE, outline=OPENING_PINK, w=6)
+    d.text((int(w * 0.5), int(h * 0.49)), "SIGNAL POP · WEEKLY", fill=OPENING_BLUE, font=fnt(int(h * 0.038), True), anchor="mm")
+    d.text((int(w * 0.5), int(h * 0.55)), f"{PUB_DT.month}/{PUB_DT.day} 周末", fill=(207, 224, 255), font=fnt(int(h * 0.042), True), anchor="mm")
+    fs = int(h * 0.22)
+    fy = int(h * 0.60)
+    a1 = circular_face(axin, fs, OPENING_BLUE, 6)
+    a2 = circular_face(xiaolan, fs, OPENING_PINK, 6)
+    canvas.paste(a1, (int(w * 0.5) - fs - int(w * 0.03), fy), a1)
+    canvas.paste(a2, (int(w * 0.5) + int(w * 0.03), fy), a2)
+    d = ImageDraw.Draw(canvas)
+    d.text((int(w * 0.5), h - 30), "MARK哥的创想引擎 · 出品", fill=(200, 215, 245), font=fnt(int(h * 0.028), True), anchor="mm")
+    canvas = _opening_bars(canvas)
+    return canvas
+
+
 def build_avatar(axin, xiaolan, size=800, style="magazine"):
     if style == "split":
         half = size // 2
@@ -1103,7 +1200,7 @@ def build_avatar(axin, xiaolan, size=800, style="magazine"):
         canvas = Image.new("RGB", (size, size), (6, 8, 16))
         canvas = add_glow(canvas, size // 2, size // 2, int(size * 0.55), hue, 115)
         d = ImageDraw.Draw(canvas)
-        d.text((size // 2, size // 2 - 30), "本周15条", font=fnt(int(size * 0.16), True), fill=(*hue, 255), anchor="mm")
+        d.text((size // 2, size // 2 - 30), CN_COUNT, font=fnt(int(size * 0.16), True), fill=(*hue, 255), anchor="mm")
         d.text((size // 2, size // 2 + 30), "本周要闻", font=fnt(int(size * 0.10), True), fill=WHITE, anchor="mm")
         fs = int(size * 0.30)
         a1 = circular_face(axin, fs, AXIN_BLUE, 4)
@@ -1126,7 +1223,7 @@ def build_avatar(axin, xiaolan, size=800, style="magazine"):
         canvas.paste(a1, (int(size * 0.12), fy), a1)
         canvas.paste(a2, (size - int(size * 0.12) - fs, fy), a2)
         d = ImageDraw.Draw(canvas)
-        d.text((size // 2, int(size * 0.78)), "本周15条 · 周末特刊", fill=pal["ink"], font=serif_fnt(int(size * 0.065)), anchor="mm")
+        d.text((size // 2, int(size * 0.78)), f"本周{ITEM_COUNT}条 · 周末特刊", fill=pal["ink"], font=serif_fnt(int(size * 0.065)), anchor="mm")
         d.text((size // 2, size - int(size * 0.09)), f"{PUB_DATE_SHORT}", fill=pal["accent"], font=serif_fnt(int(size * 0.05)), anchor="mm")
         return canvas
     if style == "popart":
@@ -1137,7 +1234,7 @@ def build_avatar(axin, xiaolan, size=800, style="magazine"):
         canvas = halftone(canvas, (0, int(size * 0.45), size, int(size * 0.70)), pal["ink"], step=int(size * 0.035), rmax=int(size * 0.010))
         canvas = starburst(canvas, size // 2, int(size * 0.26), int(size * 0.34), int(size * 0.23), 12, pal["b"], 255)
         d = ImageDraw.Draw(canvas)
-        draw_outline(d, (size // 2, int(size * 0.26)), "本周15条", fnt(int(size * 0.085), True), (255, 255, 255), outline=pal["ink"], w=6)
+        draw_outline(d, (size // 2, int(size * 0.26)), CN_COUNT, fnt(int(size * 0.085), True), (255, 255, 255), outline=pal["ink"], w=6)
         fs = int(size * 0.24)
         fy = int(size * 0.60)
         a1 = circular_face(axin, fs, pal["ink"], 5)
@@ -1153,7 +1250,7 @@ def build_avatar(axin, xiaolan, size=800, style="magazine"):
         d = ImageDraw.Draw(canvas)
         for y in range(0, size, 6):
             d.line([(0, y), (size, y)], fill=(20, 20, 32))
-        rgb_split_text(canvas, (size // 2, int(size * 0.24)), "本周15条", fnt(int(size * 0.105), True), (250, 250, 255), pal["hue"], pal["warn"], int(size * 0.007))
+        rgb_split_text(canvas, (size // 2, int(size * 0.24)), CN_COUNT, fnt(int(size * 0.105), True), (250, 250, 255), pal["hue"], pal["warn"], int(size * 0.007))
         d = ImageDraw.Draw(canvas)
         fs = int(size * 0.26)
         fy = int(size * 0.44)
@@ -1171,7 +1268,7 @@ def build_avatar(axin, xiaolan, size=800, style="magazine"):
         canvas = vgrad(size, size, pal["top"], pal["bot"])
         canvas = starburst(canvas, size // 2, int(size * 0.28), int(size * 0.40), int(size * 0.28), 14, pal["burst"], 255)
         d = ImageDraw.Draw(canvas)
-        draw_outline(d, (size // 2, int(size * 0.28)), "本周15条", fnt(int(size * 0.10), True), (255, 255, 255), outline=(24, 18, 10), w=7)
+        draw_outline(d, (size // 2, int(size * 0.28)), CN_COUNT, fnt(int(size * 0.10), True), (255, 255, 255), outline=(24, 18, 10), w=7)
         fs = int(size * 0.25)
         fy = int(size * 0.50)
         a1 = circular_face(axin, fs, (255, 255, 255), 5)
@@ -1179,8 +1276,21 @@ def build_avatar(axin, xiaolan, size=800, style="magazine"):
         canvas.paste(a1, (int(size * 0.14), fy), a1)
         canvas.paste(a2, (size - int(size * 0.14) - fs, fy), a2)
         d = ImageDraw.Draw(canvas)
-        d.text((size // 2, size - int(size * 0.08)), f"{PUB_DT.month}/{PUB_DT.day} {WEEKDAY_CN} 08:00", fill=(255, 255, 255), font=fnt(int(size * 0.05), True), anchor="mm",
+        d.text((size // 2, size - int(size * 0.08)), f"{PUB_DT.month}/{PUB_DT.day} 周末", fill=(255, 255, 255), font=fnt(int(size * 0.05), True), anchor="mm",
                stroke_width=3, stroke_fill=(24, 18, 10))
+        return canvas
+    if style == "opening":
+        canvas = Image.new("RGB", (size, size), OPENING_NAVY)
+        canvas = add_glow(canvas, int(size * 0.5), int(size * 0.5), int(size * 0.55), OPENING_PURPLE, 90)
+        canvas = starburst(canvas, int(size * 0.5), int(size * 0.40), int(size * 0.30), int(size * 0.18), 12, OPENING_YEL, 230)
+        d = ImageDraw.Draw(canvas)
+        draw_outline(d, (size // 2, int(size * 0.40)), CN_COUNT, fnt(int(size * 0.085), True), OPENING_WHITE, outline=OPENING_BLUE, w=6)
+        fs = int(size * 0.28)
+        a1 = circular_face(axin, fs, OPENING_BLUE, 5)
+        a2 = circular_face(xiaolan, fs, OPENING_PINK, 5)
+        fy = size - fs - int(size * 0.06)
+        canvas.paste(a1, (int(size * 0.12), fy), a1)
+        canvas.paste(a2, (size - fs - int(size * 0.12), fy), a2)
         return canvas
     # magazine
     canvas = Image.new("RGB", (size, size), DARK_NAVY)
@@ -1207,22 +1317,14 @@ BUILDERS = {
     "popart": (build_popart_landscape, build_popart_portrait),
     "glitch": (build_glitch_landscape, build_glitch_portrait),
     "variety": (build_variety_landscape, build_variety_portrait),
+    "opening": (build_opening_landscape, build_opening_portrait),
 }
 
 
 def main():
     global TOP3
-    # 风格解析：auto 按日期轮换（正式出品才记录历史），显式传风格则直接用
-    if STYLE == "auto":
-        style = pick_style_auto(PREP_DATE, record=(SUFFIX == ""))
-        src = "auto"
-    else:
-        style = STYLE
-        src = "manual"
-    print(f"[cover] style={style} ({src}) date={PREP_DATE}" + (f" suffix={SUFFIX}" if SUFFIX else ""))
     TOP3 = load_top3()
     print(f"[cover] TOP3 = {[t for _, t, _ in TOP3]}")
-
     axin = Image.open(os.path.join(IMAGES_DIR, "anchor_axin.jpg"))
     xiaolan = Image.open(os.path.join(IMAGES_DIR, "anchor_xiaolan.jpg"))
     os.makedirs(OUT_DIR, exist_ok=True)
@@ -1231,6 +1333,32 @@ def main():
         ("4x3", 1440, 1080, "landscape"),
         ("3x4", 1080, 1440, "portrait"),
     ]
+
+    # all 模式：每期出全套供挑选（文件名带风格后缀，不污染正式出品名）
+    if STYLE == "all":
+        styles = COVER_STYLES
+        print(f"[cover] mode=all -> {styles}  date={PREP_DATE}")
+        for style in styles:
+            build_ls, build_pt = BUILDERS[style]
+            for name, w, h, kind in covers:
+                img = build_ls(w, h, axin, xiaolan) if kind == "landscape" else build_pt(w, h, axin, xiaolan)
+                out = os.path.join(OUT_DIR, f"cover_weekly_{PREP_DATE}_{style}_{name}.png")
+                img.save(out, quality=92)
+                print(f"✅ {style} {name} ({w}x{h}): {out}")
+            avatar = build_avatar(axin, xiaolan, 800, style)
+            av = os.path.join(OUT_DIR, f"avatar_weekly_{PREP_DATE}_{style}.png")
+            avatar.save(av, quality=92)
+            print(f"✅ {style} avatar: {av}")
+        return
+
+    # 单风格：auto 按日期轮换（正式出品才记录历史），或显式指定
+    if STYLE == "auto":
+        style = pick_style_auto(PREP_DATE, record=(SUFFIX == ""))
+        src = "auto"
+    else:
+        style = STYLE
+        src = "manual"
+    print(f"[cover] style={style} ({src}) date={PREP_DATE}" + (f" suffix={SUFFIX}" if SUFFIX else ""))
     build_ls, build_pt = BUILDERS.get(style, BUILDERS["magazine"])
     sfx = f"_{SUFFIX}" if SUFFIX else ""
     for name, w, h, kind in covers:

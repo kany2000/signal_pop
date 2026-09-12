@@ -179,8 +179,14 @@ breaking_title = core[0]["title"] if core else ""
 title_top3 = "、".join(shorts[:3])
 CIRC = "①②③④⑤⑥⑦⑧⑨⑩⓫⓬⓭⓮⓯"
 
-# 每期精选固定网址（口播里说"网址在视频简介里"，文案必须带出）
-PICK_URL = "https://sink.hailoutec.com/pam"
+# 每期精选网址（口播里说"网址在视频简介里"，文案必须带出）
+# 优先级：output/weekly/<制作日>/pick_url.txt > 默认兜底
+_PICK_URL_FILE = os.path.join(OUT, "pick_url.txt")
+PICK_URL = (
+    open(_PICK_URL_FILE, encoding="utf-8").read().strip()
+    if os.path.exists(_PICK_URL_FILE)
+    else "https://sink.hailoutec.com/pam"
+)
 PICK_URL_LINE = f"🔗 每期精选网址（复制到浏览器打开）：{PICK_URL}"
 
 
