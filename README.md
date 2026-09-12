@@ -38,7 +38,8 @@ signal_pop/
 │   ├── gen_dual_tts.py            # 周末版双人 TTS（逐段峰值归一化，阿信 0.95 / 小蓝 0.72）
 │   ├── gen_weekly_talk_cover.py   # 周末版封面（七风格 + auto 每期轮换 + all 全套模式 + opening 同开场动画风格）
 │   ├── gen_weekly_talk_copy.py    # 周末版 8 平台文案
-│   ├── gen_weekly_en_srt.py       # 周末版英文外挂字幕（en_US.srt）
+│   ├── gen_weekly_en_srt.py       # 周末版英文外挂字幕（en_US.srt，--rewrap 离线重排）
+│   ├── subtitle_layout.py         # 字幕智能排版（auto line-break：中英分词+行首禁则+安全区，移植自 short-video-factory）
 │   ├── export_weekly_remotion.py  # 周末版分镜导出 → weekly_segs.json
 │   ├── remotion_weekly_build.py   # 周末版 Remotion 渲染 + ffmpeg 合并（CRF26 + loudnorm）
 │   ├── render_weekly_segmented.sh # 周末版应急分段渲染（单次渲染被环境回收时续渲染，幂等/可续）
@@ -210,7 +211,7 @@ python tools/remotion_weekly_build.py 20260821
 - **一键三连动画**：订阅/关注/转发金色圆钮 stagger 浮现 + 呼吸光晕，从三连段持续到片尾。
 - **视频码率**：Remotion 默认 CRF18 过大（3min ≈ 76MB），统一 `libx264 CRF26`（≈ 26MB）压缩。
 - **应急分段渲染**：单次整片渲染在本环境会被后台任务回收时，用 `bash tools/render_weekly_segmented.sh {制作日}` 分段渲染（每段 ~33s）+ 拼接 + 整体 CRF26 重编码；脚本幂等可续，总帧数自动从 `remotion_poc/src/weekly_segs.json` 计算，不硬编码。
-- **字幕规则**：中文版**不烧字幕**、不生成中文字幕；仅保留英文外挂 `signal_pop_weekly_{date}.en_US.srt`（海外平台 + 质检用）。
+- **字幕规则**：中文版**不烧字幕**、不生成中文字幕；仅保留英文外挂 `signal_pop_weekly_{date}.en_US.srt`（海外平台 + 质检用）。英文字幕行经 `tools/subtitle_layout.py` 智能换行（2026-09-12 接入：固定宽度贪心换行、行首禁则标点、中英混排分词，`don't`/`under-display`/`1:00` 等不被拆散，替代原整段单行写法）。
 - **8 平台发布矩阵**：抖音 / 快手 / B站（自动代发）+ 小红书 / 知乎 / Facebook / YouTube / Twitter（手动）；视频须经用户最终确认后才发布。
 - **快手标题硬上限 28 字**（2026-09-12 实测）：封面标题输入框限制 28 字以内，创作指南建议 15–30 字；描述（`--desc`）只取文案 md 的「简介」字段（≈75 字，500 字以内不触限）。标题务必压在 28 字内留余量（本期已缩至 22 字）。
 - **发布前质检**：`python tools/check_publish_ready.py {制作日}` —— 校验视频大小、封面、8 平台文案非空、标题简介、parsed_news 条目数、英文字幕；全部通过方可发布。

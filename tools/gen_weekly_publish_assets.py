@@ -6,6 +6,8 @@
   2. 8 平台文案 .md —— 抖音/快手/B站/小红书/知乎/Facebook/YouTube/Twitter
 源数据：dialogue_segments.json（台词）+ audio/tts_segments.json（时间轴）+ parsed_news.json（标题）
 用法：python tools/gen_weekly_publish_assets.py [PREP_DATE]
+2026-09-12：英文 SRT 接入 subtitle_layout 智能换行（每条 ≤2 行、行首禁则、
+中英自适应；断点复用的多行旧译文会被自然 unwrap 后重排，幂等）。
 """
 import os
 import re
@@ -15,6 +17,12 @@ import json
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta
+
+_TOOLS_DIR = os.path.dirname(os.path.abspath(__file__))
+if _TOOLS_DIR not in sys.path:
+    sys.path.insert(0, _TOOLS_DIR)
+
+from subtitle_layout import wrap_srt_text  # noqa: E402
 
 PROJECT_ROOT = "E:/projects/signal_pop"
 PREP_DATE = sys.argv[1] if len(sys.argv) > 1 else "20260828"
@@ -149,7 +157,10 @@ def build_en_srt():
             break
         print(f"  [retry {round_n}] {len(failed)} 段未翻出，{delays[round_n-1]}s 后重试…")
         time.sleep(delays[round_n - 1])
-    blocks = [f'{p["i"]}\n{srt_ts(p["start"])} --> {srt_ts(p["end"])}\n{p["en"]}' for p in pend]
+    blocks = [
+        f'{p["i"]}\n{srt_ts(p["start"])} --> {srt_ts(p["end"])}\n{wrap_srt_text(p["en"])}'
+        for p in pend
+    ]
     out = os.path.join(OUT, f"signal_pop_weekly_{PREP_DATE}.en_US.srt")
     with open(out, "w", encoding="utf-8") as f:
         f.write("\n".join(blocks))
