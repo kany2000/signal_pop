@@ -23,6 +23,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+FFMPEG = ROOT / "bin" / "ffmpeg-9.0.1-essentials_build" / "bin" / "ffmpeg.exe"
 FFPROBE = ROOT / "bin" / "ffmpeg-9.0.1-essentials_build" / "bin" / "ffprobe.exe"
 SEGS = {
     "weekly": ROOT / "remotion_poc" / "src" / "weekly_segs.json",
@@ -32,6 +33,27 @@ FPS = 30
 # 容差：帧数允许多出的合并冗余帧；音频可比视频长的拖尾秒数（正常结尾定格）
 FRAME_TOLERANCE = 30        # 1s
 AUDIO_TAIL_TOLERANCE = 3.0  # 秒
+BLACK_MIN_DUR = 0.5         # 秒，黑帧报警阈值
+SILENCE_MIN_DUR = 2.0       # 秒，异常长静音报警阈值
+
+
+def detect_black_and_silence(path: Path) -> tuple[list[str], list[str]]:
+    """使用 ffmpeg 探测黑帧与异常静音（借鉴自 simontalk-investigation 质量门禁）"""
+    cmd = [
+        str(FFMPEG), "-nostdin", "-v", "info", "-i", str(path),
+        "-vf", f"blackdetect=d={BLACK_MIN_DUR}:pix_th=0.06",
+        "-af", f"silencedetect=n=-45dB:d={SILENCE_MIN_DUR}",
+        "-f", "null", "-"
+    ]
+    res = subprocess.run(cmd, capture_output=True, text=True)
+    blacks = []
+    silences = []
+    for line in res.stderr.splitlines():
+        if "black_start:" in line:
+            blacks.append(line.split("]")[-1].strip())
+        elif "silence_start:" in line:
+            silences.append(line.split("]")[-1].strip())
+    return blacks, silences
 
 
 def ffprobe_json(path: Path) -> dict:
@@ -109,6 +131,18 @@ def main() -> int:
 
     if size_mb < 1:
         fails.append(f"文件仅 {size_mb:.2f}MB，疑似损坏")
+
+    # 黑帧与静音质检
+    blacks, silences = detect_black_and_silence(video)
+    if blacks:
+        fails.append(f"检测到异常黑帧段（>{BLACK_MIN_DUR}s）: {', '.join(blacks[:3])}")
+    else:
+        lines.append(f"黑帧检测: PASS（无 >{BLACK_MIN_DUR}s 异常黑帧）")
+
+    if silences:
+        warns.append(f"检测到长静音段（>{SILENCE_MIN_DUR}s, <-45dB）: {', '.join(silences[:3])}")
+    else:
+        lines.append(f"静音检测: PASS（无 >{SILENCE_MIN_DUR}s 异常停顿）")
 
     for ln in lines:
         print(ln)

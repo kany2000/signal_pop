@@ -53,6 +53,7 @@ bin/
 
 # 归档/无用文件目录（整理时移入，不提交）
 old/
+external/
 
 # HyperFrames generated assets
 hyperframes/**

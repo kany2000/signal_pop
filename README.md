@@ -10,7 +10,7 @@ Signal Pop 目前有两条独立产线，面向不同节奏与形态：
 | 选题 | 10 条（经济2/文旅1/科技3/民生2/体育1/新质生产力1 + 末条固定「AI 使用指南/电脑 AI 新应用」） | 突发置顶 + 本周要闻(无排名) + 本周之最 + 下周看点 + 双主播观点 + 互动话题 |
 | 渲染 | ffmpeg 合成（传统管线） | **Remotion** 程序化渲染（`remotion_poc/`） |
 | 声音 | 单女声（豆包 / edge-tts 兜底） | 双人（阿信男声报新闻 + 小蓝女声点评，逐段峰值归一化，阿信峰值 0.95 / 小蓝 0.72） |
-| 封面 | AI 女主播封面（背景主题每期轮换：hud/aurora/neon/minimal/retro） | 双人封面七风格自动轮换（见下文） |
+| 封面 | AI 女主播封面（背景主题每期轮换：hud/aurora/neon/minimal/retro） | 双人封面六风格自动轮换（见下文） |
 | 发布 | 抖音/快手/B站自动 + 其余手动 | 抖音/快手/B站自动 + 其余手动 |
 
 ---
@@ -36,7 +36,7 @@ signal_pop/
 │   ├── weekly_images.py           # 周末版配图（真实网图 + AI 图混合来源）
 │   ├── build_weekly_dialogue.py   # 周末版新闻→阿信/小蓝对话稿
 │   ├── gen_dual_tts.py            # 周末版双人 TTS（逐段峰值归一化，阿信 0.95 / 小蓝 0.72）
-│   ├── gen_weekly_talk_cover.py   # 周末版封面（七风格 + auto 每期轮换 + all 全套模式 + opening 同开场动画风格）
+│   ├── gen_weekly_talk_cover.py   # 周末版封面（六风格 + auto 每期轮换 + all 全套模式 + opening 同开场动画风格）
 │   ├── gen_weekly_talk_copy.py    # 周末版 8 平台文案
 │   ├── gen_weekly_en_srt.py       # 周末版英文外挂字幕（en_US.srt，--rewrap 离线重排）
 │   ├── subtitle_layout.py         # 字幕智能排版（auto line-break：中英分词+行首禁则+安全区，移植自 short-video-factory）
@@ -47,7 +47,8 @@ signal_pop/
 │   ├── remotion_daily_build.py    # 每日版 Remotion 渲染 + 音频合并（CRF26，支持 --render）
 │   ├── gen_daily_en_srt.py        # 每日版英文外挂字幕（en_US.srt，基于音频时长生成）
 │   ├── check_publish_ready.py     # 发布前质检（全过才可发布）
-│   ├── verify_final_video.py      # 出品自检：视频帧数 vs 分镜期望、音视频时长差校验（PASS 才交审片）
+│   ├── verify_final_video.py      # 出品自检：视频帧数 vs 分镜期望、音视频时长差、黑帧(>0.5s)与异常长静音(>2.0s)校验（PASS 才交审片）
+│   ├── mix_sidechain_bgm.py       # 侧链闪避混音工具（旁白发声 BGM 自动下潜，停顿平滑回弹，-c:v copy 秒级导出）
 │   ├── publish_weekly_*.py / publish_daily_*.py  # 各平台发布脚本
 │   ├── gen_weekly_publish_assets.py  # 周末版发布素材汇总（封面/文案/字幕打包）
 │   ├── gen_cloud_tts.py / gen_srt.py / gen_en_srt.py  # TTS / 字幕通用工具
@@ -195,12 +196,11 @@ python tools/remotion_weekly_build.py 20260821
 
 - **选题结构**：【特别报道置顶】仅真实重大事件才放 →【本周要闻】无排名播报（本期 17 条，随选题浮动，封面 ITEM_COUNT 变量化）→【本周之最】→【下周看点】→【双主播观点】每条新闻阿信/小蓝各一句 →【互动话题】收尾邀评。题材以民生/科技/经济为主，游戏类配图（如《边缘行者 2》）使用真实官方图，禁止 AI 生成。
 - **音量平衡**：`gen_dual_tts.py` 改为**逐段峰值归一化**（阿信峰值 0.95 / 小蓝 0.72，等效相对响度约 +30%）消除忽高忽低与削波；`remotion_weekly_build.py` 的 `merge_audio` 再叠 `ffmpeg loudnorm`（I=-14）统一整片响度。
-- **封面七风格 + 每期自动轮换**（`gen_weekly_talk_cover.py`，2026-09-04 扩充，2026-09-12 增 opening + 移除 split）：
+- **封面六风格 + 每期自动轮换**（`gen_weekly_talk_cover.py`，2026-09-04 扩充，2026-09-12 增 opening + 移除 split，2026-09-13 移除 glitch）：
   - `magazine`：杂志头条风（双人 + 大刊头 TOP3 预告）
   - `neon`：**巨型数字霓虹风**（巨大「本周N条」数字 + 圆形头像 + 霓虹光晕）
   - `newspaper`：报纸头版风（米白纸纹 + 衬线大标题 + 黑白红三色）
   - `popart`：波普漫画风（三色对角撞色 + 半调网点 + 爆炸星框 + 贴纸卡）
-  - `glitch`：赛博故障风（RGB 错位标题 + 扫描线 + 数据网格，标题区有保护带）
   - `variety`：综艺大字报风（渐变底 + 爆炸星 + 超大描边字 + 旋转贴纸标签）
   - `opening`：**与开场动画同视觉**（深蓝底 `#0a0e27` + 青蓝网格 `#37E1FF` + 紫粉辉光 + 漫画速度线/半调网点 + 12角爆炸星 + 霓虹描边标题「信蓝组合/本周N条」+「SIGNAL POP · WEEKLY」+ 底部「MARK哥的创想引擎·出品」，最贴近正片）
   - > ⚠️ `split` 已于 2026-09-12 永久停用（左右分屏风格弃用，不再出现在轮换池）。
@@ -230,7 +230,11 @@ python tools/remotion_weekly_build.py 20260821
 - **TTS 中文日期修复（2026-09-01）**：豆包 seed-tts-2.0 对短数字日期「X月Y日」概率性误读为英文；`gen_cloud_tts.py` 的 `_cn_month_day()` 在拼接正文前把「X月Y日」转汉字（九月一日），年份/数量词不动。重合成后 faster-whisper 复检确认无英文串音。
 - **发布三坑位（每日版/周末版通用）**：① 抖音必须 `--headed`（无头卡创作平台弹窗，失败且会误以为已发布）；② B站（`sau bilibili`）**不接受 `--headed`**，该参数只给 douyin，传错会 `exit=2`；B站偶发 `invalid peer certificate: Expired`，重试一次即过；③ **重跑整套会重复预约已成功平台**，失败平台只用 `publish_*_{yyyymmdd}_retry_<平台>.py` 单家重试。抖音/快手/B站自动代发（`sau` CLI，账号 `her2home`），知乎/小红书/Facebook/YouTube/Twitter 手动。
 - **视频编码对齐**：每日版与周末版统一 `libx264 CRF26`（-preset fast -pix_fmt yuv420p），1080p 约 275kb/s（10 分钟视频 ≈ 22MB）。
-- **出品自检（2026-08-30 起）**：成片交付/发布前必须先跑 `python tools/verify_final_video.py weekly|daily {制作日}` 自检——校验视频帧数 vs 分镜期望（拦截分段渲染残段混入导致的结尾画面缺失）、视频轨 vs 音频轨时长差（拦截定格假播）、文件 sanity；**PASS 才可交用户审片**。
+- **出品自检（2026-08-30 起，2026-09-21 强化）**：成片交付/发布前必须先跑 `python tools/verify_final_video.py weekly|daily {制作日}` 自检——校验视频帧数 vs 分镜期望（拦截分段渲染残段混入导致的结尾画面缺失）、视频轨 vs 音频轨时长差（拦截定格假播）、文件 sanity；**2026-09-21 借鉴 simontalk 新增黑帧检测（`blackdetect=d=0.5`，>0.5s 异常黑帧）与长静音检测（`silencedetect=n=-45dB:d=2.0`，>2.0s 异常卡死）**；全部 PASS 才可交用户审片。
+- **音频侧链闪避混音（2026-09-21 落地）**：通过 `tools/mix_sidechain_bgm.py`（借鉴自 simontalk 商业长片工艺），以人声音轨为 key，说话时 BGM 自动下潜至 0.22，停顿/转场时 350ms 平滑回弹饱满，`alimiter=0.95` 绝不破音；视频轨 `-c:v copy` 保持画面零重编码损耗，秒级完成混音。
+- **《大家一起聊经济》证据卡组件（2026-09-21 新增）**：`remotion_poc/src/EvidenceCard.tsx` 原生 React 组件，提供纸张白边内衬、-1.5° 微倾斜、真实深度阴影、Ken-Burns 微缓推镜头与数据来源印章，专用于经济财报图表与分析数据展示。
+- **生图后端约定（2026-09-21 最终固化）**：配图及单张/批量生图任务，默认首选 WorkBuddy 内置生图工具（ImageGen / 混元大模型），免外部网络依赖，严格遵守无文字后缀定律与 1536x1024 宽屏（16:9 适配）高画质规格。
+- **🧹 发布前清理门禁（2026-09-13 固化）**：每期视频审查通过后、发布各平台前，AI 必须扫描制作留下的系统缓存与不需要文件（渲染中间产物 / remotion_poc/node_modules/.cache / 已发布历史期 output 大视频 / pip·npm 缓存与 %TEMP% / *.bak·*.log 杂散文件），给出「路径+大小+可删理由」清单**经用户确认后才删**，并汇报实际释放空间；当期成片/封面/文案/SRT/分镜 JSON/public 素材/两个指纹 JSON 永不清理。详见发布 skill「第 0 步」。
 - 密钥只走 `.env`，禁止硬编码；`output/` 产物与 `*.mp4/*.wav/*.png/*.jpg/*.srt` 按 `.gitignore` 不入库（仅 `remotion_poc/public/` 素材例外放行）。
 - 代码规范：`black --line-length=120`、`flake8`；改动前先完整重读项目（README/scripts/tools/历史）再动手。
 

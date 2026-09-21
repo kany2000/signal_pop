@@ -9,7 +9,6 @@
   - neon      : 霓虹巨型数字风（双人圆形头像 + 霓虹光晕色）
   - newspaper : 报纸头版风（米白纸纹 + 衬线大标题 + 黑白红三色）
   - popart    : 波普漫画风（高饱和撞色 + 半调网点 + 爆炸星框）
-  - glitch    : 赛博故障风（RGB 错位 + 扫描线 + 数据网格）
   - variety   : 综艺大字报风（渐变底 + 爆炸贴纸 + 超大描边字）
   - opening   : 开场动画同款（深蓝网格 + 紫粉辉光 + 爆炸星 + 信号弹，最贴正片）
 
@@ -20,7 +19,7 @@
   TOP3 头条自动读取本期 parsed_news.json（缺失时回退内置占位）。
 
 用法：python tools/gen_weekly_talk_cover.py [PREP_DATE] [STYLE] [SUFFIX]
-  STYLE : auto | all | magazine | neon | newspaper | popart | glitch | variety | opening
+  STYLE : auto | all | magazine | neon | newspaper | popart | variety | opening
   SUFFIX: 可选，附加到文件名做风格预览；正式出品不传 SUFFIX（输出规范名）
 """
 import os
@@ -72,7 +71,7 @@ NEON_HUES = [
 
 # ===================== 风格轮换机制（2026-09-04） =====================
 # split 风格经用户 2026-09-12 明确否决，永久移出自动轮换池（不再自动出现）
-COVER_STYLES = ["magazine", "neon", "newspaper", "popart", "glitch", "variety", "opening"]
+COVER_STYLES = ["magazine", "neon", "newspaper", "popart", "variety", "opening"]
 USED_COVER_FILE = os.path.join(PROJECT_ROOT, "output", "used_cover_styles.json")
 
 
@@ -116,11 +115,6 @@ POPART_PALS = [
     {"a": (236, 64, 122), "b": (255, 213, 40), "c": (38, 198, 218), "ink": (24, 20, 26)},    # 粉/黄/青
     {"a": (255, 112, 40), "b": (255, 224, 70), "c": (90, 160, 255), "ink": (24, 20, 26)},    # 橙/黄/蓝
     {"a": (150, 80, 240), "b": (70, 220, 160), "c": (255, 150, 190), "ink": (24, 20, 26)},   # 紫/绿/粉
-]
-GLITCH_PALS = [
-    {"hue": (0, 230, 230), "warn": (255, 60, 90)},    # 青/红
-    {"hue": (120, 255, 120), "warn": (255, 140, 40)}, # 绿/橙
-    {"hue": (200, 120, 255), "warn": (60, 220, 200)}, # 紫/薄荷
 ]
 VARIETY_PALS = [
     {"top": (230, 40, 60), "bot": (255, 150, 30), "burst": (255, 220, 60), "tag": (30, 200, 190)},   # 红→橙
@@ -635,15 +629,6 @@ def starburst(canvas, cx, cy, r_out, r_in, points, color, alpha=255):
     return Image.alpha_composite(canvas.convert("RGBA"), ov).convert("RGB")
 
 
-def scanlines(canvas, gap=4, alpha=28):
-    ov = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
-    d = ImageDraw.Draw(ov)
-    w, h = canvas.size
-    for y in range(0, h, gap):
-        d.line([(0, y), (w, y)], fill=(0, 0, 0, alpha))
-    return Image.alpha_composite(canvas.convert("RGBA"), ov).convert("RGB")
-
-
 def paste_rotated(canvas, layer, center, angle):
     rot = layer.rotate(angle, expand=True, resample=Image.BICUBIC)
     canvas.paste(rot, (center[0] - rot.width // 2, center[1] - rot.height // 2), rot)
@@ -662,35 +647,6 @@ def make_sticker(canvas, box, text, sub, bg_color, ink, angle=4, radius=18):
     subf, _ = fit_size(sub, pw - 44, int(ph * 0.17), bold=False, min_size=10)
     cd.text((pw // 2, int(ph * 0.68)), sub, fill=(110, 105, 95, 255), font=subf, anchor="mm")
     return paste_rotated(canvas, card, ((x1 + x2) // 2, (y1 + y2) // 2), angle)
-
-
-def rgb_split_text(canvas, pos, text, font, base, hue, warn, split_dx):
-    """赛博故障：红/青错位 + 白色主体。"""
-    d = ImageDraw.Draw(canvas)
-    x, y = pos
-    d.text((x - split_dx, y), text, fill=(*warn, 255), font=font, anchor="mm")
-    d.text((x + split_dx, y), text, fill=(*hue, 255), font=font, anchor="mm")
-    d.text((x, y), text, fill=(*base, 255), font=font, anchor="mm")
-
-
-def glitch_shift(canvas, prep_date, n=6, y1r=0.12, y2r=0.92, skip=None):
-    """随机横带水平错位，模拟信号故障。skip=(a,b) 为保护带（比例），错位条不落在标题上。"""
-    import random as _r
-    w, h = canvas.size
-    rng = _r.Random(int(hashlib.md5(prep_date.encode()).hexdigest()[:8], 16))
-    placed = 0
-    tries = 0
-    while placed < n and tries < n * 8:
-        tries += 1
-        y = rng.randint(int(h * y1r), int(h * y2r))
-        if skip and skip[0] * h <= y <= skip[1] * h:
-            continue
-        bh = rng.randint(6, 30)
-        shift = rng.randint(-46, 46)
-        strip = canvas.crop((0, y, w, y + bh))
-        canvas.paste(strip, (shift, y))
-        placed += 1
-    return canvas
 
 
 # ===================== NEWSPAPER（报纸头版风） =====================
@@ -906,91 +862,6 @@ def build_popart_portrait(w, h, axin, xiaolan):
     d = ImageDraw.Draw(canvas)
     d.text((w // 2, h - int(h * 0.035)), f"{PUB_DT.month}/{PUB_DT.day} 周末", fill=(255, 255, 255), font=fnt(int(w * 0.040), True), anchor="mm",
            stroke_width=4, stroke_fill=pal["ink"])
-    return canvas
-
-
-# ===================== GLITCH（赛博故障风） =====================
-def build_glitch_landscape(w, h, axin, xiaolan):
-    pal = date_pick(PREP_DATE, GLITCH_PALS)
-    canvas = vgrad(w, h, (7, 7, 12), (15, 13, 26))
-    d = ImageDraw.Draw(canvas)
-    for x in range(0, w, 72):
-        d.line([(x, 0), (x, h)], fill=(26, 26, 40))
-    for y in range(0, h, 72):
-        d.line([(0, y), (w, y)], fill=(26, 26, 40))
-
-    # 幽灵巨型数字
-    big = fnt(int(h * 0.42), True)
-    d.text((w - int(w * 0.26), int(h * 0.42)), "15", fill=(32, 30, 52), font=big, anchor="mm")
-
-    cx, cy = w // 2, int(h * 0.34)
-    d.text((cx, cy - int(h * 0.155)), "本 周", fill=(*pal["hue"], 255), font=fnt(int(h * 0.065), True), anchor="mm")
-    rgb_split_text(canvas, (cx, cy), CN_COUNT, fnt(int(h * 0.135), True), (250, 250, 255), pal["hue"], pal["warn"], int(w * 0.006))
-    d = ImageDraw.Draw(canvas)
-    d.text((cx, cy + int(h * 0.115)), "SIGNAL // POP // WEEKEND", fill=(140, 140, 170), font=fnt(int(w * 0.014)), anchor="mm")
-
-    # 故障错位条（避开标题带）+ 扫描线
-    canvas = glitch_shift(canvas, PREP_DATE, skip=(0.13, 0.48))
-    canvas = scanlines(canvas)
-
-    # 双人方形头像框（色环）
-    d = ImageDraw.Draw(canvas)
-    fs = int(h * 0.21)
-    fy = h - fs - int(h * 0.12)
-    a1 = circular_face(axin, fs, pal["hue"], 5)
-    a2 = circular_face(xiaolan, fs, pal["warn"], 5)
-    canvas.paste(a1, (int(w * 0.06), fy), a1)
-    canvas.paste(a2, (int(w * 0.06) + fs + int(w * 0.02), fy), a2)
-    d.text((int(w * 0.06) + fs // 2, fy + fs + int(h * 0.032)), "AXIN", fill=(*pal["hue"], 255), font=fnt(int(w * 0.015), True), anchor="mm")
-    d.text((int(w * 0.06) + fs + int(w * 0.02) + fs // 2, fy + fs + int(h * 0.032)), "XIAOLAN", fill=(*pal["warn"], 255), font=fnt(int(w * 0.015), True), anchor="mm")
-
-    # 右下数据式 TOP3
-    lx = int(w * 0.42)
-    ty = fy + int(h * 0.01)
-    tf_t = fnt(int(w * 0.017), True)
-    tf_s = fnt(int(w * 0.012))
-    for rank, title, sub in TOP3:
-        d.rectangle([lx, ty - 4, lx + 14, ty + 10], fill=(*pal["hue"], 255))
-        d.text((lx + int(w * 0.020), ty), f"[{rank}] {fit(tf_t, title, int(w * 0.36))}", fill=(235, 235, 245), font=tf_t, anchor="lm")
-        d.text((lx + int(w * 0.020), ty + int(h * 0.030)), f">> {fit(tf_s, sub, int(w * 0.34))}", fill=(120, 120, 150), font=tf_s, anchor="lm")
-        ty += int(h * 0.085)
-    d.text((w // 2, h - int(h * 0.045)), f"{PUB_DT.month}/{PUB_DT.day} 周末", fill=(*pal["hue"], 255), font=fnt(int(w * 0.018), True), anchor="mm")
-    return canvas
-
-
-def build_glitch_portrait(w, h, axin, xiaolan):
-    pal = date_pick(PREP_DATE, GLITCH_PALS)
-    canvas = vgrad(w, h, (7, 7, 12), (15, 13, 26))
-    d = ImageDraw.Draw(canvas)
-    for y in range(0, h, 72):
-        d.line([(0, y), (w, y)], fill=(26, 26, 40))
-    d.text((w // 2, int(h * 0.045)), "隔天信号弹 · 信蓝组合", fill=(150, 150, 175), font=fnt(int(w * 0.038), True), anchor="mm")
-
-    cx, cy = w // 2, int(h * 0.17)
-    rgb_split_text(canvas, (cx, cy), CN_COUNT, fnt(int(w * 0.115), True), (250, 250, 255), pal["hue"], pal["warn"], int(w * 0.007))
-    d = ImageDraw.Draw(canvas)
-
-    fs = int(w * 0.27)
-    fy = int(h * 0.30)
-    a1 = circular_face(axin, fs, pal["hue"], 5)
-    a2 = circular_face(xiaolan, fs, pal["warn"], 5)
-    gap = int(w * 0.08)
-    canvas.paste(a1, (w // 2 - fs - gap // 2, fy), a1)
-    canvas.paste(a2, (w // 2 + gap // 2, fy), a2)
-
-    canvas = glitch_shift(canvas, PREP_DATE, skip=(0.11, 0.25))
-    canvas = scanlines(canvas)
-    d = ImageDraw.Draw(canvas)
-
-    ty = fy + fs + int(h * 0.045)
-    tf_t = fnt(int(w * 0.032), True)
-    tf_s = fnt(int(w * 0.022))
-    for rank, title, sub in TOP3:
-        d.rectangle([int(w * 0.08), ty - 4, int(w * 0.08) + 16, ty + 12], fill=(*pal["hue"], 255))
-        d.text((int(w * 0.12), ty), f"[{rank}] {fit(tf_t, title, int(w * 0.72))}", fill=(235, 235, 245), font=tf_t, anchor="lm")
-        d.text((int(w * 0.12), ty + int(h * 0.026)), f">> {fit(tf_s, sub, int(w * 0.70))}", fill=(120, 120, 150), font=tf_s, anchor="lm")
-        ty += int(h * 0.075)
-    d.text((w // 2, h - int(h * 0.045)), f"{PUB_DT.month}/{PUB_DT.day} 周末", fill=(*pal["hue"], 255), font=fnt(int(w * 0.042), True), anchor="mm")
     return canvas
 
 
@@ -1244,25 +1115,6 @@ def build_avatar(axin, xiaolan, size=800, style="magazine"):
         d = ImageDraw.Draw(canvas)
         d.text((size // 2, size - int(size * 0.08)), "信蓝组合 · 开聊！", fill=pal["ink"], font=fnt(int(size * 0.06), True), anchor="mm")
         return canvas
-    if style == "glitch":
-        pal = date_pick(PREP_DATE, GLITCH_PALS)
-        canvas = Image.new("RGB", (size, size), (7, 7, 12))
-        d = ImageDraw.Draw(canvas)
-        for y in range(0, size, 6):
-            d.line([(0, y), (size, y)], fill=(20, 20, 32))
-        rgb_split_text(canvas, (size // 2, int(size * 0.24)), CN_COUNT, fnt(int(size * 0.105), True), (250, 250, 255), pal["hue"], pal["warn"], int(size * 0.007))
-        d = ImageDraw.Draw(canvas)
-        fs = int(size * 0.26)
-        fy = int(size * 0.44)
-        a1 = circular_face(axin, fs, pal["hue"], 4)
-        a2 = circular_face(xiaolan, fs, pal["warn"], 4)
-        canvas.paste(a1, (int(size * 0.14), fy), a1)
-        canvas.paste(a2, (size - int(size * 0.14) - fs, fy), a2)
-        canvas = glitch_shift(canvas, PREP_DATE)
-        canvas = scanlines(canvas)
-        d = ImageDraw.Draw(canvas)
-        d.text((size // 2, size - int(size * 0.08)), "SIGNAL // POP // WEEKEND", fill=(*pal["hue"], 255), font=fnt(int(size * 0.04), True), anchor="mm")
-        return canvas
     if style == "variety":
         pal = date_pick(PREP_DATE, VARIETY_PALS)
         canvas = vgrad(size, size, pal["top"], pal["bot"])
@@ -1315,7 +1167,6 @@ BUILDERS = {
     "neon": (build_neon_landscape, build_neon_portrait),
     "newspaper": (build_newspaper_landscape, build_newspaper_portrait),
     "popart": (build_popart_landscape, build_popart_portrait),
-    "glitch": (build_glitch_landscape, build_glitch_portrait),
     "variety": (build_variety_landscape, build_variety_portrait),
     "opening": (build_opening_landscape, build_opening_portrait),
 }
