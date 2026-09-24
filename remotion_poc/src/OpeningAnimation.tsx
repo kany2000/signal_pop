@@ -107,6 +107,13 @@ export const OpeningAnimation: React.FC<{
   // —— 背景层淡入 ——
   const bgFade = interpolate(frame, [0, 14], [0, 1], { extrapolateRight: "clamp" });
 
+  // —— 结尾淡出（最后约 0.8s 由全亮淡出至黑，平滑接入正片，避免硬切）——
+  const fadeOut = interpolate(frame, [245, 270], [1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.inOut(Easing.cubic),
+  });
+
   // —— 3D 入场：rotateX/Y/Z + translateZ + scale + opacity ——
   const enter = interpolate(frame, [6, 34], [0, 1], {
     extrapolateLeft: "clamp",
@@ -166,7 +173,7 @@ export const OpeningAnimation: React.FC<{
   const by = 240 - bulletP * 120;
 
   return (
-    <AbsoluteFill style={{ backgroundColor: INK, opacity: bgFade }}>
+    <AbsoluteFill style={{ backgroundColor: INK, opacity: bgFade * fadeOut }}>
       {/* 墨色径向底 + 暖光池 */}
       <AbsoluteFill
         style={{

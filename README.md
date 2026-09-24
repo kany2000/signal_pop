@@ -325,11 +325,13 @@ python tools/analytics_postmortem.py 20260908
 python tools/analytics_postmortem.py 20260908 --snapshot     # 拉数（需登录）
 ```
 
-### 6. 片头/片尾增强（参考 Easel video-intro-outro，2026-09-24 升级）
-开场 `OpeningAnimation.tsx` 与片尾 `EndingCard.tsx` 现已统一为 **3D 纸张刊头语言**（源自 `EvidenceCard.tsx` 的纸张白边 / -1.5° 微倾斜 / 真实重投影 / Ken-Burns 微推 / 红色印章 / 来源标头）：用 `perspective(1400px)` + `preserve-3d` 实现真 3D，纸卡从 `rotateX/rotateY` 倾角与 `translateZ` 纵深「落定」桌面视角，入场后 ±1.6/±2.4° 呼吸浮动；品牌点 `BulletMark` 与背景光环 `BackHalo` 由 `OpeningAnimation.tsx` 导出、`EndingCard.tsx` 复用，保证开/收尾视觉一致。片尾含金边「关注·点赞·转发」CTA。**突发徽章**已在 `WeeklyTalk.tsx` 改为「热点」。
-- **声音**：开场/片尾为静音画面轨，声音由外部 mux 叠加——`remotion_poc/out/opening_music.wav`（钢琴前奏，10s）即设计用于开场垫乐；最终成片由 `remotion_weekly_build.py` 合并 TTS 双人旁白 + 侧链闪避 BGM（`mix_sidechain_bgm.py`）。如需让独立预览也带声，用 ffmpeg 将 `opening_music.wav` 与预览 mp4 合并即可。
-- **沙箱渲染**：本环境无 Remotion 自带 Chromium，改用系统 Chrome 作 `browserExecutable`，走 `bundle → getCompositions → renderFrames → stitchFramesToVideo`（见 `remotion_poc/render_preview2.mjs` 一键样板）；`renderMedia()` 在本沙箱会崩，勿用。
-- 未来管线可 `OpeningAnimation(10s) + DailyNews/WeeklyTalk(正片) + EndingCard(4s)` 顺序拼接。
+### 6. 片头增强（参考 Easel video-intro-outro，2026-09-24 升级）
+
+开场 `OpeningAnimation.tsx` 现为 **3D 纸张刊头语言**（源自 `EvidenceCard.tsx`）：`perspective(1400px)` + `preserve-3d` 真 3D，纸卡从 `rotateX/rotateY` 倾角与 `translateZ` 纵深「落定」桌面视角，入场后 ±1.6/±2.4° 呼吸浮动；品牌点 `BulletMark` 与背景光环 `BackHalo` 在组件内导出。纸卡语言含纸张白边 / -1.5° 微倾斜 / 真实重投影 / Ken-Burns 微推 / 红色印章 / 来源标头。**突发徽章**已在 `WeeklyTalk.tsx` 改为「热点」。
+- **结尾淡出**：开场最后约 0.8s（frames 245→270，`Easing.inOut` 曲线）整体由全亮淡出至黑，平滑接入正片，避免硬切。
+- **片尾动画已取消（2026-09-24）**：`EndingCard.tsx` 已删除，最终成片不再含片尾动画；生产管线为 `OpeningAnimation(9s/270帧) + WeeklyTalk(正片)` 顺序拼接（`tools/render_weekly_segmented.sh` 的 `concat_list` 仅含片头 + 各 part）。
+- **声音**：开场垫乐取 `output/mp3/Romeo - Winds of Hope - Creative Cut - Piano.mp3` 的 **34–43s 片段（约 9s，纯钢琴）**，由 `render_weekly_segmented.sh` 作为前 9s 头段、TTS 整体延后 270 帧合并。⚠️ 该曲约每 8–12s 有一次强动态涌浪（约 8/20/30/44/56/64/72/80.7s），其中 ~30s 起为带人声/合唱的宽带段——**截取时必须避开，选段后用 `showspectrumpic` 频谱图核验无人声**。独立预览带声用 `remotion_poc/out/opening_romeo.wav` 与预览 mp4 ffmpeg 合并（`-map 0:v:0 -map 1:a:0 -c:a aac -b:a 192k`）。
+- **沙箱渲染**：本环境无 Remotion 自带 Chromium，改用系统 Chrome 作 `browserExecutable`，走 `bundle → getCompositions → renderFrames → stitchFramesToVideo`（见 `remotion_poc/render_preview2.mjs`）；`renderMedia()` 在本沙箱会崩，勿用。
 
 ---
 

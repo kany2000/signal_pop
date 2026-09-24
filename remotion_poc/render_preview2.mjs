@@ -26,11 +26,6 @@ const jobs = [
     outputLocation: OUT + "/OpeningAnimation_preview.mp4",
     inputProps: { title: "AI语播·信号弹每周精选", date: "2026年9月26日", weekday: "星期六" },
   },
-  {
-    id: "EndingCard",
-    outputLocation: OUT + "/EndingCard_preview.mp4",
-    inputProps: {},
-  },
 ];
 
 for (const job of jobs) {

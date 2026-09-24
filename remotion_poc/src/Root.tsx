@@ -4,7 +4,6 @@ import { NewsSlide } from "./NewsSlide";
 import { WeeklyTalk } from "./WeeklyTalk";
 import { DailyNews, DailySeg } from "./DailyNews";
 import { OpeningAnimation } from "./OpeningAnimation";
-import { EndingCard } from "./EndingCard";
 import newsData from "./news.json";
 import weeklySegs from "./weekly_segs.json";
 import dailySegs from "./daily_segs.json";
@@ -63,15 +62,6 @@ export const RemotionRoot: React.FC = () => {
           date: "2026年9月12日",
           weekday: "星期六",
         }}
-      />
-      <Composition
-        id="EndingCard"
-        component={EndingCard}
-        durationInFrames={120}
-        fps={30}
-        width={1920}
-        height={1080}
-        defaultProps={{}}
       />
     </>
   );
