@@ -5,119 +5,95 @@ import {
   useVideoConfig,
   interpolate,
   Easing,
-  Sequence,
 } from "remotion";
 
-// ===== 信号弹周末版 · 开场动画（活泼漫画风 × 科技感）=====
-// 设计语言：深蓝科技底 + 霓虹网格 + 漫画速度线/网点 + 爆炸星形徽标 +
-// 信号弹拖尾掠过 + 标题逐字 comic bounce + 收尾 glitch 闪烁。
+// ===== 信号弹周末版 · 开场动画（纸质编辑 / 杂志刊头风 · 3D 版）=====
+// 设计语言（取自 EvidenceCard「新学到的技能」＋ 3D 升级）：
+//   ① 白纸卡片 + 白边 + 真实投影（0 24px 60px 重阴影）
+//   ② 微倾斜 -1.5°（纸张随意平铺感）：以 perspective + preserve-3d 实现真 3D
+//      入场从 rotateX(-26°)/rotateY(16°)/translateZ(-260px) 缓缓「落定」到桌面视角，
+//      之后叠加 ±2~3° 的轻微呼吸浮动，画面有生命但不眩晕。
+//   ③ Ken-Burns 微推 1.0 → 1.022（画面持续生命力）
+//   ④ 右上角红色「印章」标签 + 底部「来源/刊期」标头（均带 translateZ 景深）
+//   ⑤ 背景巨型光环 + 前景扫光分处不同 Z 深度，形成视差层次。
 // 纯 CSS/SVG 实现，无外部素材依赖；背景乐由外部钢琴片段 mux 进正片。
 
-const NAVY = "#0a0e27";
-const NEON_BLUE = "#37E1FF";
-const NEON_PINK = "#FF4FD8";
-const COMIC_YEL = "#FFE23D";
-const PURPLE = "#8A6BE0";
-const WHITE = "#F5F7FF";
+const INK = "#0b0f1a"; // 背景墨色
+const INK_2 = "#161c2e"; // 背景次色
+const PAPER = "#FCFBF7"; // 纸张米白
+const PAPER_LINE = "#E7E3D8"; // 纸面分隔线
+const STAMP = "#FF375F"; // 印章红（与 EvidenceCard 一致）
+const GOLD = "#C9A24B"; // 烫金点缀
+const INK_TEXT = "#1E293B"; // 卡片正文墨色
+const SUB_TEXT = "#64748B"; // 次级灰
+const PERSPECTIVE = 1400; // 3D 透视距离
 
-const easeOut = Easing.out(Easing.cubic);
+const easeOutCubic = Easing.out(Easing.cubic);
 const easeOutBack = (x: number) => {
-  const c1 = 2.2; // 更弹的 back
+  const c1 = 1.9;
   const c3 = c1 + 1;
   return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
 };
 
-// ---------- 漫画爆炸星形（徽标底）----------
-const BurstStar: React.FC<{ spin: number; scale: number; glow: number }> = ({
-  spin,
-  scale,
-  glow,
-}) => (
+// ---------- 背景巨型光环（置于卡片后方 Z 深度，缓慢自转）----------
+export const BackHalo: React.FC<{ p: number }> = ({ p }) => (
   <AbsoluteFill
     style={{
       alignItems: "center",
       justifyContent: "center",
-      opacity: glow,
-      transform: `scale(${scale}) rotate(${spin}deg)`,
-      transformOrigin: "50% 50%",
+      transform: `translateZ(-340px) rotateY(${p * 24}deg)`,
+      transformStyle: "preserve-3d",
+      opacity: 0.5,
     }}
   >
-    <svg width={860} height={860} viewBox="0 0 200 200">
-      {/* 外层光晕 */}
+    <svg width={1180} height={1180} viewBox="0 0 200 200">
       <defs>
-        <radialGradient id="burstGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor={COMIC_YEL} stopOpacity="0.55" />
-          <stop offset="55%" stopColor={NEON_PINK} stopOpacity="0.22" />
-          <stop offset="100%" stopColor={NEON_PINK} stopOpacity="0" />
+        <radialGradient id="haloG" cx="50%" cy="50%" r="50%">
+          <stop offset="60%" stopColor="rgba(201,162,75,0)" />
+          <stop offset="82%" stopColor="rgba(201,162,75,0.22)" />
+          <stop offset="100%" stopColor="rgba(55,225,255,0)" />
         </radialGradient>
-        <linearGradient id="burstFill" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#FFF3B0" />
-          <stop offset="50%" stopColor={COMIC_YEL} />
-          <stop offset="100%" stopColor="#FFB01F" />
-        </linearGradient>
       </defs>
-      <circle cx="100" cy="100" r="98" fill="url(#burstGlow)" />
-      {/* 12 角爆炸星 */}
-      <polygon
-        points="100,6 118,64 176,40 140,92 196,108 140,124 176,176 118,140 100,194 82,140 24,176 60,124 4,108 60,92 24,40 82,64"
-        fill="url(#burstFill)"
-        stroke="#1a1206"
-        strokeWidth="4"
-        strokeLinejoin="round"
-      />
-      {/* 内圈描边（漫画双线）*/}
-      <polygon
-        points="100,30 114,74 158,56 130,96 172,108 130,120 158,164 114,146 100,178 86,146 42,164 70,120 28,108 70,96 42,56 86,74"
-        fill="none"
-        stroke="#1a1206"
-        strokeWidth="2"
-        strokeLinejoin="round"
-        opacity="0.55"
-      />
+      <circle cx="100" cy="100" r="96" fill="url(#haloG)" />
+      <circle cx="100" cy="100" r="78" fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="0.6" />
     </svg>
   </AbsoluteFill>
 );
 
-// ---------- 信号弹拖尾（掠过）----------
-const SignalBullet: React.FC<{ progress: number; opacity: number }> = ({
-  progress,
-  opacity,
-}) => {
-  // progress 0→1 从左下飞到右上
-  const x = -300 + progress * 2200;
-  const y = 1150 - progress * 1000;
-  return (
-    <AbsoluteFill style={{ opacity, pointerEvents: "none" }}>
-      <div
-        style={{
-          position: "absolute",
-          left: x,
-          top: y,
-          width: 520,
-          height: 26,
-          transform: "translate(-50%,-50%) rotate(-24deg)",
-          borderRadius: 999,
-          background: `linear-gradient(90deg, rgba(55,225,255,0) 0%, ${NEON_BLUE} 55%, #fff 100%)`,
-          boxShadow: `0 0 40px 8px ${NEON_BLUE}, 0 0 80px 16px rgba(55,225,255,0.45)`,
-          filter: "blur(1px)",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          left: x + 250,
-          top: y,
-          width: 34,
-          height: 34,
-          transform: "translate(-50%,-50%)",
-          borderRadius: "50%",
-          background: "#fff",
-          boxShadow: `0 0 30px 10px ${NEON_BLUE}, 0 0 60px 20px rgba(255,79,216,0.5)`,
-        }}
-      />
-    </AbsoluteFill>
-  );
-};
+// ---------- 信号弹小徽标（纸面刊头左上的品牌点）----------
+export const BulletMark: React.FC<{ opacity: number }> = ({ opacity }) => (
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      opacity,
+      transform: `translateY(${(1 - opacity) * 10}px)`,
+    }}
+  >
+    <svg width={30} height={30} viewBox="0 0 30 30">
+      <defs>
+        <linearGradient id="bmGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#37E1FF" />
+          <stop offset="100%" stopColor="#FF375F" />
+        </linearGradient>
+      </defs>
+      <path d="M4 22 Q14 4 26 8" stroke="url(#bmGrad)" strokeWidth="3.4" fill="none" strokeLinecap="round" />
+      <circle cx="26" cy="8" r="4.4" fill="#fff" stroke="url(#bmGrad)" strokeWidth="2.4" />
+    </svg>
+    <span
+      style={{
+        fontSize: 22,
+        fontWeight: 800,
+        letterSpacing: 1,
+        color: INK_TEXT,
+        fontFamily: "Noto Sans SC, sans-serif",
+      }}
+    >
+      信号弹 · Signal Pop
+    </span>
+  </div>
+);
 
 export const OpeningAnimation: React.FC<{
   title: string;
@@ -128,251 +104,295 @@ export const OpeningAnimation: React.FC<{
   const { fps, durationInFrames } = useVideoConfig();
   const t = frame / fps;
 
-  // —— 背景层动效 ——
-  const gridPan = (t * 40) % 80; // 网格横向流动
-  const speedSweep = interpolate(frame, [0, 18], [0, 1], {
-    extrapolateRight: "clamp",
-    easing: easeOut,
-  });
-  const haloPulse = 0.5 + 0.5 * Math.sin(t * 2.4);
+  // —— 背景层淡入 ——
+  const bgFade = interpolate(frame, [0, 14], [0, 1], { extrapolateRight: "clamp" });
 
-  // —— 爆炸星入场 ——
-  const burstScale = interpolate(frame, [6, 26], [0.2, 1], {
+  // —— 3D 入场：rotateX/Y/Z + translateZ + scale + opacity ——
+  const enter = interpolate(frame, [6, 34], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
-    easing: easeOutBack,
+    easing: easeOutCubic,
   });
-  const burstGlow = interpolate(frame, [0, 20], [0, 1], { extrapolateRight: "clamp" });
-  const burstSpin = t * 22;
+  const eScale = interpolate(enter, [0, 1], [0.9, 1.0]);
+  const eOpacity = interpolate(enter, [0, 1], [0, 1]);
+  const eRX = interpolate(enter, [0, 1], [-26, 4]); // 落定桌面视角 X 倾角
+  const eRY = interpolate(enter, [0, 1], [16, -5]); // 落定桌面视角 Y 倾角
+  const eRZ = interpolate(enter, [0, 1], [0, -1.5]); // 招牌纸张微倾斜
+  const eTZ = interpolate(enter, [0, 1], [-260, 0]); // 由远及近
 
-  // —— 信号弹掠过（约 1.1s→2.2s）——
-  const bulletP = interpolate(frame, [33, 66], [0, 1], {
+  // —— 入场后轻微呼吸浮动（±2~3°，有生命不眩晕）——
+  const floatRX = enter * Math.sin(t * 1.05) * 1.6;
+  const floatRY = enter * Math.sin(t * 0.85 + 0.6) * 2.4;
+
+  // —— Ken-Burns 微推（全程 1.0 → 1.022，按成片时长自适应）——
+  const ambient = interpolate(t, [0, durationInFrames / fps], [1.0, 1.022], {
+    extrapolateRight: "clamp",
+    easing: Easing.linear,
+  });
+
+  const rx = eRX + floatRX;
+  const ry = eRY + floatRY;
+  const cardTransform = `scale(${eScale * ambient}) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${eRZ}deg) translateZ(${eTZ}px)`;
+
+  // —— 卡片内元素依次入场（带 translateZ 景深）——
+  const markP = interpolate(frame, [16, 30], [0, 1], { extrapolateRight: "clamp", easing: easeOutCubic });
+  const stampP = interpolate(frame, [24, 40], [0, 1], { extrapolateRight: "clamp", easing: easeOutBack });
+  const titleP = interpolate(frame, [30, 56], [0, 1], { extrapolateRight: "clamp", easing: easeOutCubic });
+  const kickerP = interpolate(frame, [46, 64], [0, 1], { extrapolateRight: "clamp", easing: easeOutCubic });
+  const footerP = interpolate(frame, [60, 82], [0, 1], { extrapolateRight: "clamp", easing: easeOutCubic });
+
+  // —— 一道斜向扫光（前景 Z 深度，约 1.3s→2.4s 掠过一次）——
+  const sweepX = interpolate(frame, [40, 72], [-900, 2200], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.inOut(Easing.cubic),
   });
-  const bulletOpacity = interpolate(frame, [30, 36, 64, 70], [0, 1, 1, 0], {
+  const sweepOpacity = interpolate(frame, [38, 46, 70, 78], [0, 0.5, 0.5, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  // —— 标题逐字 comic bounce（0.8s→2.4s stagger）——
-  const titleChars = [...title];
-  const charAppear = (i: number) => {
-    const start = 24 + i * 4;
-    const x = Math.max(0, Math.min(1, (frame - start) / 12));
-    return easeOutBack(x);
-  };
-  const titleFade = interpolate(frame, [22, 40], [0, 1], { extrapolateRight: "clamp" });
-
-  // —— 副标题 / 日期 ——
-  const subP = interpolate(frame, [60, 84], [0, 1], { extrapolateRight: "clamp", easing: easeOut });
-  const dateP = interpolate(frame, [78, 102], [0, 1], { extrapolateRight: "clamp", easing: easeOut });
-  const brandP = interpolate(frame, [96, 120], [0, 1], { extrapolateRight: "clamp" });
-
-  // —— glitch 闪烁（约 3.0s 与 6.6s 两处）——
-  const glitchAt = (c: number, dur: number) =>
-    Math.max(0, Math.min(1, 1 - Math.abs(t - c) / dur));
-  const g1 = glitchAt(3.0, 0.18);
-  const g2 = glitchAt(6.6, 0.18);
-  const glitch = Math.max(g1, g2);
-  const glitchShift = glitch * 10 * Math.sin(frame * 1.3);
-
-  // —— 收尾提亮（最后 0.6s 不闪）——
-  const endHold = interpolate(frame, [durationInFrames - 18, durationInFrames], [1, 1], {
+  // —— 信号弹拖尾（开场呼应品牌，自左上掠到中部一次）——
+  const bulletP = interpolate(frame, [10, 34], [0, 1], {
     extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.inOut(Easing.cubic),
   });
+  const bulletOpacity = interpolate(frame, [8, 14, 32, 38], [0, 0.9, 0.9, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const bx = -260 + bulletP * 1080;
+  const by = 240 - bulletP * 120;
 
   return (
-    <AbsoluteFill style={{ backgroundColor: NAVY }}>
-      {/* 科技网格底 */}
-      <AbsoluteFill
-        style={{
-          backgroundImage: `linear-gradient(rgba(55,225,255,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(55,225,255,0.10) 1px, transparent 1px)`,
-          backgroundSize: "80px 80px",
-          backgroundPositionX: -gridPan,
-          opacity: 0.55,
-        }}
-      />
-      {/* 径向霓虹辉光 */}
+    <AbsoluteFill style={{ backgroundColor: INK, opacity: bgFade }}>
+      {/* 墨色径向底 + 暖光池 */}
       <AbsoluteFill
         style={{
           background:
-            "radial-gradient(circle at 50% 44%, rgba(138,107,224,0.30) 0%, rgba(10,14,39,0) 55%), radial-gradient(circle at 22% 78%, rgba(255,79,216,0.18) 0%, rgba(10,14,39,0) 45%)",
+            "radial-gradient(circle at 50% 42%, rgba(40,52,82,0.55) 0%, rgba(11,15,26,0) 58%), radial-gradient(circle at 50% 120%, rgba(201,162,75,0.10) 0%, rgba(11,15,26,0) 50%)",
         }}
       />
-      {/* 漫画速度线（斜向，入场扫入）*/}
-      <AbsoluteFill style={{ opacity: 0.22 * speedSweep, mixBlendMode: "screen" }}>
+      {/* 纸面细点纹理（极淡，呼应纸张质感）*/}
+      <AbsoluteFill style={{ opacity: 0.05, mixBlendMode: "screen" }}>
         <div
           style={{
             position: "absolute",
-            inset: -200,
-            backgroundImage:
-              "repeating-linear-gradient(36deg, transparent 0 26px, rgba(255,255,255,0.5) 26px 28px)",
-            transform: `translateX(${gridPan * 1.4}px)`,
+            inset: -100,
+            backgroundImage: "radial-gradient(rgba(255,255,255,0.9) 1px, transparent 1.4px)",
+            backgroundSize: "26px 26px",
           }}
         />
       </AbsoluteFill>
-      {/* 漫画网点（halftone 同心点）*/}
-      <AbsoluteFill style={{ opacity: 0.12, mixBlendMode: "screen" }}>
+      {/* 暗角 */}
+      <AbsoluteFill style={{ boxShadow: "inset 0 0 360px 80px rgba(0,0,0,0.55)" }} />
+
+      {/* 信号弹拖尾（微弱呼应）*/}
+      <AbsoluteFill style={{ opacity: bulletOpacity, pointerEvents: "none" }}>
         <div
           style={{
             position: "absolute",
-            inset: -200,
-            backgroundImage:
-              "radial-gradient(rgba(255,226,61,0.9) 1.4px, transparent 1.6px)",
-            backgroundSize: "18px 18px",
+            left: bx,
+            top: by,
+            width: 360,
+            height: 16,
+            transform: "translate(-50%,-50%) rotate(-18deg)",
+            borderRadius: 999,
+            background: "linear-gradient(90deg, rgba(55,225,255,0) 0%, rgba(55,225,255,0.85) 60%, #fff 100%)",
+            boxShadow: "0 0 28px 6px rgba(55,225,255,0.5)",
+            filter: "blur(1px)",
           }}
         />
       </AbsoluteFill>
 
-      {/* 信号弹掠过 */}
-      <SignalBullet progress={bulletP} opacity={bulletOpacity} />
+      {/* ============ 3D 场景（perspective 容器）============ */}
+      <AbsoluteFill style={{ perspective: PERSPECTIVE }}>
+        <AbsoluteFill style={{ transformStyle: "preserve-3d", alignItems: "center", justifyContent: "center" }}>
+          {/* 背景巨型光环（卡片后方 Z 深度）*/}
+          <BackHalo p={t} />
 
-      {/* 爆炸星形徽标 */}
-      <BurstStar spin={burstSpin} scale={burstScale} glow={burstGlow} />
-
-      {/* 标题区 */}
-      <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
-        <div style={{ position: "relative", textAlign: "center" }}>
-          {/* 标题（漫画粗描边 + 霓虹辉光 + 逐字弹入）*/}
+          {/* ============ 刊头纸张卡片（真 3D）============ */}
           <div
             style={{
-              display: "flex",
-              justifyContent: "center",
-              gap: 2,
-              opacity: titleFade,
-              transform: `translateX(${glitchShift}px)`,
+              position: "relative",
+              width: "min(1120px, 86%)",
+              opacity: eOpacity,
+              transform: cardTransform,
+              transformStyle: "preserve-3d",
+              transformOrigin: "center center",
             }}
           >
-            {titleChars.map((ch, i) => {
-              const a = charAppear(i);
-              const isMid = i >= 4 && i <= 6; // “信号弹” 三字用粉强调
-              const col = isMid ? NEON_PINK : NEON_BLUE;
-              return (
-                <span
-                  key={i}
+            {/* 纸卡本体：白边 + 真实重投影 */}
+            <div
+              style={{
+                position: "relative",
+                background: PAPER,
+                borderRadius: 14,
+                padding: "54px 60px 46px 60px",
+                boxShadow: "0 24px 60px rgba(0,0,0,0.65), 0 4px 12px rgba(0,0,0,0.4)",
+                border: "1px solid rgba(255,255,255,0.6)",
+                transformStyle: "preserve-3d",
+              }}
+            >
+              {/* 顶部刊头行：左品牌 / 右印章（印章带 translateZ 景深）*/}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  transform: "translateZ(8px)",
+                }}
+              >
+                <BulletMark opacity={markP} />
+                {/* 右上角红色印章标签（EvidenceCard 语言，弹出景深）*/}
+                <div
                   style={{
-                    fontSize: 104,
-                    fontWeight: 900,
-                    fontFamily: "Noto Sans SC, sans-serif",
-                    color: WHITE,
+                    background: STAMP,
+                    color: "#fff",
+                    fontSize: 20,
+                    fontWeight: 800,
+                    padding: "6px 16px",
+                    borderRadius: 6,
                     letterSpacing: 2,
-                    opacity: Math.min(1, a),
-                    transform: `translateY(${(1 - a) * 60}px) scale(${0.6 + a * 0.4}) rotate(${(1 - a) * -8}deg)`,
-                    textShadow: `3px 3px 0 #1a1206, -2px -2px 0 ${col}, 0 0 26px ${col}, 0 0 50px ${col}88`,
+                    boxShadow: "0 4px 12px rgba(255,55,95,0.4)",
+                    opacity: stampP,
+                    transform: `translateZ(50px) scale(${0.5 + stampP * 0.5}) rotate(${(1 - stampP) * -10}deg)`,
+                    transformOrigin: "center center",
                   }}
                 >
-                  {ch}
-                </span>
-              );
-            })}
+                  本周精选 · WEEKLY
+                </div>
+              </div>
+
+              {/* 主标题（刊头大标，整块上浮淡入，带 translateZ 景深）*/}
+              <div
+                style={{
+                  marginTop: 46,
+                  textAlign: "center",
+                  opacity: titleP,
+                  transform: `translateZ(28px) translateY(${(1 - titleP) * 24}px)`,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 86,
+                    fontWeight: 900,
+                    color: INK_TEXT,
+                    fontFamily: "Noto Sans SC, sans-serif",
+                    letterSpacing: 2,
+                    lineHeight: 1.12,
+                    textShadow: "0 2px 0 rgba(0,0,0,0.04)",
+                  }}
+                >
+                  {title}
+                </div>
+              </div>
+
+              {/* 分隔细线 + 副标（周末特别版）*/}
+              <div
+                style={{
+                  marginTop: 30,
+                  opacity: kickerP,
+                  transform: `translateZ(14px) translateY(${(1 - kickerP) * 14}px)`,
+                }}
+              >
+                <div
+                  style={{
+                    height: 2,
+                    width: "62%",
+                    margin: "0 auto 18px auto",
+                    background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)`,
+                  }}
+                />
+                <div
+                  style={{
+                    textAlign: "center",
+                    fontSize: 26,
+                    fontWeight: 700,
+                    letterSpacing: 8,
+                    color: SUB_TEXT,
+                    fontFamily: "Noto Sans SC, sans-serif",
+                  }}
+                >
+                  周末特别版 · 每周六更新
+                </div>
+              </div>
+
+              {/* 底部来源 / 刊期标头（EvidenceCard 来源行语言）*/}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginTop: 34,
+                  paddingTop: 18,
+                  borderTop: `1px solid ${PAPER_LINE}`,
+                  opacity: footerP,
+                  transform: `translateZ(6px) translateY(${(1 - footerP) * 12}px)`,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 22,
+                    fontWeight: 700,
+                    color: INK_TEXT,
+                    fontFamily: "Noto Sans SC, sans-serif",
+                    letterSpacing: 1,
+                  }}
+                >
+                  发布 {date} · {weekday}
+                </div>
+                <div
+                  style={{
+                    fontSize: 19,
+                    fontWeight: 600,
+                    letterSpacing: 1,
+                    color: SUB_TEXT,
+                    fontFamily: "Noto Sans SC, sans-serif",
+                  }}
+                >
+                  MARK哥的创想引擎 · 出品
+                </div>
+              </div>
+            </div>
           </div>
-          {/* glitch 残影（RGB 错位）*/}
-          {glitch > 0.01 && (
+
+          {/* 前景斜向扫光（Z 深度前移，掠过纸面一次）*/}
+          <AbsoluteFill
+            style={{
+              opacity: sweepOpacity,
+              mixBlendMode: "screen",
+              pointerEvents: "none",
+              transform: "translateZ(140px)",
+            }}
+          >
             <div
               style={{
                 position: "absolute",
+                top: -200,
                 left: 0,
-                right: 0,
-                top: 0,
-                display: "flex",
-                justifyContent: "center",
-                gap: 2,
-                opacity: glitch * 0.7,
-                transform: `translateX(${-glitchShift * 1.6}px)`,
-                mixBlendMode: "screen",
-                pointerEvents: "none",
+                width: 260,
+                height: 1500,
+                transform: `translateX(${sweepX}px) rotate(14deg)`,
+                background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent)",
+                filter: "blur(18px)",
               }}
-            >
-              {titleChars.map((ch, i) => (
-                <span
-                  key={i}
-                  style={{
-                    fontSize: 104,
-                    fontWeight: 900,
-                    fontFamily: "Noto Sans SC, sans-serif",
-                    color: NEON_PINK,
-                    letterSpacing: 2,
-                    transform: `translateY(${(1 - charAppear(i)) * 60}px)`,
-                  }}
-                >
-                  {ch}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* 副标题 Signal Pop Weekly */}
-          <div
-            style={{
-              marginTop: 22,
-              fontSize: 38,
-              fontWeight: 700,
-              letterSpacing: 10,
-              color: NEON_BLUE,
-              fontFamily: "Consolas, monospace",
-              opacity: subP,
-              transform: `translateY(${(1 - subP) * 18}px)`,
-              textShadow: `0 0 18px ${NEON_BLUE}aa`,
-            }}
-          >
-            SIGNAL POP · WEEKLY
-          </div>
-
-          {/* 日期副标 */}
-          <div
-            style={{
-              marginTop: 16,
-              fontSize: 40,
-              fontWeight: 700,
-              color: "#cfe0ff",
-              fontFamily: "Noto Sans SC, sans-serif",
-              letterSpacing: 4,
-              opacity: dateP,
-              transform: `translateY(${(1 - dateP) * 16}px)`,
-              textShadow: "0 2px 14px rgba(0,0,0,0.5)",
-            }}
-          >
-            {date} · {weekday}
-          </div>
-        </div>
+            />
+          </AbsoluteFill>
+        </AbsoluteFill>
       </AbsoluteFill>
 
-      {/* 工作室品牌（底部）*/}
-      <AbsoluteFill style={{ alignItems: "center", justifyContent: "flex-end", paddingBottom: 48 }}>
-        <div
-          style={{
-            fontSize: 26,
-            color: "rgba(200,215,245,0.9)",
-            fontFamily: "Noto Sans SC, sans-serif",
-            letterSpacing: 3,
-            opacity: brandP,
-            textShadow: `0 0 16px ${PURPLE}88`,
-          }}
-        >
-          MARK哥的创想引擎 · 出品
-        </div>
-      </AbsoluteFill>
-
-      {/* 顶部/底部霓虹光带（漫画分镜感）*/}
-      <AbsoluteFill style={{ opacity: 0.9 }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 8, background: `linear-gradient(90deg, transparent, ${NEON_PINK}, ${NEON_BLUE}, transparent)` }} />
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 8, background: `linear-gradient(90deg, transparent, ${NEON_BLUE}, ${NEON_PINK}, transparent)` }} />
-      </AbsoluteFill>
-
-      {/* 聚光扫光（质感）*/}
-      <AbsoluteFill style={{ opacity: 0.18 + 0.12 * haloPulse, mixBlendMode: "screen" }}>
+      {/* 顶部烫金细线（杂志分镜感）*/}
+      <AbsoluteFill style={{ opacity: 0.85 }}>
         <div
           style={{
             position: "absolute",
-            top: -240,
+            top: 0,
             left: 0,
             right: 0,
-            height: 800,
-            transform: `translateX(${(frame / durationInFrames) * 2600 - 700}px) rotate(12deg)`,
-            background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)",
-            filter: "blur(24px)",
+            height: 6,
+            background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)`,
           }}
         />
       </AbsoluteFill>

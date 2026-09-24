@@ -462,7 +462,7 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[]; pickUrl?: string }> = (
         隔天信号弹 · 周末特别版
       </div>
 
-      {/* 突发 / 互动话题 徽章（红色=突发，金色=互动话题，二者不同时出现） */}
+      {/* 热点 / 互动话题 徽章（红色=热点，金色=互动话题，二者不同时出现） */}
       {(cur.isBreaking || cur.isInteractive) && (
         <div
           style={{
@@ -484,7 +484,7 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[]; pickUrl?: string }> = (
               : "0 0 26px rgba(212,175,55,0.65)",
           }}
         >
-          {cur.isBreaking ? "突 发" : "互动话题"}
+          {cur.isBreaking ? "热 点" : "互动话题"}
         </div>
       )}
 

@@ -6,15 +6,28 @@ import {
   interpolate,
   Easing,
 } from "remotion";
+import { BackHalo, BulletMark } from "./OpeningAnimation";
 
-// ===== 片尾 Logo 卡（与 OpeningAnimation 同视觉语言，可拼在主片尾部）=====
+// ===== 片尾 Logo 卡（与 OpeningAnimation 同款 3D 纸张刊头语言）=====
 // 参考 Easel video-intro-outro 的「片尾关注引导卡」：品牌 + 订阅 CTA。
+// 视觉与开场完全统一：白纸卡 + 真实投影 + -1.5° 微倾斜 + 3D 透视 + Ken-Burns + 红色印章。
 // 未来管线：OpeningAnimation(10s) + DailyNews(正片) + EndingCard(4s) 顺序 concat。
 
-const NAVY = "#05102e";
-const GOLD = "#FFD700";
-const WHITE = "#F3F7FF";
-const easeOut = Easing.out(Easing.cubic);
+const INK = "#0b0f1a";
+const PAPER = "#FCFBF7";
+const PAPER_LINE = "#E7E3D8";
+const STAMP = "#FF375F";
+const GOLD = "#C9A24B";
+const INK_TEXT = "#1E293B";
+const SUB_TEXT = "#64748B";
+const PERSPECTIVE = 1400;
+
+const easeOutCubic = Easing.out(Easing.cubic);
+const easeOutBack = (x: number) => {
+  const c1 = 1.9;
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+};
 
 export const EndingCard: React.FC<{
   brand?: string;
@@ -29,50 +42,259 @@ export const EndingCard: React.FC<{
   const { fps, durationInFrames } = useVideoConfig();
   const t = frame / fps;
 
-  // 整体入场（0 → 1.4s）
-  const inP = interpolate(frame, [0, 42], [0, 1], { extrapolateRight: "clamp", easing: easeOut });
-  const fade = interpolate(frame, [0, 30], [0, 1], { extrapolateRight: "clamp" });
-  // 结尾轻微脉冲（最后 0.6s）
-  const pulse = interpolate(frame, [durationInFrames - 18, durationInFrames], [1, 1.04],
-    { extrapolateLeft: "clamp" });
+  // —— 背景层淡入 ——
+  const bgFade = interpolate(frame, [0, 14], [0, 1], { extrapolateRight: "clamp" });
+
+  // —— 3D 入场（与开场同幅度：正常、不夸张）——
+  const enter = interpolate(frame, [6, 42], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: easeOutCubic,
+  });
+  const eScale = interpolate(enter, [0, 1], [0.9, 1.0]);
+  const eOpacity = interpolate(enter, [0, 1], [0, 1]);
+  const eRX = interpolate(enter, [0, 1], [-26, 4]);
+  const eRY = interpolate(enter, [0, 1], [16, -5]);
+  const eRZ = interpolate(enter, [0, 1], [0, -1.5]);
+  const eTZ = interpolate(enter, [0, 1], [-260, 0]);
+
+  // —— 入场后轻微呼吸浮动（±1.6/±2.4°，与开场一致）——
+  const floatRX = enter * Math.sin(t * 1.05) * 1.6;
+  const floatRY = enter * Math.sin(t * 0.85 + 0.6) * 2.4;
+
+  // —— Ken-Burns 微推（全程 1.0 → 1.022）——
+  const ambient = interpolate(t, [0, durationInFrames / fps], [1.0, 1.022], {
+    extrapolateRight: "clamp",
+    easing: Easing.linear,
+  });
+
+  const rx = eRX + floatRX;
+  const ry = eRY + floatRY;
+  const cardTransform = `scale(${eScale * ambient}) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${eRZ}deg) translateZ(${eTZ}px)`;
+
+  // —— 卡片内元素依次入场（带 translateZ 景深）——
+  const markP = interpolate(frame, [16, 30], [0, 1], { extrapolateRight: "clamp", easing: easeOutCubic });
+  const stampP = interpolate(frame, [24, 40], [0, 1], { extrapolateRight: "clamp", easing: easeOutBack });
+  const titleP = interpolate(frame, [30, 56], [0, 1], { extrapolateRight: "clamp", easing: easeOutCubic });
+  const subP = interpolate(frame, [46, 64], [0, 1], { extrapolateRight: "clamp", easing: easeOutCubic });
+  const ctaP = interpolate(frame, [58, 80], [0, 1], { extrapolateRight: "clamp", easing: easeOutCubic });
+  const footerP = interpolate(frame, [64, 86], [0, 1], { extrapolateRight: "clamp", easing: easeOutCubic });
 
   return (
-    <AbsoluteFill style={{ backgroundColor: NAVY }}>
+    <AbsoluteFill style={{ backgroundColor: INK, opacity: bgFade }}>
+      {/* 墨色径向底 + 暖光池 */}
       <AbsoluteFill
-        style={{ background: "radial-gradient(circle at 50% 42%, #0c1f4d 0%, #071537 45%, #03081c 100%)" }}
+        style={{
+          background:
+            "radial-gradient(circle at 50% 42%, rgba(40,52,82,0.55) 0%, rgba(11,15,26,0) 58%), radial-gradient(circle at 50% 120%, rgba(201,162,75,0.10) 0%, rgba(11,15,26,0) 50%)",
+        }}
       />
-      <AbsoluteFill style={{ opacity: fade, transform: `scale(${0.94 + inP * 0.06})`, transformOrigin: "50% 50%" }}>
-        <div style={{ position: "absolute", left: "50%", top: "46%", transform: "translate(-50%,-50%)", textAlign: "center" }}>
-          {/* 圆形品牌徽标 */}
-          <div style={{
-            width: 150, height: 150, margin: "0 auto 30px",
-            borderRadius: "50%",
-            background: "radial-gradient(circle at 36% 30%, #2a6cff 0%, #1347a8 40%, #04173f 100%)",
-            border: "2px solid rgba(170,215,255,0.75)",
-            boxShadow: "inset 0 0 30px rgba(0,0,0,0.5), 0 0 34px rgba(47,123,255,0.5)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            transform: `scale(${pulse})`,
-          }}>
-            <span style={{ fontSize: 46, color: GOLD, fontWeight: 900, fontFamily: "Noto Sans SC, sans-serif" }}>M</span>
-          </div>
-          <div style={{
-            fontSize: 56, fontWeight: 900, color: WHITE, fontFamily: "Noto Sans SC, sans-serif",
-            letterSpacing: 6, textShadow: "0 4px 22px rgba(0,0,0,0.6), 0 0 16px rgba(47,123,255,0.4)",
-          }}>{brand}</div>
-          <div style={{
-            marginTop: 18, fontSize: 30, fontWeight: 700, color: "#cfe0ff", fontFamily: "Noto Sans SC, sans-serif",
-            letterSpacing: 3,
-          }}>{program}</div>
-          <div style={{
-            marginTop: 30, fontSize: 26, color: "rgba(200,215,245,0.9)", fontFamily: "Noto Sans SC, sans-serif",
-            letterSpacing: 2,
-          }}>{cta}</div>
-        </div>
+      {/* 纸面细点纹理 */}
+      <AbsoluteFill style={{ opacity: 0.05, mixBlendMode: "screen" }}>
+        <div
+          style={{
+            position: "absolute",
+            inset: -100,
+            backgroundImage: "radial-gradient(rgba(255,255,255,0.9) 1px, transparent 1.4px)",
+            backgroundSize: "26px 26px",
+          }}
+        />
       </AbsoluteFill>
-      {/* 上下细光带，呼应开场 */}
-      <AbsoluteFill style={{ opacity: 0.9 }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 6, background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)`, opacity: 0.5 }} />
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 6, background: `linear-gradient(90deg, transparent, #2f7bff, transparent)`, opacity: 0.5 }} />
+      <AbsoluteFill style={{ boxShadow: "inset 0 0 360px 80px rgba(0,0,0,0.55)" }} />
+
+      {/* ============ 3D 场景 ============ */}
+      <AbsoluteFill style={{ perspective: PERSPECTIVE }}>
+        <AbsoluteFill style={{ transformStyle: "preserve-3d", alignItems: "center", justifyContent: "center" }}>
+          {/* 背景巨型光环（与开场一致）*/}
+          <BackHalo p={t} />
+
+          {/* ============ 刊头纸张卡片（真 3D）============ */}
+          <div
+            style={{
+              position: "relative",
+              width: "min(1080px, 84%)",
+              opacity: eOpacity,
+              transform: cardTransform,
+              transformStyle: "preserve-3d",
+              transformOrigin: "center center",
+            }}
+          >
+            <div
+              style={{
+                position: "relative",
+                background: PAPER,
+                borderRadius: 14,
+                padding: "52px 58px 44px 58px",
+                boxShadow: "0 24px 60px rgba(0,0,0,0.65), 0 4px 12px rgba(0,0,0,0.4)",
+                border: "1px solid rgba(255,255,255,0.6)",
+                transformStyle: "preserve-3d",
+              }}
+            >
+              {/* 顶部刊头行：左品牌 / 右印章 */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  transform: "translateZ(8px)",
+                }}
+              >
+                <BulletMark opacity={markP} />
+                {/* 右上角红色印章标签：感谢观看 */}
+                <div
+                  style={{
+                    background: STAMP,
+                    color: "#fff",
+                    fontSize: 20,
+                    fontWeight: 800,
+                    padding: "6px 16px",
+                    borderRadius: 6,
+                    letterSpacing: 2,
+                    boxShadow: "0 4px 12px rgba(255,55,95,0.4)",
+                    opacity: stampP,
+                    transform: `translateZ(50px) scale(${0.5 + stampP * 0.5}) rotate(${(1 - stampP) * -10}deg)`,
+                    transformOrigin: "center center",
+                  }}
+                >
+                  感谢观看 · THANKS
+                </div>
+              </div>
+
+              {/* 主标题（节目名）*/}
+              <div
+                style={{
+                  marginTop: 42,
+                  textAlign: "center",
+                  opacity: titleP,
+                  transform: `translateZ(28px) translateY(${(1 - titleP) * 24}px)`,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 84,
+                    fontWeight: 900,
+                    color: INK_TEXT,
+                    fontFamily: "Noto Sans SC, sans-serif",
+                    letterSpacing: 2,
+                    lineHeight: 1.12,
+                    textShadow: "0 2px 0 rgba(0,0,0,0.04)",
+                  }}
+                >
+                  {program}
+                </div>
+              </div>
+
+              {/* 分隔细线 + 出品方副标 */}
+              <div
+                style={{
+                  marginTop: 28,
+                  opacity: subP,
+                  transform: `translateZ(14px) translateY(${(1 - subP) * 14}px)`,
+                }}
+              >
+                <div
+                  style={{
+                    height: 2,
+                    width: "62%",
+                    margin: "0 auto 18px auto",
+                    background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)`,
+                  }}
+                />
+                <div
+                  style={{
+                    textAlign: "center",
+                    fontSize: 28,
+                    fontWeight: 700,
+                    letterSpacing: 4,
+                    color: SUB_TEXT,
+                    fontFamily: "Noto Sans SC, sans-serif",
+                  }}
+                >
+                  {brand}
+                </div>
+              </div>
+
+              {/* 订阅 CTA 横幅（金边胶囊，呼应 Easel 关注引导卡）*/}
+              <div
+                style={{
+                  marginTop: 32,
+                  textAlign: "center",
+                  opacity: ctaP,
+                  transform: `translateZ(20px) translateY(${(1 - ctaP) * 16}px)`,
+                }}
+              >
+                <div
+                  style={{
+                    display: "inline-block",
+                    padding: "14px 34px",
+                    borderRadius: 999,
+                    border: `2px solid ${GOLD}`,
+                    background: "rgba(201,162,75,0.08)",
+                    color: INK_TEXT,
+                    fontSize: 26,
+                    fontWeight: 700,
+                    letterSpacing: 2,
+                    fontFamily: "Noto Sans SC, sans-serif",
+                    boxShadow: "0 6px 18px rgba(201,162,75,0.18)",
+                  }}
+                >
+                  {cta}
+                </div>
+              </div>
+
+              {/* 底部来源 / 出品标头 */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginTop: 34,
+                  paddingTop: 18,
+                  borderTop: `1px solid ${PAPER_LINE}`,
+                  opacity: footerP,
+                  transform: `translateZ(6px) translateY(${(1 - footerP) * 12}px)`,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 22,
+                    fontWeight: 700,
+                    color: INK_TEXT,
+                    fontFamily: "Noto Sans SC, sans-serif",
+                    letterSpacing: 1,
+                  }}
+                >
+                  {brand} · 出品
+                </div>
+                <div
+                  style={{
+                    fontSize: 19,
+                    fontWeight: 600,
+                    letterSpacing: 1,
+                    color: SUB_TEXT,
+                    fontFamily: "Noto Sans SC, sans-serif",
+                  }}
+                >
+                  周末特别版
+                </div>
+              </div>
+            </div>
+          </div>
+        </AbsoluteFill>
+      </AbsoluteFill>
+
+      {/* 顶部烫金细线（与开场呼应）*/}
+      <AbsoluteFill style={{ opacity: 0.85 }}>
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 6,
+            background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)`,
+          }}
+        />
       </AbsoluteFill>
     </AbsoluteFill>
   );
