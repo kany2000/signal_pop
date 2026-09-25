@@ -333,6 +333,12 @@ python tools/analytics_postmortem.py 20260908 --snapshot     # 拉数（需登�
 - **声音**：开场垫乐取 `output/mp3/Romeo - Winds of Hope - Creative Cut - Piano.mp3` 的 **34–43s 片段（约 9s，纯钢琴）**，由 `render_weekly_segmented.sh` 作为前 9s 头段、TTS 整体延后 270 帧合并。⚠️ 该曲约每 8–12s 有一次强动态涌浪（约 8/20/30/44/56/64/72/80.7s），其中 ~30s 起为带人声/合唱的宽带段——**截取时必须避开，选段后用 `showspectrumpic` 频谱图核验无人声**。独立预览带声用 `remotion_poc/out/opening_romeo.wav` 与预览 mp4 ffmpeg 合并（`-map 0:v:0 -map 1:a:0 -c:a aac -b:a 192k`）。
 - **沙箱渲染**：本环境无 Remotion 自带 Chromium，改用系统 Chrome 作 `browserExecutable`，走 `bundle → getCompositions → renderFrames → stitchFramesToVideo`（见 `remotion_poc/render_preview2.mjs`）；`renderMedia()` 在本沙箱会崩，勿用。
 
+### 7. 周末版字幕与交互升级（2026-09-25 升级）
+- **短视频滚动翻牌字幕（Paged Flow）**：`WeeklyTalk.tsx` 集成 `PagedDialogue` 智能分句组件，长新闻彻底告别省略号 `……` 截断，按标点语义动态分页并平滑向上推滚翻牌，右上角显示优雅页码胶囊，下方淡显下一句预告。
+- **高透毛玻璃气泡**：气泡背景升级为 `rgba(14,20,34,0.68)` + `backdropFilter: blur(14px)`，通透轻盈，配图细节隐隐透出，字幕高对比度清晰可读。
+- **换主播接话呼吸停顿**：`gen_dual_tts.py` 合成加入智能间歇机制（换主播接话追加 0.45s 呼吸空停顿、同人句间 0.20s），彻底消除两主播抢话感，对话从容自然。
+- **本期精选网址动态注入**：支持从 `parsed_news.json` 自动解析或 `pick_url.txt` 动态配置，彻底告别旧默认网址硬编码，视频内胶囊卡与 8 平台文案动态同步展示（如 `https://fmhy.net`）。
+
 ---
 
 ## 许可

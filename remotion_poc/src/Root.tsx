@@ -33,7 +33,7 @@ export const RemotionRoot: React.FC = () => {
         height={1080}
         defaultProps={{
           segs: weeklySegs,
-          pickUrl: (weeklySegs && weeklySegs[0] && weeklySegs[0].pickUrl) || "sink.hailoutec.com/pam",
+          pickUrl: (weeklySegs && weeklySegs[0] && weeklySegs[0].pickUrl) || "https://fmhy.net",
         }}
       />
       <Composition

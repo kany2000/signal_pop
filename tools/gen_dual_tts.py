@@ -15,8 +15,13 @@ import struct
 
 PROJECT_ROOT = "E:/projects/signal_pop"
 PREP_DATE = sys.argv[1] if len(sys.argv) > 1 else "20260814"
-SCRIPT_FILE = os.path.join(PROJECT_ROOT, "archive", f"signal_pop_weekly_special_{PREP_DATE}.txt")
 OUT_DIR = os.path.join(PROJECT_ROOT, "output", "weekly", PREP_DATE)
+# 优先读当期 dialogue_script.txt，不存在再回退 archive
+candidate_script = os.path.join(OUT_DIR, "dialogue_script.txt")
+if os.path.exists(candidate_script):
+    SCRIPT_FILE = candidate_script
+else:
+    SCRIPT_FILE = os.path.join(PROJECT_ROOT, "archive", f"signal_pop_weekly_special_{PREP_DATE}.txt")
 AUDIO_DIR = os.path.join(OUT_DIR, "audio")
 AUDIO_PATH = os.path.join(AUDIO_DIR, "tts.wav")
 SEGMENTS_PATH = os.path.join(AUDIO_DIR, "tts_segments.json")
@@ -67,9 +72,15 @@ async def gen_one(idx, seg, sem, audio_dir):
     from gen_cloud_tts import volc_synthesize, xunfei_synthesize, qwen_synthesize
     async with sem:
         mp3 = os.path.join(audio_dir, f"_s{idx:03d}.mp3")
-        # 断点续跑：已成功的片段直接复用（避免重跑烧配额）
-        if os.path.exists(mp3) and os.path.getsize(mp3) > 1000:
-            return mp3
+        meta_file = os.path.join(audio_dir, f"_s{idx:03d}.txt")
+        # 断点续跑：仅当音频存在且文本哈希完全一致时才复用（防止改稿/调序后错位复用旧音频）
+        if os.path.exists(mp3) and os.path.getsize(mp3) > 1000 and os.path.exists(meta_file):
+            try:
+                cached_text = open(meta_file, encoding="utf-8").read().strip()
+                if cached_text == seg["text"].strip():
+                    return mp3
+            except Exception:
+                pass
         last_err = None
         for attempt in range(4):
             try:
@@ -86,6 +97,11 @@ async def gen_one(idx, seg, sem, audio_dir):
                                                 connect_timeout=30, receive_timeout=120)
                     await comm.save(mp3)
                 if os.path.getsize(mp3) > 1000:
+                    try:
+                        with open(meta_file, "w", encoding="utf-8") as mf:
+                            mf.write(seg["text"].strip())
+                    except Exception:
+                        pass
                     return mp3
                 last_err = "empty audio"
             except Exception as e:
@@ -142,11 +158,29 @@ async def gen_tts_all(segs, out_dir=AUDIO_DIR):
         if peak > 0:
             scale = min(target / peak, 4.0)  # 上限 4x 防止极小峰值段底噪爆炸
             trimmed = [max(-32768, min(32767, int(s * scale))) for s in trimmed]
-        dur = len(trimmed) / rate
+
+        # 换主播自然停顿间隔（2026-09-25 用户要求：避免换人抢话，增加对话呼吸感）
+        # 换主播间隔 0.45s，同主播段间 0.20s，末句收束 0.50s
+        silence_sec = 0.0
+        if idx + 1 < len(segs):
+            next_seg = segs[idx + 1]
+            if next_seg["speaker"] != seg["speaker"]:
+                silence_sec = 0.45  # 换人接话空停顿
+            else:
+                silence_sec = 0.20  # 同人换句短停顿
+        else:
+            silence_sec = 0.50  # 片尾最后一句收束
+
+        silence_samples = int(rate * silence_sec)
+        dur = (len(trimmed) + silence_samples) / rate
+
         for s in trimmed:
             all_pcm.extend(struct.pack("<h", s))
+        if silence_samples > 0:
+            all_pcm.extend(b"\x00\x00" * silence_samples)
+
         durations.append({"dur": dur, "speaker": seg["speaker"], "text": seg["text"]})
-        print(f"  [{idx+1}/{len(segs)}] {seg['speaker']} {dur:.2f}s: {seg['text'][:26]}...")
+        print(f"  [{idx+1}/{len(segs)}] {seg['speaker']} {dur:.2f}s (含停顿{silence_sec:.2f}s): {seg['text'][:24]}...")
 
     with wave.open(audio_path, "wb") as out:
         out.setnchannels(1)

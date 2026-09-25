@@ -69,20 +69,49 @@ def main(date):
     opening_bg_path = os.path.join(out_dir, "images", "opening_bg.jpg")
     has_opening_bg = os.path.exists(opening_bg_path)
 
-    # 每期精选网址（片尾「本期精选网址」条 + 发布文案复用）：逐期可配。
-    # 优先级：argv[2] 显式传入 > output/weekly/<日>/pick_url.txt > 默认兜底。
-    DEFAULT_PICK_URL = "sink.hailoutec.com/pam"
-    pick_url = DEFAULT_PICK_URL
-    pick_txt = os.path.join(out_dir, "pick_url.txt")
-    if len(sys.argv) > 2 and sys.argv[2].strip():
+    # 每期精选网址（片尾「本期精选网址」条 + 发布文案复用）：
+    # 优先级：从 parsed_news.json 的 pick 项正文中自动提取 URL
+    # > argv[2] 显式传入 > output/weekly/<日>/pick_url.txt > 默认兜底。
+    pick_url = None
+
+    # 1) 优先从 parsed_news.json 的 pick 条目正文提取真实网址
+    try:
+        pn_data = json.load(open(os.path.join(out_dir, "parsed_news.json"), encoding="utf-8"))
+        pick_it = next((it for it in pn_data if it.get("type") == "pick"), None)
+        if pick_it and pick_it.get("body"):
+            import re
+            m = re.search(r"(https?://[^\s，。、；]+|[a-zA-Z0-9][-a-zA-Z0-9]*\.(?:net|com|org|cn|io|me|cc|tv|xyz)[^\s，。、；]*)", pick_it["body"])
+            if m:
+                pick_url = m.group(1).rstrip("，。、；")
+                # 规范化：去除协议头便于胶囊卡美观展示（如 https://fmhy.net -> fmhy.net）
+                print(f"✅ 从 parsed_news.json pick 提取到本期精选网址: {pick_url}")
+    except Exception as e:
+        print(f"⚠️ 解析 pick_url 失败: {e}")
+
+    # 2) 命令行参数显式传入
+    if not pick_url and len(sys.argv) > 2 and sys.argv[2].strip():
         pick_url = sys.argv[2].strip()
-    elif os.path.exists(pick_txt):
+
+    # 3) pick_url.txt 文件
+    pick_txt = os.path.join(out_dir, "pick_url.txt")
+    if not pick_url and os.path.exists(pick_txt):
         try:
             pick_url = open(pick_txt, encoding="utf-8").read().strip()
         except Exception:
             pass
-    if pick_url:
-        print(f"ℹ️ 本期精选网址: {pick_url}")
+
+    # 4) 兜底
+    if not pick_url:
+        pick_url = "fmhy.net"
+
+    # 同步写入/更新 pick_url.txt，供后续发布脚本或外部工具复用
+    try:
+        with open(pick_txt, "w", encoding="utf-8") as pf:
+            pf.write(pick_url)
+    except Exception:
+        pass
+
+    print(f"ℹ️ 本期精选网址最终锁定: {pick_url}")
 
     for i in range(n):
         d = dlg[i]

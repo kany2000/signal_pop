@@ -44,6 +44,207 @@ const GREY = "#BEC6D2";
 
 const easeOut = Easing.out(Easing.cubic);
 
+// ============ 方案3：现代短视频 智能分句 + 逐句滚动翻牌组件 ============
+export function splitTextIntoPages(text: string, maxLen = 38): string[] {
+  const trimmed = text.trim();
+  if (trimmed.length <= maxLen) return [trimmed];
+
+  // 1. 按句末标点初步断开
+  const parts = trimmed.split(/([。！？；]+)/).filter(Boolean);
+  const sentences: string[] = [];
+  let buffer = "";
+
+  for (let i = 0; i < parts.length; i++) {
+    const p = parts[i];
+    if (/^[。！？；]+$/.test(p)) {
+      buffer += p;
+      if (buffer.length >= 14) {
+        sentences.push(buffer.trim());
+        buffer = "";
+      }
+    } else {
+      if (buffer && buffer.length + p.length > maxLen) {
+        sentences.push(buffer.trim());
+        buffer = p;
+      } else {
+        buffer += p;
+      }
+    }
+  }
+  if (buffer.trim()) sentences.push(buffer.trim());
+
+  // 2. 针对过长单句按逗号再次拆分
+  const refined: string[] = [];
+  for (const s of sentences) {
+    if (s.length > maxLen + 8 && s.includes("，")) {
+      const sub = s.split(/([，]+)/).filter(Boolean);
+      let sbuf = "";
+      for (const sp of sub) {
+        if (/^[，]+$/.test(sp)) {
+          sbuf += sp;
+          if (sbuf.length >= 16) {
+            refined.push(sbuf.trim());
+            sbuf = "";
+          }
+        } else {
+          if (sbuf && sbuf.length + sp.length > maxLen) {
+            refined.push(sbuf.trim());
+            sbuf = sp;
+          } else {
+            sbuf += sp;
+          }
+        }
+      }
+      if (sbuf.trim()) refined.push(sbuf.trim());
+    } else {
+      refined.push(s);
+    }
+  }
+
+  // 3. 前后短句合并优化（避免首句“接着聊科技。”等短句孤立）
+  const finalPages: string[] = [];
+  for (let i = 0; i < refined.length; i++) {
+    const cur = refined[i];
+    if (cur.length < 13 && i + 1 < refined.length && cur.length + refined[i + 1].length <= 44) {
+      finalPages.push(cur + refined[i + 1]);
+      i++; // 跳过下一句
+    } else {
+      finalPages.push(cur);
+    }
+  }
+  return finalPages.length > 0 ? finalPages : [trimmed];
+}
+
+export const PagedDialogue: React.FC<{
+  text: string;
+  duration: number;
+  localT: number;
+  accent: string;
+}> = ({ text, duration, localT, accent }) => {
+  const pages = React.useMemo(() => splitTextIntoPages(text), [text]);
+  const totalChars = React.useMemo(
+    () => pages.reduce((sum, p) => sum + p.length, 0),
+    [pages]
+  );
+
+  // 计算每页的起止时间
+  const pageTimings = React.useMemo(() => {
+    let acc = 0;
+    return pages.map((p, idx) => {
+      const pageDur =
+        idx === pages.length - 1
+          ? Math.max(0.8, duration - acc)
+          : duration * (p.length / totalChars);
+      const start = acc;
+      const end = acc + pageDur;
+      acc = end;
+      return { text: p, start, end, dur: pageDur };
+    });
+  }, [pages, duration, totalChars]);
+
+  // 找出当前处于第几页
+  let curIndex = 0;
+  for (let i = 0; i < pageTimings.length; i++) {
+    if (localT >= pageTimings[i].start) {
+      curIndex = i;
+    }
+  }
+  curIndex = Math.min(curIndex, pageTimings.length - 1);
+  const curPage = pageTimings[curIndex];
+  const nextPage = curIndex + 1 < pageTimings.length ? pageTimings[curIndex + 1] : null;
+
+  // 页面内相对进度
+  const pageLocalT = localT - curPage.start;
+  const pDur = Math.max(0.6, curPage.dur);
+
+  // 切换过渡动画（0.28s 进，0.28s 出）
+  const transitionTime = Math.min(0.28, pDur * 0.2);
+  const enterProgress = Math.min(1, Math.max(0, pageLocalT / transitionTime));
+  const leaveProgress =
+    curIndex < pageTimings.length - 1
+      ? Math.min(1, Math.max(0, (pageLocalT - (pDur - transitionTime)) / transitionTime))
+      : 0;
+
+  // easeOut 缓动
+  const easeProgress = 1 - Math.pow(1 - enterProgress, 3);
+  const easeLeave = Math.pow(leaveProgress, 2);
+
+  const opacity = easeProgress * (1 - easeLeave);
+  const translateY = (1 - easeProgress) * 16 - easeLeave * 16;
+
+  return (
+    <div style={{ position: "relative", width: "100%", height: 110, overflow: "hidden" }}>
+      {/* 当前播放句子（主行：高亮醒目） */}
+      <div
+        style={{
+          position: "absolute",
+          top: 2,
+          left: 0,
+          right: 0,
+          opacity,
+          transform: `translateY(${translateY}px)`,
+          fontSize: 38,
+          fontWeight: 600,
+          color: "#FFFFFF",
+          fontFamily: "Noto Sans SC, sans-serif",
+          lineHeight: 1.42,
+          textShadow: "0 2px 10px rgba(0,0,0,0.6)",
+        }}
+      >
+        {curPage.text}
+      </div>
+
+      {/* 下一句预告（若有多页，显示在下方，半透明，提供视线预期） */}
+      {nextPage && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 2,
+            left: 0,
+            right: 0,
+            opacity: Math.max(0, 0.42 - easeLeave * 0.2),
+            transform: `translateY(${leaveProgress * -12}px)`,
+            fontSize: 26,
+            fontWeight: 400,
+            color: "#A0AEC0",
+            fontFamily: "Noto Sans SC, sans-serif",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {nextPage.text}
+        </div>
+      )}
+
+      {/* 右上角 翻页进度指示灯（仅在大于 1 页时显示） */}
+      {pages.length > 1 && (
+        <div
+          style={{
+            position: "absolute",
+            top: -26,
+            right: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 18,
+            fontWeight: 600,
+            color: accent,
+            background: "rgba(255,255,255,0.06)",
+            padding: "3px 12px",
+            borderRadius: 999,
+            border: `1px solid ${accent}44`,
+          }}
+        >
+          <span>{curIndex + 1}</span>
+          <span style={{ opacity: 0.5 }}>/</span>
+          <span style={{ opacity: 0.7 }}>{pages.length}</span>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ============ 章节转场卡（⑤对撞 + ①标题浮现） ============
 // 按 bg 文件名自动推导章节：breaking/news_XX/summary/watch/interactive
 const CHAPTER_META: Record<string, { title: string; en: string; color: string }> = {
@@ -323,7 +524,6 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[]; pickUrl?: string }> = (
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const t = frame / fps;
-  const pickUrlDisplay = pickUrl || "sink.hailoutec.com/pam";
 
   // 累计定位当前段
   let cur: TalkSegment | null = null;
@@ -341,6 +541,8 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[]; pickUrl?: string }> = (
     acc += s.dur;
   }
   if (!cur) return <AbsoluteFill style={{ backgroundColor: "#0d1220" }} />;
+
+  const pickUrlDisplay = cur.pickUrl || pickUrl || "https://fmhy.net";
 
   const localT = t - segStart;
 
@@ -411,11 +613,7 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[]; pickUrl?: string }> = (
     easing: easeOut,
   });
 
-  // 文本按 4 行截断（气泡内）
-  const maxChars = 42;
-  let text = cur.text;
-  if (text.length > maxChars * 3) text = text.slice(0, maxChars * 3 - 1) + "…";
-
+  // 文本采用方案3：现代短视频 智能分句 + 滚动翻牌组件（全量保留，告别省略号截断）
   const nameColor = isAxin ? "#9CC3EC" : "#F2B8D4";
 
   // 三连动画检测：段文本含「一键三连」或最后 CTA 段 → 三连图标浮现后持续显示到视频结束
@@ -655,10 +853,12 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[]; pickUrl?: string }> = (
           width: 1560,
           minHeight: 190,
           padding: "26px 44px",
-          background: "rgba(18,26,42,0.92)",
-          border: `3px solid ${accent}`,
+          background: "rgba(14,20,34,0.68)",
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
+          border: `2px solid ${accent}aa`,
           borderRadius: 26,
-          boxShadow: `0 0 40px rgba(0,0,0,0.5), 0 0 24px ${accent}55`,
+          boxShadow: `0 14px 40px rgba(0,0,0,0.45), 0 0 24px ${accent}44`,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
@@ -667,9 +867,12 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[]; pickUrl?: string }> = (
             {isAxin ? "阿信" : "小蓝"}
           </span>
         </div>
-        <div style={{ fontSize: 34, color: WHITE, fontFamily: "Noto Sans SC, sans-serif", lineHeight: 1.55 }}>
-          {text}
-        </div>
+        <PagedDialogue
+          text={cur.text}
+          duration={cur.dur}
+          localT={localT}
+          accent={accent}
+        />
       </div>
 
       {/* 底部进度条 */}

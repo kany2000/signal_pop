@@ -14,11 +14,30 @@ from PIL import Image, ImageDraw, ImageFont
 
 BASE = "E:/projects/signal_pop"
 
-# 展示顺序与中文章节标签
-ORDER = [("breaking", "特别报道")]
-ORDER += [(f"news_{i:02d}", f"要闻{i:02d}") for i in range(1, 17)]
-ORDER += [("summary", "本周之最"),
-          ("interactive", "互动话题"), ("pick", "每期精选")]
+# 展示顺序与中文章节标签（精确对应 20260925 期用户指定顺序）
+ORDER = [
+    ("breaking", "特别报道·Claude5.5"),
+    ("news_01", "01 水产秋收"),
+    ("news_02", "02 市场监管食品"),
+    ("news_03", "03 银行存款利率"),
+    ("news_04", "04 车企造机器人"),
+    ("news_05", "05 11.3万亿吨冰"),
+    ("news_06", "06 西贝股权质押"),
+    ("news_07", "07 改装RTX5090"),
+    ("news_08", "08 华为HAIP平台"),
+    ("news_09", "09 天关卫星拉索"),
+    ("news_10", "10 钟南山肺结节"),
+    ("news_11", "11 智谱ZCode整改"),
+    ("news_12", "12 酒店长租公寓"),
+    ("news_13", "13 阿里语音模型"),
+    ("news_14", "14 英国返还文物"),
+    ("interactive", "互动话题·AI变笨"),
+    ("pick", "每期精选·fmhy"),
+    ("econ_slide_1", "聊经济01·开场"),
+    ("econ_slide_2", "聊经济02·真假摔"),
+    ("econ_slide_3", "聊经济03·情绪杀"),
+    ("econ_slide_4", "聊经济04·价值锚定"),
+]
 
 
 def find_font(size):

@@ -191,13 +191,31 @@ title_top3 = "、".join(shorts[:3])
 CIRC = "①②③④⑤⑥⑦⑧⑨⑩⓫⓬⓭⓮⓯"
 
 # 每期精选网址（口播里说"网址在视频简介里"，文案必须带出）
-# 优先级：output/weekly/<制作日>/pick_url.txt > 默认兜底
+# 优先级：output/weekly/<制作日>/pick_url.txt > 从 parsed_news.json 的 pick 项提取 > 默认兜底
 _PICK_URL_FILE = os.path.join(OUT, "pick_url.txt")
-PICK_URL = (
-    open(_PICK_URL_FILE, encoding="utf-8").read().strip()
-    if os.path.exists(_PICK_URL_FILE)
-    else "https://sink.hailoutec.com/pam"
-)
+PICK_URL = None
+if os.path.exists(_PICK_URL_FILE):
+    try:
+        PICK_URL = open(_PICK_URL_FILE, encoding="utf-8").read().strip()
+    except Exception:
+        pass
+
+if not PICK_URL:
+    try:
+        pick_it = next((it for it in parsed if it.get("type") == "pick"), None)
+        if pick_it and pick_it.get("body"):
+            m = re.search(r"(https?://[^\s，。、；]+|[a-zA-Z0-9][-a-zA-Z0-9]*\.(?:net|com|org|cn|io|me|cc|tv|xyz)[^\s，。、；]*)", pick_it["body"])
+            if m:
+                PICK_URL = m.group(1).rstrip("，。、；")
+    except Exception:
+        pass
+
+if not PICK_URL:
+    PICK_URL = "https://fmhy.net"
+
+if not PICK_URL.startswith("http"):
+    PICK_URL = f"https://{PICK_URL}"
+
 PICK_URL_LINE = f"🔗 每期精选网址（复制到浏览器打开）：{PICK_URL}"
 
 
@@ -364,12 +382,6 @@ Every Saturday on Signal Pop. Subscribe for weekly China & tech news.
 SignalPop,WeeklyNews,China,Technology,News,AI"""
 
     # 8. Twitter（280 字符硬上限，三级兜底）
-    files["facebook.md"] = f"""📡 Signal Pop Weekly | {PUB_DATE_SHORT} Weekend News Briefing
-
-Top {n} stories this week (by Axin & Xiaolan):
-完整内容见视频。{PICK_URL_LINE}
-欢迎关注，每周六 8 点更新。"""
-
     twitter = f"""📡 Signal Pop Weekly | {n} News in 9 min
 
 This week's top stories:
