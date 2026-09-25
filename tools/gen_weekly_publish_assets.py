@@ -233,6 +233,10 @@ BG_LABEL_STATIC = {
     "watch.jpg": "下周看点",
     "interactive.jpg": "互动话题",
     "pick.jpg": "每期精选",
+    "econ_slide_1.jpg": "聊经济·理财避坑开场",
+    "econ_slide_2.jpg": "聊经济·第一步辨别真假摔",
+    "econ_slide_3.jpg": "聊经济·第二步情绪杀vs业绩杀",
+    "econ_slide_4.jpg": "聊经济·第三步价值锚定总结",
 }
 
 
