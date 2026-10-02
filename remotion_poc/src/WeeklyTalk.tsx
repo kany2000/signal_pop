@@ -543,6 +543,7 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[]; pickUrl?: string }> = (
   if (!cur) return <AbsoluteFill style={{ backgroundColor: "#0d1220" }} />;
 
   const pickUrlDisplay = cur.pickUrl || pickUrl || "https://fmhy.net";
+  const effectiveBg = cur.bg || "opening_bg.jpg";
 
   const localT = t - segStart;
 
@@ -646,13 +647,15 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[]; pickUrl?: string }> = (
     <AbsoluteFill style={{ backgroundColor: "#0d1220" }}>
       {/* 背景配图（随段轮换，淡入过渡；开场 bg 为空时渲染渐变底） */}
       <AbsoluteFill style={{ opacity: bgFade, transform: `scale(${bgScale})`, transformOrigin: "50% 40%" }}>
-        {cur.bg ? (
-          <Img src={staticFile(cur.bg)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        {effectiveBg ? (
+          <Img src={staticFile(effectiveBg)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
-          <AbsoluteFill style={{ background: "radial-gradient(circle at 50% 35%, #1c2c4a 0%, #0d1220 70%)" }} />
+          <AbsoluteFill style={{ background: "radial-gradient(circle at 50% 30%, #2a416d 0%, #152038 55%, #0c1424 100%)" }} />
         )}
       </AbsoluteFill>
-      <AbsoluteFill style={{ background: "rgba(8,12,24,0.62)" }} />
+      {/* 配图遮罩层：从 0.62 降低至 0.28，让配图明亮生动；econ_slide 本身是清晰图表则完全不压暗 */}
+      {/* 配图遮罩层：从 0.62 降低至 0.15，彻底还原新闻配图原汁原味的高清纯净明亮色彩；econ_slide 维持完全透传 */}
+      <AbsoluteFill style={{ background: cur.bg && cur.bg.startsWith("econ_slide") ? "rgba(0,0,0,0)" : "rgba(8,12,24,0.15)" }} />
 
       {/* 顶部品牌条 */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 90, background: "linear-gradient(180deg, rgba(10,16,30,0.95), rgba(10,16,30,0))" }} />

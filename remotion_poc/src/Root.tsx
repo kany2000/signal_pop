@@ -59,7 +59,7 @@ export const RemotionRoot: React.FC = () => {
         height={1080}
         defaultProps={{
           title: "AI语播·信号弹每周精选",
-          date: "2026年9月12日",
+          date: "2026年10月3日",
           weekday: "星期六",
         }}
       />
