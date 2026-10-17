@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Signal Pop 周末特别版封面 — 深色霓虹 + 女主播"""
-import sys, os, hashlib, urllib.request, ssl
+import sys, os, hashlib, urllib.request, ssl, base64
 from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import numpy as np
@@ -25,7 +25,7 @@ _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 from config import SENSENOVA_API_KEY as SENSENOVA_KEY  # noqa: E402
-SENSENOVA_MODEL = "sensenova-u1-fast"
+SENSENOVA_MODEL = "sensenova-u1.5-lite"  # 2026-10-13：u1-fast 已退役
 
 ANCHOR_PROMPT = "Chinese female news anchor, professional studio portrait, short hair, wearing red blazer, elegant confident smile, modern broadcast studio with blue background, cinematic lighting, high quality, photorealistic, portrait photography, 8K, no text, no words, no letters, no numbers, no characters, no typography, no signage, no labels, no captions, no UI, no writing, no screens with text, no charts, no data displays, no any text whatsoever, completely text-free image, no monitors with text, no screens showing data"
 
@@ -70,9 +70,13 @@ def get_anchor():
         )
         with urllib.request.urlopen(req, timeout=300, context=ctx) as r:
             resp = j.loads(r.read())
-        img_url = resp["data"][0]["url"]
-        with urllib.request.urlopen(img_url, timeout=300, context=ctx) as img_r:
-            img_data = img_r.read()
+        item = resp["data"][0]
+        if item.get("b64_json"):  # u1.5-lite 直接返回 base64（无 URL）
+            img_data = base64.b64decode(item["b64_json"])
+        else:
+            img_url = item["url"]  # 兼容旧模型的 URL 返回
+            with urllib.request.urlopen(img_url, timeout=300, context=ctx) as img_r:
+                img_data = img_r.read()
         with open(cache, "wb") as f:
             f.write(img_data)
         print(f"  Anchor saved to cache")

@@ -44,8 +44,16 @@ _prep_dt = datetime.strptime(PREP_DATE, "%Y%m%d")
 PUB_DT = _prep_dt + timedelta(days=(5 - _prep_dt.weekday()) % 7)
 PUB_DATE_SHORT = f"{PUB_DT.year}.{PUB_DT.month:02d}.{PUB_DT.day:02d}"
 WEEKDAY_CN = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][PUB_DT.weekday()]
-# 本期精选条数（与正片/文案保持一致；后续可改为从 parsed_news 自动读取）
-ITEM_COUNT = 17
+# 本期条数：2026-10-16 起改为从 parsed_news.json 自动统计
+# （原先硬编码 ITEM_COUNT = 17，20261016 期实际只有 11 条 —— 突发 1 + 要闻 10，
+#   封面标题「本周17条」与正片不符，已被用户看出）
+try:
+    import json as _json
+    _pn = _json.load(open(os.path.join(OUT_DIR, "parsed_news.json"), encoding="utf-8"))
+    _items = _pn if isinstance(_pn, list) else _pn.get("items", [])
+    ITEM_COUNT = len(_items) or 17
+except Exception:
+    ITEM_COUNT = 17
 CN_COUNT = f"本周{ITEM_COUNT}条"  # 例：本周17条
 
 # 调色板
@@ -525,7 +533,7 @@ def build_neon_landscape(w, h, axin, xiaolan):
     d = ImageDraw.Draw(canvas)
     draw_outline(d, (cx, cy), "15", big, WHITE, outline=(*hue, 255), w=10)
     d.text((cx, cy - int(h * 0.26)), "本 周", fill=(*hue, 255), font=fnt(int(h * 0.09), True), anchor="mm")
-    d.text((cx, cy + int(h * 0.22)), "本周 15 条 · 一报一评", fill=WHITE, font=fnt(int(h * 0.05), True), anchor="mm")
+    d.text((cx, cy + int(h * 0.22)), f"本周 {ITEM_COUNT} 条 · 一报一评", fill=WHITE, font=fnt(int(h * 0.05), True), anchor="mm")
     # 双人圆形头像
     fs = int(h * 0.22)
     fy = h - fs - 110
@@ -555,7 +563,7 @@ def build_neon_portrait(w, h, axin, xiaolan):
         canvas = Image.alpha_composite(canvas.convert("RGBA"), ov).convert("RGB")
     d = ImageDraw.Draw(canvas)
     draw_outline(d, (cx, cy), "15", big, WHITE, outline=(*hue, 255), w=8)
-    d.text((cx, cy + int(h * 0.16)), "本周 15 条", fill=WHITE, font=fnt(int(w * 0.07), True), anchor="mm")
+    d.text((cx, cy + int(h * 0.16)), f"本周 {ITEM_COUNT} 条", fill=WHITE, font=fnt(int(w * 0.07), True), anchor="mm")
     # 双人
     fs = int(w * 0.28)
     fy = int(h * 0.70)

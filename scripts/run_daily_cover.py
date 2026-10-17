@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Signal Pop 每日封面 — 复用 run_cover.py 风格，参数适配"""
-import sys, os, json, random, hashlib, urllib.request, ssl
+import sys, os, json, random, hashlib, urllib.request, ssl, base64
 from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import numpy as np
@@ -25,7 +25,7 @@ _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 from config import SENSENOVA_API_KEY as SENSENOVA_KEY  # noqa: E402
-SENSENOVA_MODEL = "sensenova-u1-fast"
+SENSENOVA_MODEL = "sensenova-u1.5-lite"  # 2026-10-13：u1-fast 已退役
 
 # ===== 主播形象库：多维度特征池（组合空间百万级），每期生成"从未用过"的全新形象 =====
 # 每个维度独立池，组合指纹记录到 used_anchor_styles.json，生成时自动避开历史，确保每期人物全新。
@@ -272,9 +272,13 @@ def get_anchor(anchor_idx=None):
         )
         with urllib.request.urlopen(req, timeout=300, context=ctx) as r:
             resp = j.loads(r.read())
-        img_url = resp["data"][0]["url"]
-        with urllib.request.urlopen(img_url, timeout=300, context=ctx) as img_r:
-            img_data = img_r.read()
+        item = resp["data"][0]
+        if item.get("b64_json"):  # u1.5-lite 直接返回 base64（无 URL）
+            img_data = base64.b64decode(item["b64_json"])
+        else:
+            img_url = item["url"]  # 兼容旧模型的 URL 返回
+            with urllib.request.urlopen(img_url, timeout=300, context=ctx) as img_r:
+                img_data = img_r.read()
         with open(cache, "wb") as f:
             f.write(img_data)
         print(f"  Anchor saved to cache")
@@ -493,9 +497,13 @@ def get_avatar():
         )
         with urllib.request.urlopen(req, timeout=300, context=ctx) as r:
             resp = j.loads(r.read())
-        img_url = resp["data"][0]["url"]
-        with urllib.request.urlopen(img_url, timeout=300, context=ctx) as img_r:
-            img_data = img_r.read()
+        item = resp["data"][0]
+        if item.get("b64_json"):  # u1.5-lite 直接返回 base64（无 URL）
+            img_data = base64.b64decode(item["b64_json"])
+        else:
+            img_url = item["url"]  # 兼容旧模型的 URL 返回
+            with urllib.request.urlopen(img_url, timeout=300, context=ctx) as img_r:
+                img_data = img_r.read()
         with open(cache, "wb") as f:
             f.write(img_data)
         print(f"  Avatar saved to cache")

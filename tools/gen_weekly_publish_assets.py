@@ -162,9 +162,21 @@ def build_en_srt():
         for p in pend
     ]
     out = os.path.join(OUT, f"signal_pop_weekly_{PREP_DATE}.en_US.srt")
+    # ⚠️ 2026-10-12：落盘前两道自检，防止坏字幕流到 output/ 对外发布。
+    #   ① 时间轴跨度必须≈ TTS 总时长（拦「时长兜底导致字幕塌缩」这类静默 bug，
+    #      20261002 就是 37 条全被压成 3.0s、总跨度只有真实值的 20.2%）。
+    #   ② 不允许残留中文（翻译失败会用原文占位，那种行对海外平台是错的）。
+    total = sum(du["dur"] for du in tts)
+    span = pend[-1]["end"] - pend[0]["start"] if pend else 0.0
+    if pend and span < total * 0.98:
+        print(f"  ❌ 字幕跨度 {span:.1f}s 与 TTS 总时长 {total:.1f}s 不符 → 拒绝写入")
+        sys.exit(1)
+    zh = [p["i"] for p in pend if re.search(r"[\u4e00-\u9fff]", p["en"] or "")]
+    if zh:
+        print(f"  ⚠️ {len(zh)} 段仍是中文（翻译失败占位）:段 {zh[:8]}")
     with open(out, "w", encoding="utf-8") as f:
         f.write("\n".join(blocks))
-    print(f"  ✓ 英文 SRT: {out} ({len(blocks)} 段)")
+    print(f"  ✓ 英文 SRT: {out} ({len(blocks)} 段, 跨度 {span:.1f}s / TTS {total:.1f}s)")
 
 
 # ── 2. 8 平台文案 ──

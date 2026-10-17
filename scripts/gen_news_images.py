@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""为 signal_pop daily/weekly 新闻稿生成配图 — Sensenova-u1-fast 优先，Pollinations 备选"""
-import urllib.request, os, sys, re, json, io
+"""为 signal_pop daily/weekly 新闻稿生成配图 — Sensenova-u1.5-lite 优先，Pollinations 备选"""
+import urllib.request, os, sys, re, json, io, base64
 import urllib.parse
 from datetime import date
 from PIL import Image
@@ -15,7 +15,7 @@ _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 from config import SENSENOVA_API_KEY as SENSENOVA_KEY  # noqa: E402
-SENSENOVA_MODEL = "sensenova-u1-fast"
+SENSENOVA_MODEL = "sensenova-u1.5-lite"  # 2026-10-13：u1-fast 已退役
 SENSENOVA_SIZE = "2752x1536"  # 16:9
 
 def gen_sensenova(prompt, timeout=120):
@@ -35,13 +35,19 @@ def gen_sensenova(prompt, timeout=120):
     )
     with urllib.request.urlopen(req, timeout=timeout) as r:
         resp = json.loads(r.read())
-    url = resp.get("data", [{}])[0].get("url")
-    if not url:
-        raise Exception("no URL in response")
-    # 下载 PNG → 转 JPEG
-    img_req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    with urllib.request.urlopen(img_req, timeout=timeout) as ir:
-        img = Image.open(io.BytesIO(ir.read()))
+    item = resp.get("data", [{}])[0]
+    b64 = item.get("b64_json")
+    if b64:  # u1.5-lite 直接返回 base64（无 URL）
+        data = base64.b64decode(b64)
+    else:
+        url = item.get("url")  # 兼容旧模型的 URL 返回
+        if not url:
+            raise Exception("no URL in response")
+        # 下载 PNG → 转 JPEG
+        img_req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(img_req, timeout=timeout) as ir:
+            data = ir.read()
+    img = Image.open(io.BytesIO(data))
     out = io.BytesIO()
     img.convert("RGB").save(out, "JPEG", quality=88)
     return out.getvalue()

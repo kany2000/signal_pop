@@ -4,6 +4,7 @@
 import sys
 import os
 import json
+import base64
 import time
 import io
 import urllib.request
@@ -19,7 +20,7 @@ from config import SENSENOVA_API_KEY  # noqa: E402
 from logger import logger  # noqa: E402
 
 SENSENOVA_URL = "https://token.sensenova.cn/v1/images/generations"
-SENSENOVA_MODEL = "sensenova-u1-fast"
+SENSENOVA_MODEL = "sensenova-u1.5-lite"  # 2026-10-13：u1-fast 已退役，u1.5-lite 为现役图像模型
 SENSENOVA_SIZE = "2752x1536"  # 16:9
 
 POLLINATIONS_TPL = "https://image.pollinations.ai/prompt/{q}?width=1216&height=832&seed={seed}&model=flux&nofeed=true"
@@ -246,7 +247,10 @@ def gen_sensenova(prompt, timeout=180):
     )
     with urllib.request.urlopen(req, timeout=timeout) as r:
         resp = json.loads(r.read())
-    url = resp["data"][0]["url"]
+    item = resp["data"][0]
+    if item.get("b64_json"):  # u1.5-lite 直接返回 base64（无 URL）
+        return base64.b64decode(item["b64_json"])
+    url = item["url"]  # 兼容旧模型的 URL 返回
     with urllib.request.urlopen(url, timeout=timeout) as img_r:
         img_bytes = img_r.read()
     return img_bytes

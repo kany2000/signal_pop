@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate images for weekly special — 15 news items + opening + ending"""
-import sys, os, json, re, io, time, urllib.request, urllib.parse
+import sys, os, json, re, io, time, urllib.request, urllib.parse, base64
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -14,7 +14,7 @@ _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 from config import SENSENOVA_API_KEY as SENSENOVA_KEY  # noqa: E402
-SENSENOVA_MODEL = "sensenova-u1-fast"
+SENSENOVA_MODEL = "sensenova-u1.5-lite"  # 2026-10-13：u1-fast 已退役
 SENSENOVA_SIZE = "2752x1536"
 POLLINATIONS_TPL = "https://image.pollinations.ai/prompt/{q}?width=1216&height=832&seed={seed}&model=flux&nofeed=true"
 NO_TEXT = ", no text, no words, no labels, no captions, no UI, no signs, no writing, clean image without any text"
@@ -76,7 +76,10 @@ def gen_sensenova(prompt, timeout=180):
         method="POST")
     with urllib.request.urlopen(req, timeout=timeout) as r:
         resp = json.loads(r.read())
-    url = resp["data"][0]["url"]
+    item = resp["data"][0]
+    if item.get("b64_json"):  # u1.5-lite 直接返回 base64（无 URL）
+        return base64.b64decode(item["b64_json"])
+    url = item["url"]  # 兼容旧模型的 URL 返回
     with urllib.request.urlopen(url, timeout=timeout) as img_r:
         return img_r.read()
 

@@ -584,9 +584,11 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[]; pickUrl?: string }> = (
 
   const isAxin = cur.speaker === "阿信";
   const accent = isAxin ? AXIN_BLUE : XIAOLAN_PINK;
+  const isEconMode = Boolean(cur.bg && cur.bg.startsWith("econ_"));
 
-  // 头像：说话者光晕脉冲（sin 呼吸）+ 入场弹跳
-  const speakPulse = 1 + 0.05 * Math.sin(localT * 5 * Math.PI * 2);
+  // 头像：说话者轻微柔和呼吸（2026-10-17 修复：原先写了 5Hz 高频震荡，导致阿信说话时全屏高频抽搐抖动，
+  // 现改为极其平缓的 0.6Hz 微呼吸，幅度从 0.05 降为 0.012，彻底消除画面震颤感）
+  const speakPulse = 1 + 0.012 * Math.sin(localT * 0.6 * Math.PI * 2);
   const enter = interpolate(frame, [0, 12], [0, 1], {
     extrapolateRight: "clamp",
     easing: easeOut,
@@ -699,35 +701,40 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[]; pickUrl?: string }> = (
             <div
               style={{
                 position: "absolute",
-                left: 730,
-                top: 120,
-                width: 460,
-                height: 259,
-                borderRadius: 16,
+                left: 640,
+                top: 150,
+                width: 640,
+                height: 360,
+                borderRadius: 18,
                 overflow: "hidden",
                 border: "3px solid rgba(255,255,255,0.85)",
                 boxShadow: "0 10px 34px rgba(0,0,0,0.6)",
                 background: "#000",
               }}
             >
+              {/* 2026-10-17：`objectFit` 从 cover 改 contain。
+                  cover 在比例不匹配时（如 8:5 素材放进 16:9 窗口）会逐帧重算裁切，
+                  Chromium 亚像素误差表现为画面上下「震动」。contain + 素材已转标准
+                  16:9 双重保险：不再裁切 → 不再抖。
+                  contain 出现空隙时用父容器黑底兜住（下方 background 已设）。 */}
               <Video
                 src={staticFile(videoSeg.video)}
                 muted
                 startFrom={0}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
               />
             </div>
             <div
               style={{
                 position: "absolute",
-                left: 730,
-                top: 80,
-                fontSize: 22,
+                left: 640,
+                top: 108,
+                fontSize: 24,
                 fontWeight: "bold",
                 color: "#fff",
                 fontFamily: "Noto Sans SC, sans-serif",
                 background: "rgba(226,59,59,0.92)",
-                padding: "5px 16px",
+                padding: "5px 18px",
                 borderRadius: 8,
                 letterSpacing: 1,
               }}
@@ -738,33 +745,71 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[]; pickUrl?: string }> = (
         </Sequence>
       )}
 
-      {/* 左阿信 */}
-      <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", left: 0, width: 540 }}>
-        <div style={{ transform: `scale(${axinScale})`, transformOrigin: "center", width: 300, height: 300, position: "relative" }}>
+      {/* 左阿信（聊经济模式下 136x136 贴左下角标，名牌下置防遮挡） */}
+      {isEconMode ? (
+        <div
+          style={{
+            position: "absolute",
+            left: 22,
+            bottom: 12,
+            width: 136,
+            height: 136,
+            transform: `scale(${isAxin ? speakPulse : 0.95})`,
+            opacity: isAxin ? 1 : 0.45,
+          }}
+        >
           {isAxin && (
-            <div style={{ position: "absolute", inset: -28, borderRadius: "50%", border: `4px solid ${accent}`, opacity: 0.55, boxShadow: `0 0 60px ${accent}` }} />
+            <div style={{ position: "absolute", inset: -8, borderRadius: "50%", border: `4px solid ${accent}`, opacity: 0.75, boxShadow: `0 0 26px ${accent}` }} />
           )}
           <Img src={staticFile("anchor_axin.jpg")} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", border: `3px solid ${accent}` }} />
         </div>
-        <div style={{ marginTop: 18, fontSize: 34, fontWeight: "bold", color: nameColor, fontFamily: "Noto Sans SC, sans-serif" }}>
-          阿信
-          {isAxin && <span style={{ color: GOLD, fontSize: 20, marginLeft: 8 }}>正在说…</span>}
-        </div>
-      </AbsoluteFill>
+      ) : (
+        <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", left: 0, width: 540 }}>
+          <div style={{ transform: `scale(${axinScale})`, transformOrigin: "center", width: 300, height: 300, position: "relative" }}>
+            {isAxin && (
+              <div style={{ position: "absolute", inset: -28, borderRadius: "50%", border: `4px solid ${accent}`, opacity: 0.55, boxShadow: `0 0 60px ${accent}` }} />
+            )}
+            <Img src={staticFile("anchor_axin.jpg")} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", border: `3px solid ${accent}` }} />
+          </div>
+          <div style={{ marginTop: 18, fontSize: 34, fontWeight: "bold", color: nameColor, fontFamily: "Noto Sans SC, sans-serif" }}>
+            阿信
+            {isAxin && <span style={{ color: GOLD, fontSize: 20, marginLeft: 8 }}>正在说…</span>}
+          </div>
+        </AbsoluteFill>
+      )}
 
-      {/* 右小蓝 */}
-      <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", left: 1380, width: 540 }}>
-        <div style={{ transform: `scale(${xiaolanScale})`, transformOrigin: "center", width: 300, height: 300, position: "relative" }}>
+      {/* 右小蓝（聊经济模式下 136x136 贴右下角标） */}
+      {isEconMode ? (
+        <div
+          style={{
+            position: "absolute",
+            right: 22,
+            bottom: 12,
+            width: 136,
+            height: 136,
+            transform: `scale(${!isAxin ? speakPulse : 0.95})`,
+            opacity: !isAxin ? 1 : 0.45,
+          }}
+        >
           {!isAxin && (
-            <div style={{ position: "absolute", inset: -28, borderRadius: "50%", border: `4px solid ${accent}`, opacity: 0.55, boxShadow: `0 0 60px ${accent}` }} />
+            <div style={{ position: "absolute", inset: -8, borderRadius: "50%", border: `4px solid ${accent}`, opacity: 0.75, boxShadow: `0 0 26px ${accent}` }} />
           )}
           <Img src={staticFile("anchor_xiaolan.jpg")} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", border: `3px solid ${accent}` }} />
         </div>
-        <div style={{ marginTop: 18, fontSize: 34, fontWeight: "bold", color: nameColor, fontFamily: "Noto Sans SC, sans-serif" }}>
-          小蓝
-          {!isAxin && <span style={{ color: GOLD, fontSize: 20, marginLeft: 8 }}>正在说…</span>}
-        </div>
-      </AbsoluteFill>
+      ) : (
+        <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", left: 1380, width: 540 }}>
+          <div style={{ transform: `scale(${xiaolanScale})`, transformOrigin: "center", width: 300, height: 300, position: "relative" }}>
+            {!isAxin && (
+              <div style={{ position: "absolute", inset: -28, borderRadius: "50%", border: `4px solid ${accent}`, opacity: 0.55, boxShadow: `0 0 60px ${accent}` }} />
+            )}
+            <Img src={staticFile("anchor_xiaolan.jpg")} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", border: `3px solid ${accent}` }} />
+          </div>
+          <div style={{ marginTop: 18, fontSize: 34, fontWeight: "bold", color: nameColor, fontFamily: "Noto Sans SC, sans-serif" }}>
+            小蓝
+            {!isAxin && <span style={{ color: GOLD, fontSize: 20, marginLeft: 8 }}>正在说…</span>}
+          </div>
+        </AbsoluteFill>
+      )}
 
       {/* 三连图标（三连段开始持续显示到结尾，stagger 浮现后常驻 CTA） */}
       {t >= sanlianSegStart - 0.05 && (
@@ -846,21 +891,21 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[]; pickUrl?: string }> = (
         </div>
       )}
 
-      {/* 底部对话气泡 */}
+      {/* 底部对话气泡（聊经济模式下收缩为夹在两 96x96 小头像之间的紧凑字幕条） */}
       <div
         style={{
           position: "absolute",
-          bottom: 70,
+          bottom: isEconMode ? 22 : 70,
           left: "50%",
           transform: `translateX(-50%) scale(${0.92 + bubbleIn * 0.08})`,
-          width: 1560,
-          minHeight: 190,
-          padding: "26px 44px",
-          background: "rgba(14,20,34,0.68)",
+          width: isEconMode ? 1624 : 1560,
+          minHeight: isEconMode ? 90 : 190,
+          padding: isEconMode ? "14px 32px" : "26px 44px",
+          background: "rgba(14,20,34,0.78)",
           backdropFilter: "blur(14px)",
           WebkitBackdropFilter: "blur(14px)",
           border: `2px solid ${accent}aa`,
-          borderRadius: 26,
+          borderRadius: isEconMode ? 20 : 26,
           boxShadow: `0 14px 40px rgba(0,0,0,0.45), 0 0 24px ${accent}44`,
         }}
       >

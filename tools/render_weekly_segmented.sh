@@ -36,11 +36,50 @@ OUT="$ROOT/output/weekly/$DATE"
 FF="$ROOT/bin/ffmpeg-9.0.1-essentials_build/bin/ffmpeg.exe"
 FP="$ROOT/bin/ffmpeg-9.0.1-essentials_build/bin/ffprobe.exe"
 CHROME="C:/Program Files/Google/Chrome/Application/chrome.exe"
-REMIX="$POC/node_modules/.bin/remotion"
+# 本机 Remotion 调用方式（三条铁律，都实测踩过）：
+#   ① `node_modules/.bin/remotion` 是 **shell shim**，在 Git Bash 下会报
+#      `SyntaxError: Invalid or unexpected token` —— 必须直调 CLI 的 JS 入口。
+#   ② props 参数名是 `--props`（不是新版的 `--input-props`，后者被静默忽略）。
+#   ③ 2026-10-16 根因定位（连踩 3 次才找到，17~19 秒即挂，报
+#      `node ...: No such file or directory`）：
+#      **`$NODE` 必须带 `.exe` 后缀**。Git Bash 里 `node`（无后缀）能解析到
+#      PATH 里的 shim，但脚本内是 `( cd "$POC" && "$REMIX" ... )` 子 shell，
+#      Windows 按字面找 `node` 这个文件 → 报 No such file or directory。
+#      三个修复叠加才稳：① 绝对路径 ② 带 .exe ③ JS 入口也用绝对路径（不吃 cwd）。
+NODE="C:/Users/Administrator/.workbuddy/binaries/node/versions/22.22.2-6/node.exe"
+REMIX="$NODE $POC/node_modules/@remotion/cli/remotion-cli.js"
 OPENING_OUT="$OUT/opening_anim.mp4"
 PIANO="$ROOT/output/mp3/Romeo - Winds of Hope - Creative Cut - Piano.mp3"
 OPEN_FRAMES=270
 PY="C:/Users/Administrator/AppData/Local/Programs/Python/Python311/python.exe"
+# 片头 Composition id + 片头配乐在钢琴曲里的起点（秒）
+# 2026-10-12：MARK哥定版 V4「新闻联播式过场」为**每期标配**，替换原 OpeningAnimation（纸卡 3D）。
+# V4 零人物/零 Logo，换成宋体 Noto Serif SC + 地球弧线 + 横向光带。
+OPENING_ID="${OPENING_ID:-OpeningV4}"
+PIANO_START="${PIANO_START:-34}"
+# 片头文案（每期可覆盖，不改代码）
+# ⚠️ 之前 title/date/weekday 是硬编码在 Root.tsx 的 defaultProps 里，
+# 意味着每期都要手改 TSX 才会更新日期 —— 已改为可用环境变量注入。
+# 日期留空时从制作日 $DATE 推导（20261002 → 2026年10月3日周六，按发布日算）。
+OPENING_TITLE="${OPENING_TITLE:-AI语播·信号弹每周精选}"
+OPENING_DATE="${OPENING_DATE-}"
+OPENING_WEEKDAY="${OPENING_WEEKDAY-}"
+if [ -z "$OPENING_DATE" ] || [ -z "$OPENING_WEEKDAY" ]; then
+  read -r OPENING_DATE OPENING_WEEKDAY <<<"$("$PY" -c "
+import datetime
+d=datetime.datetime.strptime('$DATE','%Y%m%d')+datetime.timedelta(days=1)  # 周五制作→周六发布
+wk=['星期一','星期二','星期三','星期四','星期五','星期六','星期日'][d.weekday()]
+print(f'{d.year}年{d.month}月{d.day}日', wk)")"
+fi
+# 片头配乐淡入淡出（秒）
+# 时长必须与 OpeningAnimationV4 的画面淡入淡出对齐，否则音画不同步：
+#   画面 bgFade  = frame 0→36   （36 帧 = 1.2s 淡入）
+#   画面 fadeOut = frame 240→269（30 帧 = 1.0s 淡出至黑）
+# 淡出终点正好落在 9.0s = TTS 起点，配乐此时已归零，concat 处不会有咔哒声。
+PIANO_FADE_IN="${PIANO_FADE_IN:-1.2}"
+PIANO_FADE_OUT="${PIANO_FADE_OUT:-1.0}"
+# 曲线：esin（指数正弦）比默认 tri（线性）更接近音乐录音的淡入淡出听感
+PIANO_FADE_CURVE="${PIANO_FADE_CURVE:-esin}"
 LOG="$OUT/render.log"
 
 mkdir -p "$OUT"
@@ -66,17 +105,43 @@ check_part_frames() {
   [ -n "$nb" ] && [ "$nb" -eq "$expected" ]
 }
 
-# 2) 渲染片头 OpeningAnimation（幂等）
-if [ -f "$OPENING_OUT" ] && check_part_frames "$OPENING_OUT" "$OPEN_FRAMES"; then
-  echo "[$(date +%H:%M:%S)] skip opening (already done, ${OPEN_FRAMES} frames ok)" | tee -a "$LOG"
+# 2) 渲染片头（幂等）
+#    ⚠️ 幂等键必须含 OPENING_ID **和文案**：换片头版本后旧的 opening_anim.mp4
+#    帧数也是 270，只看帧数会误判"已完成"而跳过渲染，导致成片里仍是旧片头；
+#    同理改了日期/标题但帧数不变，也会错误跳过 → 日期永远更新不了。
+#    故把「版本 id + 标题 + 日期」一起写进 render.log 作为幂等键。
+OPEN_SIG="$OPENING_ID|$OPENING_TITLE|$OPENING_DATE|$OPENING_WEEKDAY"
+if [ -f "$OPENING_OUT" ] && check_part_frames "$OPENING_OUT" "$OPEN_FRAMES" \
+   && grep -qF "OPENING DONE $OPEN_SIG " "$LOG" 2>/dev/null; then
+  echo "[$(date +%H:%M:%S)] skip opening (same version+text, ${OPEN_FRAMES} frames ok)" | tee -a "$LOG"
 else
-  echo "[$(date +%H:%M:%S)] render OpeningAnimation ${OPEN_FRAMES} frames" | tee -a "$LOG"
+  if [ -f "$OPENING_OUT" ] && check_part_frames "$OPENING_OUT" "$OPEN_FRAMES"; then
+    echo "[$(date +%H:%M:%S)] 片头帧数虽完整但日志无匹配 OPENING DONE（版本或文案已变），强制重渲" | tee -a "$LOG"
+  fi
+  echo "[$(date +%H:%M:%S)] render $OPENING_ID ${OPEN_FRAMES} frames  [title=$OPENING_TITLE | $OPENING_DATE $OPENING_WEEKDAY]" | tee -a "$LOG"
   rm -f "$OPENING_OUT"
-  ( cd "$POC" && "$REMIX" render OpeningAnimation "$OPENING_OUT" --concurrency=2 --browser-executable="$CHROME" --chrome-flags="--disable-accelerated-video-decode --disable-gpu" ) >> "$LOG" 2>&1
+  # 片头文案用 --props 注入（Remotion 读 JSON 文件）。
+  # 这是「每期标配」的前提：日期/标题变了不用改 TSX，只改环境变量。
+  # ⚠️ 本机 Remotion 版本的参数名是 `--props`，**不是** `--input-props`
+  # （新版本文档写的是 --input-props，但本机 --input-props 会被静默忽略，
+  #  渲染照常成功但文案仍是 defaultProps 的硬编码值 —— 不报错，极难发现。
+  #  实测判定法：传一个可辨识标题（如 ZZTEST），渲一帧看画面上有没有出现。）
+  PROPS="$OUT/opening_props.json"
+  "$PY" -c "
+import json, io
+json.dump({'title': '''$OPENING_TITLE''', 'date': '''$OPENING_DATE''', 'weekday': '''$OPENING_WEEKDAY'''},
+          io.open(r'$PROPS','w',encoding='utf-8'), ensure_ascii=False, indent=2)"
+  # ⑤ 2026-10-16：`( cd "$POC" && ... )` 子 shell 包装在 set -u 下会让
+  #    Windows 侧执行失败（报 No such file or directory，而同样命令手动前台跑完全正常）。
+  #    改用 `pushd`/`popd` 或直接 pushd 到 POC 后原地执行，避免子 shell。
+  pushd "$POC" >/dev/null
+  "$REMIX" render "$OPENING_ID" "$OPENING_OUT" --props="$PROPS" --concurrency=2 --browser-executable="$CHROME" --chrome-flags="--disable-accelerated-video-decode --disable-gpu" >> "$LOG" 2>&1
+  popd >/dev/null
   if ! check_part_frames "$OPENING_OUT" "$OPEN_FRAMES"; then
-    echo "!! OpeningAnimation 渲染失败或帧数不足（期望 ${OPEN_FRAMES}）" >&2
+    echo "!! $OPENING_ID 渲染失败或帧数不足（期望 ${OPEN_FRAMES}）" >&2
     exit 1
   fi
+  echo "OPENING DONE $OPEN_SIG $(date +%H:%M:%S)" >> "$LOG"
 fi
 
 # 3) 逐段渲染 WeeklyTalk（幂等：跳过已完成段）
@@ -100,7 +165,9 @@ for ((i=0;i<NPARTS;i++)); do
     fi
   fi
   echo "[$(date +%H:%M:%S)] render part $i  frames=$start-$end" | tee -a "$LOG"
-  ( cd "$POC" && "$REMIX" render WeeklyTalk "$part" --frames="$start-$end" --concurrency=2 --browser-executable="$CHROME" --chrome-flags="--disable-accelerated-video-decode --disable-gpu" ) >> "$LOG" 2>&1
+  pushd "$POC" >/dev/null
+  "$REMIX" render WeeklyTalk "$part" --frames="$start-$end" --concurrency=2 --browser-executable="$CHROME" --chrome-flags="--disable-accelerated-video-decode --disable-gpu" >> "$LOG" 2>&1
+  popd >/dev/null
   if [ -f "$part" ] && check_part_frames "$part" "$expected"; then
     echo "PART DONE $i $(date +%H:%M:%S)" >> "$LOG"
   else
@@ -112,12 +179,17 @@ for ((i=0;i<NPARTS;i++)); do
 done
 
 # 若最终成片已存在、FINAL DONE 已记录且帧数校验通过，则跳过拼接/重编码
-if [ -f "$OUT/signal_pop_weekly_$DATE.mp4" ] && grep -q "FINAL DONE" "$LOG" 2>/dev/null; then
+# ⚠️ 换片头版本后必须强制重建：成片总帧数不变（都是 270+16491），
+# 只看 "FINAL DONE" 会跳过重建 → 成片里仍是旧片头。
+# 故把 OPENING_ID 记进 FINAL DONE 行，版本不同则重建。
+if [ -f "$OUT/signal_pop_weekly_$DATE.mp4" ] && grep -qF "FINAL DONE $OPEN_SIG " "$LOG" 2>/dev/null; then
   if check_part_frames "$OUT/signal_pop_weekly_$DATE.mp4" "$FULL_TOTAL"; then
-    echo "[$(date +%H:%M:%S)] 成片已存在且帧数完整，跳过拼接/重编码" | tee -a "$LOG"
+    echo "[$(date +%H:%M:%S)] 成片已存在且帧数完整（片头 $OPENING_ID），跳过拼接/重编码" | tee -a "$LOG"
     exit 0
   fi
   echo "[$(date +%H:%M:%S)] 警告：成片已存在但帧数不完整，强制重建" | tee -a "$LOG"
+elif [ -f "$OUT/signal_pop_weekly_$DATE.mp4" ] && grep -q "FINAL DONE" "$LOG" 2>/dev/null; then
+  echo "[$(date +%H:%M:%S)] 成片已存在但片头版本已变（$OPENING_ID），强制重建" | tee -a "$LOG"
 fi
 
 # 4) 拼接：片头 + WeeklyTalk 各段（copy），再整体 CRF26 重编码 + 合并完整音频
@@ -154,8 +226,14 @@ fi
 
 # 组装完整音频：前 9s 钢琴配乐 + TTS 整体延后 OPEN_FRAMES 帧
 mkdir -p "$OUT/audio"
-echo "[$(date +%H:%M:%S)] build full audio (piano 9s + tts delayed ${OPEN_FRAMES} frames)" | tee -a "$LOG"
-"$FF" -y -ss 34 -t 9 -i "$PIANO" -i "$AUDIO" -filter_complex "[0:a]aformat=sample_fmts=fltp:sample_rates=24000:channel_layouts=mono[head];[1:a]aformat=sample_fmts=fltp:sample_rates=24000:channel_layouts=mono[tail];[head][tail]concat=n=2:v=0:a=1[out]" -map "[out]" -ar 24000 -ac 1 -c:a pcm_s16le "$AUDIO_FULL" >> "$LOG" 2>&1
+echo "[$(date +%H:%M:%S)] build full audio (piano ${PIANO_START}s +9s fade ${PIANO_FADE_IN}/${PIANO_FADE_OUT}s, + tts delayed ${OPEN_FRAMES} frames)" | tee -a "$LOG"
+# 片头钢琴必须淡入淡出：现版是硬切进，与 V4 画面的淡入淡出不同步。
+# afade 的 st/d 作用在该滤镜**输入流**的时间轴上 —— 钢琴已被 -ss 截成 9s 独立流，
+# 所以 st=0/d=$PIANO_FADE_IN 和 st=(9-$PIANO_FADE_OUT)/d=$PIANO_FADE_OUT 才是对的。
+# ⚠️ 踩过的坑：若把 afade 放在 concat **之后**（作用在整条 558s 音频上），
+# st=8 会落在 TTS 段落里，淡出的是人声而不是配乐 —— 位置必须在这条链里、
+# 且在 concat 之前。
+"$FF" -y -ss "$PIANO_START" -t 9 -i "$PIANO" -i "$AUDIO" -filter_complex "[0:a]aformat=sample_fmts=fltp:sample_rates=24000:channel_layouts=mono,afade=t=in:st=0:d=${PIANO_FADE_IN}:curve=${PIANO_FADE_CURVE},afade=t=out:st=$(awk "BEGIN{print 9-$PIANO_FADE_OUT}"):d=${PIANO_FADE_OUT}:curve=${PIANO_FADE_CURVE}[head];[1:a]aformat=sample_fmts=fltp:sample_rates=24000:channel_layouts=mono[tail];[head][tail]concat=n=2:v=0:a=1[out]" -map "[out]" -ar 24000 -ac 1 -c:a pcm_s16le "$AUDIO_FULL" >> "$LOG" 2>&1
 
 echo "[$(date +%H:%M:%S)] re-encode CRF$CRF + merge audio" | tee -a "$LOG"
 "$FF" -y -i "$SILENT" -i "$AUDIO_FULL" -c:v libx264 -preset fast -crf "$CRF" -pix_fmt yuv420p -c:a aac -b:a 192k -ar 24000 -ac 1 -map 0:v:0 -map 1:a:0 "$FINAL" >> "$LOG" 2>&1
@@ -167,5 +245,5 @@ if ! check_part_frames "$FINAL" "$FULL_TOTAL"; then
   exit 1
 fi
 
-echo "FINAL DONE $(date +%H:%M:%S)" >> "$LOG"
+echo "FINAL DONE $OPEN_SIG $(date +%H:%M:%S)" >> "$LOG"
 echo "[$(date +%H:%M:%S)] 完成: $FINAL" | tee -a "$LOG"

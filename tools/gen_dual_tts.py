@@ -7,6 +7,7 @@
 """
 import os
 import sys
+import re
 import json
 import asyncio
 import subprocess
@@ -61,6 +62,8 @@ def parse_talk(text):
         for name, voices in VOICES.items():
             if line.startswith(f"{name}：") or line.startswith(f"{name}:"):
                 content = line.split("：", 1)[1] if "：" in line else line.split(":", 1)[1]
+                # 2026-10-17 纠正发音：比分 7-5 转 7比5，防止大模型念成减号
+                content = re.sub(r"(\d+)-(\d+)", r"\1比\2", content)
                 voice = voices[0] if BACKEND == "volcengine" else (voices[2] if BACKEND == "xunfei" else (voices[3] if BACKEND == "qwen" else voices[1]))
                 segs.append({"speaker": name, "voice": voice, "text": content.strip()})
                 break

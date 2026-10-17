@@ -16,7 +16,7 @@ SRT 直接重排换行，不重跑网络翻译。
 
 用法：python tools/gen_weekly_en_srt.py [PREP_DATE]
       python tools/gen_weekly_en_srt.py [PREP_DATE] --rewrap   # 仅重排换行
-依赖：Python 标准库 wave（读 wav 时长）+ urllib（MyMemory，无需 key）；
+依赖：Python 标准库 json（读 TTS 时长账本）+ urllib（MyMemory，无需 key）；
       换行度量优先 Pillow+jieba（缺失自动退化，不阻塞）
 """
 import os
@@ -24,7 +24,6 @@ import re
 import sys
 import time
 import json
-import wave
 import urllib.parse
 import urllib.request
 
@@ -37,19 +36,49 @@ from subtitle_layout import wrap_srt_text  # noqa: E402
 PROJECT_ROOT = "E:/projects/signal_pop"
 PREP_DATE = sys.argv[1] if len(sys.argv) > 1 else "20260821"
 OUT_DIR = os.path.join(PROJECT_ROOT, "output", "weekly", PREP_DATE)
-AUDIO_DIR = os.path.join(OUT_DIR, "audio")
 SEG_JSON = os.path.join(OUT_DIR, "talk_segments.json")
+# ⚠️ 时长必须读这个文件，不能自己去 audio/ 里探测分片 wav。
+#    tts_segments.json 是 TTS 阶段落的**权威时长账本**（下游
+#    gen_daily_en_srt / gen_weekly_publish_assets / export_*_remotion
+#    都只认它），是唯一的单一数据源。
+DUR_JSON = os.path.join(OUT_DIR, "audio", "tts_segments.json")
 SRT_EN = os.path.join(OUT_DIR, f"signal_pop_weekly_{PREP_DATE}.en_US.srt")
 
 
-def seg_duration(idx):
-    """读 audio/_sNNN.wav 实际时长（秒），失败回退 3.0。"""
-    wav = os.path.join(AUDIO_DIR, f"_s{idx:03d}.wav")
-    try:
-        with wave.open(wav, "rb") as w:
-            return w.getnframes() / float(w.getframerate())
-    except Exception:
-        return 3.0
+def load_durations():
+    """读 tts_segments.json 的真实时长，并硬校验段数。
+
+    ⚠️ 本函数替换掉旧实现 `seg_duration(idx)`（2026-10-12 修正）。
+    旧实现去audio/_sNNN.wav 探测时长、读不到就 `except: return 3.0`，
+    而 gen_dual_tts.py:117 早就把分片挪进了 audio/_tmp/ 子目录 →
+    路径失效 → 每段都掉进兜底 → **37 条字幕全部被压成 3.000s，
+    全片字幕从 549.7s塌缩到 111.0s（覆盖率仅 20.2%）**，
+    而且 `except Exception` 把「路径写错」这种编程错误伪装成
+    「时长恰好 3 秒」的正常数据，无日志、无告警、一路过了质检。
+
+    教训：静默兜底常量是把编程错误伪装成数据的经典手法。
+    时长这种**有权威账本**的数据，只读账本，读不到就报错退出，
+    绝不猜一个「看起来合理」的值。
+    """
+    if not os.path.exists(DUR_JSON):
+        print(f"ERROR: 找不到时长账本 {DUR_JSON}")
+        print("       请先跑完 TTS 阶段（tools/gen_dual_tts.py），再生成字幕。")
+        sys.exit(1)
+    with open(DUR_JSON, encoding="utf-8") as f:
+        rows = json.load(f)
+    durs = [float(r["dur"]) for r in rows]
+    bad = [d for d in durs if d <= 0]
+    if bad:
+        print(f"ERROR: tts_segments.json 有 {len(bad)} 段时长非正（{bad[:5]}...）")
+        sys.exit(1)
+    return durs
+
+
+def seg_duration(idx, durs=None):
+    """兼容旧调用签名；durs 由 load_durations() 一次性载入。"""
+    if durs is None:
+        durs = load_durations()
+    return durs[idx]
 
 
 def translate(text):
@@ -147,12 +176,20 @@ def main():
         print(f"ERROR: 找不到 {SEG_JSON}")
         sys.exit(1)
     segs = json.load(open(SEG_JSON, encoding="utf-8"))
+    durs = load_durations()
+
+    # ⚠️ 段数必须一致：段数不符说明对话稿与 TTS 不同步，
+    #    继续跑只会产出整体错位的字幕（无告警）。
+    if len(durs) != len(segs):
+        print(f"ERROR: 段数不匹配 —— 对话稿 {len(segs)} 段 vs TTS {len(durs)} 段")
+        print("       请重跑 TTS（tools/gen_dual_tts.py），或检查对话稿是否被改动。")
+        sys.exit(1)
 
     out = []
     t = 0.0
     for i, seg in enumerate(segs):
         text = seg.get("text", "").strip()
-        dur = seg_duration(i)
+        dur = durs[i]
         start = t
         end = t + dur
         if text:
@@ -164,13 +201,69 @@ def main():
         t = end
         time.sleep(0.6)  # 限速，避免 MyMemory 频率限制
 
+    # ⚠️ 落盘前自检：字幕总跨度必须等于 TTS 总时长。
+    #    这条断言专门拦「静默兜底」类 bug —— 只要跨度对不上就拒绝写文件，
+    #    绝不让一个时间轴错误的SRT 落到 output/ 里再流到质检和平台。
+    total = sum(durs)
+    if t < total * 0.98:
+        print(f"ERROR: 字幕总跨度 {t:.2f}s 与 TTS 总时长 {total:.2f}s 不符（偏差 {abs(t-total):.2f}s）")
+        print("       拒绝写入，宁可无字幕也不能产出时间轴错误的字幕。")
+        sys.exit(1)
+
     with open(SRT_EN, "w", encoding="utf-8") as f:
         f.write("\n".join(out))
-    print(f"\n✅ 英文字幕已生成: {SRT_EN}（{len(segs)} 段）")
+    print(f"\n✅ 英文字幕已生成: {SRT_EN}（{len(segs)} 段，总长 {t:.1f}s / TTS {total:.1f}s ✅）")
+
+
+def retime_srt():
+    """离线重建时间轴：复用现有英文译文，只按TTS 时长账本重算时间轴。
+
+    ⚠️ 2026-10-12 新增。起因：20261002 的字幕**只有时间轴坏了**（37 条全被
+    压成 3.0s），但英文译文本身完全正确（37 段全英文化、段数与对话稿一致）。
+    走main() 重生成要联网跑 37 次 MyMemory 翻译（限速 0.6s/次 + 退避重试），
+    实测跑 15 分钟还没完——**为了修一个时间轴问题去重译全部文案，纯属浪费**。
+
+    用法：python tools/gen_weekly_en_srt.py 20261002 --retime
+    """
+    if not os.path.exists(SRT_EN):
+        print(f"ERROR: 找不到 {SRT_EN}")
+        sys.exit(1)
+    raw = open(SRT_EN, encoding="utf-8").read()
+    cues = parse_srt_cues(raw)
+    texts = [" ".join(t.strip() for t in c["text"] if t.strip()) for c in cues]
+    durs = load_durations()
+
+    if len(texts) != len(durs):
+        print(f"ERROR: 现有 SRT {len(texts)} 段vs TTS {len(durs)} 段，无法按序对时")
+        print("       段数变了说明对话稿改过，必须重跑完整生成（不加 --retime）。")
+        sys.exit(1)
+
+    zh = [i + 1 for i, t in enumerate(texts) if re.search(r"[\u4e00-\u9fff]", t)]
+    if zh:
+        print(f"ERROR: 现有 SRT 有 {len(zh)} 段仍是中文（段 {zh[:8]}），译文不完整")
+        print("       请跑完整生成（不加 --retime）。")
+        sys.exit(1)
+
+    out, t = [], 0.0
+    for i, (txt, dur) in enumerate(zip(texts, durs)):
+        start, end = t, t + dur
+        out.append(f"{i + 1}\n{fmt(start)} --> {fmt(end)}\n{wrap_srt_text(txt)}\n")
+        t = end
+
+    total = sum(durs)
+    if t < total * 0.98:
+        print(f"ERROR: 重建后跨度 {t:.2f}s 与 TTS {total:.2f}s 不符 → 拒绝写入")
+        sys.exit(1)
+
+    with open(SRT_EN, "w", encoding="utf-8") as f:
+        f.write("\n".join(out))
+    print(f"✅ 时间轴已重建: {SRT_EN}（{len(texts)} 段，总长 {t:.1f}s / TTS {total:.1f}s ✅）")
 
 
 if __name__ == "__main__":
-    if "--rewrap" in sys.argv:
+    if "--retime" in sys.argv:
+        retime_srt()
+    elif "--rewrap" in sys.argv:
         rewrap_srt()
     else:
         main()

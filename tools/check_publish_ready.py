@@ -16,6 +16,7 @@
 import os
 import sys
 import re
+import json
 
 PROJECT_ROOT = "E:/projects/signal_pop"
 PREP_DATE = sys.argv[1] if len(sys.argv) > 1 else None
@@ -112,7 +113,6 @@ for plat in PLATFORMS:
 # 6. parsed_news.json
 pj = os.path.join(OUT, "parsed_news.json")
 if os.path.exists(pj):
-    import json
     with open(pj, encoding="utf-8") as f:
         items = json.load(f)
     chk(len(items) >= 11, "parsed_news.json 条目数", f"{len(items)} 条")
@@ -120,8 +120,45 @@ else:
     chk(False, "parsed_news.json 存在")
 
 # 7. SRT（2026-08-21 起：只要求英文外挂字幕，中文版不烧字幕）
+#    ⚠️ 2026-10-12：从「只判文件存在」升级为「解析内容 + 校验时间轴」。
+#    起因：20261002 的 en_US.srt 37 条 cue 全部恰好 3.000s、总跨度 111.0s，
+#    而真实 TTS 音频 549.7s（覆盖率 20.2%）——因为 gen_weekly_en_srt.py
+#    去 audio/_sNNN.wav 探测时长、而分片已被挪进 audio/_tmp/ 子目录，
+#    路径失效后 `except: return 3.0` 静默兜底。只判存在的质检完全拦不住，
+#    坏字幕一路流到output/ 对外发布。**只判存在 = 没检。**
 en_srt = os.path.join(OUT, f"signal_pop_{KIND}_{PREP_DATE}.en_US.srt")
-chk(os.path.exists(en_srt), "英文字幕 SRT (.en_US)")
+if not os.path.exists(en_srt):
+    chk(False, "英文字幕 SRT (.en_US)")
+else:
+    with open(en_srt, encoding="utf-8") as f:
+        raw_srt = f.read()
+    _cues = re.findall(
+        r"(\d{1,2}:\d{2}:\d{2}[,.]\d{3})\s*-->\s*(\d{1,2}:\d{2}:\d{2}[,.]\d{3})", raw_srt)
+    chk(len(_cues) > 0, "英文字幕 SRT 含时间轴",
+        f"{len(_cues)} 条cue")
+
+    def _s(ts):
+        h, m, rest = ts.replace(",", ".").split(":")
+        return int(h) * 3600 + int(m) * 60 + float(rest)
+
+    if _cues:
+        _span = _s(_cues[-1][1]) - _s(_cues[0][0])
+        # 与 TTS 时长账本对账：字幕总跨度应≈ TTS 总时长（容差 2%）
+        _durs_path = os.path.join(OUT, "audio", "tts_segments.json")
+        _real = None
+        if os.path.exists(_durs_path):
+            try:
+                with open(_durs_path, encoding="utf-8") as _f:
+                    _real = sum(float(r["dur"]) for r in json.load(_f))
+            except Exception:
+                _real = None
+        if _real:
+            _ratio = _span / _real
+            chk(_ratio > 0.98, "英文字幕时间轴与音频对齐",
+                f"字幕跨度 {_span:.1f}s / TTS {_real:.1f}s = {_ratio * 100:.1f}%"
+                + ("" if _ratio > 0.98 else "  ← 时间轴塌缩，疑似时长兜底"))
+        else:
+            chk(True, "英文字幕时间轴与音频对齐", f"字幕跨度 {_span:.1f}s（无账本可对账，跳过）")
 
 # 结果
 print(f"\n═══ 结果：{'✅ 全部通过，可以发布' if not fails else '❌ %d 项未通过，禁止发布' % len(fails)} ═══")

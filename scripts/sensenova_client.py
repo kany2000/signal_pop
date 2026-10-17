@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Sensenova-u1-fast 生图，失败自动降级到 Pollinations"""
-import urllib.request, urllib.parse, json, io, os, time, sys
+"""Sensenova-u1.5-lite 生图，失败自动降级到 Pollinations"""
+import urllib.request, urllib.parse, json, io, os, time, sys, base64
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")))
 from config import SENSENOVA_API_KEY
 
 API_URL = "https://token.sensenova.cn/v1/images/generations"
 API_KEY = SENSENOVA_API_KEY
-MODEL = "sensenova-u1-fast"
+MODEL = "sensenova-u1.5-lite"  # 2026-10-13：u1-fast 已退役
 SIZE = "2752x1536"  # 16:9
 
 def gen_image(prompt, seed=42, timeout=120):
@@ -31,20 +31,26 @@ def gen_image(prompt, seed=42, timeout=120):
         with urllib.request.urlopen(req, timeout=timeout) as r:
             resp = json.loads(r.read())
 
-        url = resp.get("data", [{}])[0].get("url")
-        if url:
+        item = resp.get("data", [{}])[0]
+        b64 = item.get("b64_json")
+        if b64:  # u1.5-lite 直接返回 base64
+            data = base64.b64decode(b64)
+        else:
+            url = item.get("url")
+            if not url:
+                raise Exception("no url/b64_json in response")
             # 下载图片并转 JPEG
             img_req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
             with urllib.request.urlopen(img_req, timeout=timeout) as ir:
                 data = ir.read()
-            # 检查是否是 PNG/JPEG
-            if len(data) > 10000:
-                # 尝试转 JPEG（PNG 太大）
-                from PIL import Image
-                img = Image.open(io.BytesIO(data))
-                out = io.BytesIO()
-                img.convert("RGB").save(out, "JPEG", quality=88)
-                return out.getvalue(), "sensenova"
+        # 检查是否是 PNG/JPEG
+        if len(data) > 10000:
+            # 尝试转 JPEG（PNG 太大）
+            from PIL import Image
+            img = Image.open(io.BytesIO(data))
+            out = io.BytesIO()
+            img.convert("RGB").save(out, "JPEG", quality=88)
+            return out.getvalue(), "sensenova"
     except Exception as e:
         print(f"  Sensenova 失败: {e}")
 

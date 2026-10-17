@@ -20,7 +20,21 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, "scripts"))
 sys.path.insert(0, os.path.join(PROJECT_ROOT, "tools"))
 
 PREP_DATE = sys.argv[1] if len(sys.argv) > 1 else "20260828"
+# STEP 语义（2026-10-12 修正）：
+#   旧：images / tts 都是「**从 parse 重跑到某步**」——想只重跑 TTS 会连带
+#       跑 step_parse()，而它会**覆盖 parsed_news.json**，冲掉用户在审稿期的手改。
+#       （parsed_news.json 是整条管线唯一的人工编辑入口，不能被下游步骤踩掉。）
+#   新：默认保持旧的「跑到某步」语义（向后兼容，不破坏既有 README 里的命令），
+#       加 --only 前缀 = **只跑这一步，不跑任何前置**。
+#       例：python tools/weekend_pipeline.py 20261002 tts --only
+#   ⚠️ 这正是 MoneyPrinterTurbo `stop_at` 的真正价值：让「只重跑某一步」不必
+#      付出重跑前置的代价。它那套序列化整个 params 进 script.json 的做法我们不搬
+#      ——我们已有各脚本自己的局部幂等（gen_dual_tts 用文本哈希、渲染用帧数+版本签名）。
 STEP = sys.argv[2] if len(sys.argv) > 2 else "parse"
+ONLY = "--only" in sys.argv[3:]
+if ONLY and STEP not in ("parse", "images", "tts", "all"):
+    print(f"ERROR: --only 需要合法步骤名（parse/images/tts/all），收到 {STEP!r}")
+    sys.exit(1)
 
 SCRIPT_FILE = os.path.join(PROJECT_ROOT, "archive", f"signal_pop_weekly_special_{PREP_DATE}.txt")
 OUT_DIR = os.path.join(PROJECT_ROOT, "output", "weekly", PREP_DATE)
@@ -160,10 +174,17 @@ def step_tts():
 
 
 if __name__ == "__main__":
-    if STEP in ("parse", "all"):
-        step_parse()
-    if STEP in ("images", "all"):
-        step_images()
-    if STEP in ("tts", "all"):
-        step_tts()
+    if ONLY:
+        # 只跑指定这一步，不执行任何前置步骤
+        _map = {"parse": step_parse, "images": step_images,
+                "tts": step_tts, "all": lambda: (step_parse(), step_images(), step_tts())}
+        print(f"[only] 只执行 {STEP}，跳过所有前置步骤")
+        _map[STEP]()
+    else:
+        if STEP in ("parse", "all"):
+            step_parse()
+        if STEP in ("images", "all"):
+            step_images()
+        if STEP in ("tts", "all"):
+            step_tts()
     print("DONE")
