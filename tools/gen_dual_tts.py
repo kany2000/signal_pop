@@ -46,9 +46,10 @@ BACKEND = os.environ.get("SIGNAL_POP_TTS_BACKEND", "qwen")
 
 # 豆包语音双人音色（2026-08-16 用户认可）：阿信=云舟男 / 小蓝=爽快思思女；edge/讯飞/Qwen 兜底保留
 # 第 4 元 = Qwen-TTS 音色（阿信=Ethan 晨煦男 / 小蓝=Cherry 芊悦女）
+# 第 5 元 = Kokoro-82M 本地音色（阿信=zm_yunyang 浑厚男 / 小蓝=zf_xiaoni 清亮女，纯离线备用）
 VOICES = {
-    "阿信": ("zh_male_m191_uranus_bigtts", "zh-CN-YunyangNeural", "x4_qianmo", "Ethan"),  # 云舟 2.0 男 / edge 男 / 讯飞钱墨男 / Qwen 晨煦男
-    "小蓝": ("zh_female_shuangkuaisisi_uranus_bigtts", "zh-CN-XiaoxiaoNeural", "x4_yezi", "Cherry"),  # 爽快思思 2.0 女 / edge 女 / 讯飞叶子女 / Qwen 芊悦女
+    "阿信": ("zh_male_m191_uranus_bigtts", "zh-CN-YunyangNeural", "x4_qianmo", "Ethan", "zm_yunyang"),  # 云舟 2.0 / edge / 讯飞 / Qwen / Kokoro
+    "小蓝": ("zh_female_shuangkuaisisi_uranus_bigtts", "zh-CN-XiaoxiaoNeural", "x4_yezi", "Cherry", "zf_xiaoni"),  # 爽快思思 2.0 / edge / 讯飞 / Qwen / Kokoro
 }
 
 
@@ -64,15 +65,24 @@ def parse_talk(text):
                 content = line.split("：", 1)[1] if "：" in line else line.split(":", 1)[1]
                 # 2026-10-17 纠正发音：比分 7-5 转 7比5，防止大模型念成减号
                 content = re.sub(r"(\d+)-(\d+)", r"\1比\2", content)
-                voice = voices[0] if BACKEND == "volcengine" else (voices[2] if BACKEND == "xunfei" else (voices[3] if BACKEND == "qwen" else voices[1]))
+                if BACKEND == "volcengine":
+                    voice = voices[0]
+                elif BACKEND == "xunfei":
+                    voice = voices[2]
+                elif BACKEND == "qwen":
+                    voice = voices[3]
+                elif BACKEND == "kokoro":
+                    voice = voices[4]
+                else:
+                    voice = voices[1]  # edge
                 segs.append({"speaker": name, "voice": voice, "text": content.strip()})
                 break
     return segs
 
 
 async def gen_one(idx, seg, sem, audio_dir):
-    """单句合成（豆包语音 volc_synthesize，带重试；讯飞/Qwen/edge 兜底）。返回 mp3 路径。"""
-    from gen_cloud_tts import volc_synthesize, xunfei_synthesize, qwen_synthesize
+    """单句合成（豆包语音 volc_synthesize，带重试；讯飞/Qwen/Kokoro/edge 兜底）。返回 mp3 路径。"""
+    from gen_cloud_tts import volc_synthesize, xunfei_synthesize, qwen_synthesize, kokoro_synthesize
     async with sem:
         mp3 = os.path.join(audio_dir, f"_s{idx:03d}.mp3")
         meta_file = os.path.join(audio_dir, f"_s{idx:03d}.txt")
@@ -93,6 +103,8 @@ async def gen_one(idx, seg, sem, audio_dir):
                     xunfei_synthesize(seg["text"], seg["voice"], mp3)
                 elif BACKEND == "qwen":
                     qwen_synthesize(seg["text"], seg["voice"], mp3)
+                elif BACKEND == "kokoro":
+                    kokoro_synthesize(seg["text"], seg["voice"], mp3)
                 else:
                     import edge_tts, aiohttp
                     conn = aiohttp.TCPConnector(resolver=aiohttp.resolver.ThreadedResolver())

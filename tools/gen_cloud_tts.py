@@ -50,6 +50,12 @@ QWEN_VOICE_WEEKEND = "Ethan"         # 周末男声·阿信
 QWEN_VOICE_WEEKEND_F = "Cherry"      # 周末女声·小蓝
 QWEN_VOICE_YUE = "Rocky"             # 粤语-阿强（如启用粤语）
 
+# Kokoro-82M 本地离线备用（2026-10-19 接入，断网/欠费零成本本地保底）
+#   中文音色：zm_yunyang(浑厚男·阿信), zf_xiaoni(清亮活泼女·小蓝), zf_xiaoxiao(稳重新闻女)
+KOKORO_VOICE_WEEKDAY = "zf_xiaoxiao" # 平日女声
+KOKORO_VOICE_WEEKEND = "zm_yunyang"  # 周末男声·阿信
+KOKORO_VOICE_WEEKEND_F = "zf_xiaoni" # 周末女声·小蓝
+
 # 与 win_pipeline_tts 一致的音色选择规则
 def select_voice(pub_weekday="星期六", lang="zh", speaker=None):
     """speaker 参数用于周末双人：'阿信'=男声 / '小蓝'=周末女声；其余按发布日自动。"""
@@ -74,6 +80,12 @@ def select_voice(pub_weekday="星期六", lang="zh", speaker=None):
         if speaker == "小蓝":
             return QWEN_VOICE_WEEKEND_F
         return QWEN_VOICE_WEEKEND if is_weekend else QWEN_VOICE_WEEKDAY
+    if BACKEND == "kokoro":
+        if speaker == "阿信":
+            return KOKORO_VOICE_WEEKEND
+        if speaker == "小蓝":
+            return KOKORO_VOICE_WEEKEND_F
+        return KOKORO_VOICE_WEEKEND if is_weekend else KOKORO_VOICE_WEEKDAY
     # edge 兜底
     return ("zh-CN-YunyangNeural" if is_weekend else "zh-CN-XiaoxiaoNeural")
 
@@ -302,6 +314,42 @@ def qwen_synthesize(text, voice, out_mp3):
     return out_mp3
 
 
+# ---------- Kokoro-82M 本地合成 ----------
+_KOKORO_PIPELINE = None
+
+
+def kokoro_synthesize(text, voice, out_mp3, lang_code="z"):
+    """本地 Kokoro-82M TTS 合成（开源轻量离线兜底，24kHz）。"""
+    global _KOKORO_PIPELINE
+    os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
+    from kokoro import KPipeline
+    import soundfile as sf
+    import numpy as np
+
+    if _KOKORO_PIPELINE is None:
+        _KOKORO_PIPELINE = KPipeline(lang_code=lang_code, device="cpu")
+
+    # 去掉特殊字符并保证比分发音
+    text_clean = re.sub(r"(\d+)-(\d+)", r"\1比\2", text).strip()
+    generator = _KOKORO_PIPELINE(text_clean, voice=voice, speed=1.0)
+    audio_chunks = []
+    for i, (gs, ps, audio) in enumerate(generator):
+        audio_chunks.append(audio)
+    if not audio_chunks:
+        raise RuntimeError("Kokoro 未生成音频数据")
+    full_audio = np.concatenate(audio_chunks)
+
+    if out_mp3.endswith(".mp3"):
+        tmp_wav = out_mp3.replace(".mp3", ".tmp.wav")
+        sf.write(tmp_wav, full_audio, 24000)
+        cmd = [FFMPEG, "-y", "-i", tmp_wav, "-c:a", "libmp3lame", "-b:a", "128k", out_mp3]
+        subprocess.run(cmd, check=True, capture_output=True)
+        _safe_remove(tmp_wav)
+    else:
+        sf.write(out_mp3, full_audio, 24000)
+    return out_mp3
+
+
 # ================= 统一合成 + 时长 =================
 def _safe_remove(path):
     """删除文件（兼容 Windows 沙箱回收站不可用场景：ctypes 直调 DeleteFileW）。"""
@@ -327,6 +375,8 @@ def synthesize_one(idx, label, text, voice, audio_dir):
                 xunfei_synthesize(text, voice, mp3)
             elif BACKEND == "qwen":
                 qwen_synthesize(text, voice, mp3)
+            elif BACKEND == "kokoro":
+                kokoro_synthesize(text, voice, mp3)
             else:
                 raise RuntimeError(f"未知后端: {BACKEND}")
             if os.path.getsize(mp3) > 500:
