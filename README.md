@@ -228,11 +228,14 @@ python tools/remotion_weekly_build.py 20260821
 # 1) 双播音频 + 帧账本
 python tools/gen_econ_tts.py {制作日}
 # 2) 分镜 spec + huashu 引擎渲染拼接底片
-python tools/build_econ_huashu.py {制作日}
+python tools/build_econ_huashu_generic.py {制作日}
 # 3) 叠加 V2.1 双主播 HUD + 音轨
 python tools/compose_econ_video.py {制作日}
 # → output/weekly/{制作日}/econ_talk_{制作日}_huashu.mp4
 ```
+
+- **配置驱动分镜（2026-11-02 改造）**：分镜不再写死在 Python 里，而是抽到外置 JSON —— `output/weekly/{制作日}/econ_huashu_storyboard.json`（本期专用）或 `tools/econ_huashu_storyboard.template.json`（通用模板）。**稿子段数变了只改配置，不用改代码**。`ratios` 约定：前 N-1 镜写固定比例，末镜写 `0.0` 表示取余量，保证该段帧数总和严格等于 TTS 实测帧数。脚本内置 `lint_y5()` 生成期自检，排版违规直接报错退出。
+- ⚠️ `build_econ_huashu.py` 旧版按「固定 11 段」写死，**新期请用 `_generic.py`**。
 
 - **动画引擎**：`huashu-art-motion`（`G:/projects/_dl/huashu/huashu-art-motion-main/scripts/engine`），按真实 TTS 分段帧数拆 5~10s 多镜头，交替 `t1_3b1b`（公式/曲线）、`y3_whiteboard`（白板手绘）、`t3_finance_chart`（财经图表）、`y5_kinetic_type`（动态大字），统一色板 `"theme": "ink"`（深墨底），注入安全边距 `{"top":76,"bottom":128,"left":148,"right":148}`。
 - **V2.1 HUD 规格**：左下阿信 / 右下小蓝 `136×136` 贴边圆头像（名牌内嵌在圆头像**下沿**胶囊，严禁放头顶以免遮挡图表来源行），说话者 100% 不透明 + 彩色发光外环，听讲者 45% 半透明暗化；底部中央字幕框单页 ≤25 字，主字号 `42px` 微软雅黑粗体 + `2px` 黑色描边，说话人标签 `36px`。
@@ -279,6 +282,8 @@ python tools/compose_econ_video.py {制作日}
 - **🐍 本机 Python 环境（2026-11-02 实测）**：可用解释器为 WorkBuddy 托管 Python 3.13（`C:\Users\Administrator\.workbuddy\binaries\python\versions\3.13.12\python.exe`），已装 `requests` / `Pillow` / `playwright` + Chromium。`external/voxcpm/.venv` 指向已卸载的 Python311（不可用）；`uv` 命令在本机**已不存在**，故 huashu 引擎渲染改为直接用当前解释器跑 `render.py`（只依赖 playwright + 标准库），Chromium 下载走 `PLAYWRIGHT_DOWNLOAD_HOST=https://cdn.npmmirror.com/binaries/playwright`。
 - **Windows 子进程 PATH 陷阱（2026-11-02 固化）**：`subprocess` 传 `env={"PATH": ...}` **无效**——Windows 查找可执行文件读的是**进程级**环境块；正解是改 `os.environ["PATH"]`（触发 `SetEnvironmentVariable`）。Git Bash 的 `PATH=xxx:$PATH` 前缀写法会被转成 `G;G:\...` 坏条目，不可用。
 - 代码规范：`black --line-length=120`、`flake8`；改动前先完整重读项目（README/scripts/tools/历史）再动手。
+- **📦 Skills 沉淀（2026-11-02）**：`~/.workbuddy/skills/` 下三个项目 Skill——
+  `signal-pop-weekly-publish`（三平台定时发布 + 清理门禁）、`signal-pop-weekly-render`（周末版渲染→混音→质检→交付全流程）、`signal-pop-econ-huashu`（聊经济动画三步管线 + y5 排版铁律 + 环境坑表）。新增管线能力优先沉淀为 Skill，避免每次重新调研。
 
 ---
 
