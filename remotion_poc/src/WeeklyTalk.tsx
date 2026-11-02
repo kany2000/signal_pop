@@ -37,8 +37,13 @@ export interface TalkSegment {
 const AXIN_BLUE = "#3A82D2";
 const XIAOLAN_PINK = "#DC5A96";
 const GOLD = "#D4AF37";
-const WHITE = "#F5F5FA";
-const GREY = "#BEC6D2";
+// ── dark-tech 风格包 tokens（chaojifeng-video-design/styles/dark-tech）──
+// 微调映射：底色/前景/灰阶对齐风格包；主播品牌色与语义色不动；accent 仅作点缀
+const DT_BG = "#101722"; // tokens.background
+const DT_FG = "#EDF3FC"; // tokens.foreground
+const DT_MUTED = "#A4B3C6"; // tokens.muted
+const WHITE = DT_FG;
+const GREY = DT_MUTED;
 
 // 每期精选网址（口播说"网址在视频简介里"，画面同步挂出）：改为由 weekly_segs.json 逐段 pickUrl 注入，逐期可配（见组件 pickUrl prop）
 
@@ -540,7 +545,7 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[]; pickUrl?: string }> = (
     }
     acc += s.dur;
   }
-  if (!cur) return <AbsoluteFill style={{ backgroundColor: "#0d1220" }} />;
+  if (!cur) return <AbsoluteFill style={{ backgroundColor: DT_BG }} />;
 
   const pickUrlDisplay = cur.pickUrl || pickUrl || "https://fmhy.net";
   const effectiveBg = cur.bg || "opening_bg.jpg";
@@ -646,13 +651,13 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[]; pickUrl?: string }> = (
   };
 
   return (
-    <AbsoluteFill style={{ backgroundColor: "#0d1220" }}>
+    <AbsoluteFill style={{ backgroundColor: DT_BG }}>
       {/* 背景配图（随段轮换，淡入过渡；开场 bg 为空时渲染渐变底） */}
       <AbsoluteFill style={{ opacity: bgFade, transform: `scale(${bgScale})`, transformOrigin: "50% 40%" }}>
         {effectiveBg ? (
           <Img src={staticFile(effectiveBg)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
-          <AbsoluteFill style={{ background: "radial-gradient(circle at 50% 30%, #2a416d 0%, #152038 55%, #0c1424 100%)" }} />
+          <AbsoluteFill style={{ background: "radial-gradient(circle at 50% 30%, #22385c 0%, #17253e 55%, #0e1626 100%)" }} />
         )}
       </AbsoluteFill>
       {/* 配图遮罩层：从 0.62 降低至 0.28，让配图明亮生动；econ_slide 本身是清晰图表则完全不压暗 */}

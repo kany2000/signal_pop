@@ -18,7 +18,7 @@ import sys
 import re
 import json
 
-PROJECT_ROOT = "E:/projects/signal_pop"
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PREP_DATE = sys.argv[1] if len(sys.argv) > 1 else None
 if not PREP_DATE:
     print("用法: python tools/check_publish_ready.py YYYYMMDD")
