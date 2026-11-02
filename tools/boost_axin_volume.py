@@ -1,3 +1,4 @@
+import os
 #!/usr/bin/env python3
 """Signal Pop — 周末版音频后处理：阿信段音量 +10%
 
@@ -9,8 +10,8 @@ PoC 阶段使用；本期新生成时 gen_dual_tts.py 已自带 +10%。
 """
 import sys, os, json, subprocess, wave, struct, shutil
 
-PROJECT_ROOT = "E:/projects/signal_pop"
-FFMPEG = "E:/projects/signal_pop/bin/ffmpeg-9.0.1-essentials_build/bin/ffmpeg.exe"
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FFMPEG = os.path.join(PROJECT_ROOT, "bin", "ffmpeg-9.0.1-essentials_build\bin\ffmpeg.exe")
 GAIN = 1.30  # 阿信 +30%（2026-08-21 用户反馈；接近小蓝音量）
 
 

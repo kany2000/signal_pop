@@ -33,7 +33,7 @@ GOLD = (255, 200, 50)
 WHITE = (255, 255, 255)
 LIGHT_GREY = (180, 190, 200)
 
-OUT_DIR = "E:/projects/signal_pop/output/promo"
+OUT_DIR = "G:/projects/signal_pop/output/promo"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 

@@ -11,7 +11,7 @@ PUB_DATE = PUB_DT.strftime("%Y%m%d")
 PUB_DATE_FMT = f"{PUB_DATE[:4]}年{PUB_DATE[4:6]}月{PUB_DATE[6:8]}日"
 PUB_DATE_SHORT = f"{PUB_DATE[:4]}.{PUB_DATE[4:6]}.{PUB_DATE[6:8]}"
 
-OUT_DIR = "E:/projects/signal_pop/output/weekly_20260724"
+OUT_DIR = "G:/projects/signal_pop/output/weekly_20260724"
 CACHE = os.path.join(OUT_DIR, ".cache")
 os.makedirs(CACHE, exist_ok=True)
 

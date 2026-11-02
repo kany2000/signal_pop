@@ -5,8 +5,8 @@ from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-PARSED = "E:/projects/signal_pop/output/parsed_weekly_20260807.json"
-OUT_DIR = "E:/projects/signal_pop/output/daily_20260808/images"
+PARSED = "G:/projects/signal_pop/output/parsed_weekly_20260807.json"
+OUT_DIR = "G:/projects/signal_pop/output/daily_20260808/images"
 
 SENSENOVA_URL = "https://token.sensenova.cn/v1/images/generations"
 # 密钥只走 .env（config.SENSENOVA_API_KEY），禁止硬编码

@@ -2,8 +2,8 @@
 """Signal Pop — 临时新闻过滤脚本（Windows版）"""
 import os, sys, json, html, re
 
-DATA_DIR = "E:/projects/signal_pop/output"
-OUTPUT_DIR = "E:/projects/signal_pop/output"
+DATA_DIR = "G:/projects/signal_pop/output"
+OUTPUT_DIR = "G:/projects/signal_pop/output"
 
 SPAM_KEYWORDS = [
     "世界杯", "FIFA", "欧冠", "英超", "西甲", "NBA", "CBA", "奥运", "亚运",

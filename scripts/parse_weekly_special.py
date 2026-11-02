@@ -2,8 +2,8 @@
 """Parse weekly special format → structured JSON for pipeline"""
 import sys, os, re, json
 
-INPUT = "E:/projects/signal_pop/archive/signal_pop_weekly_special_20260731.txt"
-OUTPUT = "E:/projects/signal_pop/output/parsed_weekly_20260731.json"
+INPUT = "G:/projects/signal_pop/archive/signal_pop_weekly_special_20260731.txt"
+OUTPUT = "G:/projects/signal_pop/output/parsed_weekly_20260731.json"
 
 SECTION_MAP = {
     "科技与产业": "科技前沿",

@@ -1,3 +1,4 @@
+import os
 #!/usr/bin/env python3
 """Signal Pop — Remotion 周末版数据导出（含配图轮换 + 突发现场视频窗）
 
@@ -15,7 +16,7 @@ breaking_footage.mp4 复制到 remotion_poc/public，并用 ffprobe 探测真实
 
 import sys, os, json, shutil, subprocess
 
-PROJECT_ROOT = "E:/projects/signal_pop"
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FFPROBE = os.path.join(PROJECT_ROOT, "bin", "ffmpeg-9.0.1-essentials_build", "bin", "ffprobe.exe")
 
 

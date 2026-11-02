@@ -12,11 +12,11 @@ PUB_DATE_FMT = f"{PUB_DATE[:4]}年{PUB_DATE[4:6]}月{PUB_DATE[6:8]}日"
 PUB_DATE_SHORT = f"{PUB_DATE[:4]}.{PUB_DATE[4:6]}.{PUB_DATE[6:8]}"
 PUB_WEEKDAY = ["星期一","星期二","星期三","星期四","星期五","星期六","星期日"][PUB_DT.weekday()]
 
-PARSED = "E:/projects/signal_pop/output/parsed_weekly_20260807.json"
-IMG_DIR = "E:/projects/signal_pop/output/daily_20260808/images"
-AUDIO = "E:/projects/signal_pop/output/daily_20260808/audio/tts.wav"
-SEGMENTS = "E:/projects/signal_pop/output/daily_20260808/audio/tts_segments.json"
-OUTPUT = "E:/projects/signal_pop/output/daily_20260808/signal_pop_weekly_20260807.mp4"
+PARSED = "G:/projects/signal_pop/output/parsed_weekly_20260807.json"
+IMG_DIR = "G:/projects/signal_pop/output/daily_20260808/images"
+AUDIO = "G:/projects/signal_pop/output/daily_20260808/audio/tts.wav"
+SEGMENTS = "G:/projects/signal_pop/output/daily_20260808/audio/tts_segments.json"
+OUTPUT = "G:/projects/signal_pop/output/daily_20260808/signal_pop_weekly_20260807.mp4"
 
 FFMPEG = "C:/Users/Administrator/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-9.0-full_build/bin/ffmpeg.exe"
 FONT = "C:/Windows/Fonts/msyh.ttc"
@@ -26,7 +26,7 @@ GOLD = (212, 175, 55)
 WHITE = (240, 240, 250)
 LIGHT_GREY = (200, 200, 210)
 
-FRAME_DIR = "E:/projects/signal_pop/output/daily_20260808/frames"
+FRAME_DIR = "G:/projects/signal_pop/output/daily_20260808/frames"
 os.makedirs(FRAME_DIR, exist_ok=True)
 
 # Style - gold theme for weekend

@@ -268,7 +268,7 @@ def build_video(items, img_dir, audio_path, segments_path, output_path,
 if __name__ == "__main__":
     import json
     items = json.load(open(sys.argv[1], 'r', encoding='utf-8'))
-    build_video(items, sys.argv[2] if len(sys.argv)>2 else "E:/projects/signal_pop/output/weekly_20260717/images",
+    build_video(items, sys.argv[2] if len(sys.argv)>2 else "G:/projects/signal_pop/output/weekly_20260717/images",
                 sys.argv[3], sys.argv[3].replace('.wav','_segments.json'),
-                sys.argv[4] if len(sys.argv)>4 else "E:/projects/signal_pop/output/weekly_20260717/ss.mp4",
+                sys.argv[4] if len(sys.argv)>4 else "G:/projects/signal_pop/output/weekly_20260717/ss.mp4",
                 "2026年07月18日", "星期六", "2026.07.18")

@@ -14,8 +14,8 @@ import json
 import subprocess
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
-PROJECT_ROOT = "E:/projects/signal_pop"
-FFMPEG = "E:/projects/signal_pop/bin/ffmpeg-9.0.1-essentials_build/bin/ffmpeg.exe"
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FFMPEG = os.path.join(PROJECT_ROOT, "bin", "ffmpeg-9.0.1-essentials_build", "bin", "ffmpeg.exe")
 PUBLIC_DIR = os.path.join(PROJECT_ROOT, "remotion_poc", "public")
 
 PREP_DATE = sys.argv[1] if len(sys.argv) > 1 else "20261016"

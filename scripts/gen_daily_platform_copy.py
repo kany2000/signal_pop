@@ -9,7 +9,7 @@ PUB_DATE = PUB_DT.strftime("%Y%m%d")
 PUB_DATE_SHORT = f"{PUB_DATE[:4]}.{PUB_DATE[4:6]}.{PUB_DATE[6:8]}"
 PUB_WEEKDAY = ["星期一","星期二","星期三","星期四","星期五","星期六","星期日"][PUB_DT.weekday()]
 
-OUT_DIR = f"E:/projects/signal_pop/output/daily_{DATE}"
+OUT_DIR = f"G:/projects/signal_pop/output/daily_{DATE}"
 PARSED = os.path.join(OUT_DIR, "parsed_news.json")
 SEGMENTS = os.path.join(OUT_DIR, "audio", "tts_segments.json")
 

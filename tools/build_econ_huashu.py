@@ -12,9 +12,11 @@ import sys
 import json
 import subprocess
 
-PROJECT_ROOT = "E:/projects/signal_pop"
-HUASHU_ENGINE = "E:/projects/_dl/huashu/huashu-art-motion-main/scripts/engine"
-FFMPEG_BIN = "E:/projects/signal_pop/bin/ffmpeg-9.0.1-essentials_build/bin"
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# huashu 引擎在项目同级目录 G:/projects/_dl/huashu/...，向上回溯一级定位 _dl
+_PROJECTS_DIR = os.path.dirname(PROJECT_ROOT)
+HUASHU_ENGINE = os.path.join(_PROJECTS_DIR, "_dl", "huashu", "huashu-art-motion-main", "scripts", "engine")
+FFMPEG_BIN = os.path.join(PROJECT_ROOT, "bin", "ffmpeg-9.0.1-essentials_build", "bin")
 FFMPEG = os.path.join(FFMPEG_BIN, "ffmpeg.exe")
 
 PREP_DATE = sys.argv[1] if len(sys.argv) > 1 else "20261016"

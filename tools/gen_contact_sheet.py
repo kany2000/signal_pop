@@ -11,9 +11,7 @@ import os
 import sys
 from PIL import Image, ImageDraw, ImageFont
 
-BASE = "E:/projects/signal_pop"
-
-
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def find_font(size):
     """找一个可用的中文字体（用于编号标签）。"""
     candidates = [

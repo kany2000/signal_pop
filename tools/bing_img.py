@@ -12,7 +12,7 @@ import io
 import urllib.request
 import urllib.parse
 
-PROJECT_ROOT = "E:/projects/signal_pop"
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(PROJECT_ROOT, "scripts"))
 from win_pipeline_images import _save_image  # noqa: E402
 

@@ -142,7 +142,7 @@ if __name__ == "__main__":
 
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
     script_path = (
-        sys.argv[1] if len(sys.argv) > 1 else "E:/projects/signal_pop/archive/signal_pop_weekly_special_20260717.txt"
+        sys.argv[1] if len(sys.argv) > 1 else "G:/projects/signal_pop/archive/signal_pop_weekly_special_20260717.txt"
     )
 
     try:

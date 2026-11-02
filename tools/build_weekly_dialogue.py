@@ -19,7 +19,7 @@ import sys
 import re
 import hashlib
 
-PROJECT_ROOT = "E:/projects/signal_pop"
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # 阿信/小蓝 双视角观点（板块"回退候选池"仅作未命中 COMMENTS 时的兜底；本期各条已在 COMMENTS 精确定制）
 #

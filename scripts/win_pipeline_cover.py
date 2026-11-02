@@ -14,7 +14,7 @@ WEEKDAY = ["星期一","星期二","星期三","星期四","星期五","星期�
 FONT = "C:/Windows/Fonts/msyh.ttc"
 FONT_BOLD = "C:/Windows/Fonts/msyhbd.ttc"
 W, H = 1920, 1080
-OUT_DIR = "E:/projects/signal_pop/output/weekly_20260717"
+OUT_DIR = "G:/projects/signal_pop/output/weekly_20260717"
 
 
 def fnt(size, bold=False):

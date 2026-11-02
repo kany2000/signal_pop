@@ -29,7 +29,7 @@ import hashlib
 from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageOps
 
-PROJECT_ROOT = "E:/projects/signal_pop"
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PREP_DATE = sys.argv[1] if len(sys.argv) > 1 else "20260821"
 STYLE = sys.argv[2] if len(sys.argv) > 2 else "auto"
 SUFFIX = sys.argv[3] if len(sys.argv) > 3 else ""

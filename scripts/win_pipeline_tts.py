@@ -6,7 +6,7 @@ import sys, os, json, asyncio, subprocess, wave, struct, time
 
 VOICE_WEEKDAY = "zh-CN-XiaoxiaoNeural"   # 平日：女声
 VOICE_WEEKEND = "zh-CN-YunyangNeural"    # 周末：男声
-FFMPEG = "E:/projects/signal_pop/bin/ffmpeg-9.0.1-essentials_build/bin/ffmpeg.exe"
+FFMPEG = "G:/projects/signal_pop/bin/ffmpeg-9.0.1-essentials_build/bin/ffmpeg.exe"
 
 
 def select_voice(pub_weekday="星期六"):
@@ -137,6 +137,6 @@ async def gen_tts(items_path, output_wav, pub_date_fmt="2026年07月25日", pub_
 
 
 if __name__ == "__main__":
-    items_path = sys.argv[1] if len(sys.argv) > 1 else "E:/projects/signal_pop/output/weekly_20260717/parsed_news.json"
-    out = sys.argv[2] if len(sys.argv) > 2 else "E:/projects/signal_pop/output/weekly_20260717/audio/tts.wav"
+    items_path = sys.argv[1] if len(sys.argv) > 1 else "G:/projects/signal_pop/output/weekly_20260717/parsed_news.json"
+    out = sys.argv[2] if len(sys.argv) > 2 else "G:/projects/signal_pop/output/weekly_20260717/audio/tts.wav"
     asyncio.run(gen_tts(items_path, out))

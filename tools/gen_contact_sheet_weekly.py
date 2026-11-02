@@ -12,8 +12,7 @@ import os
 import sys
 from PIL import Image, ImageDraw, ImageFont
 
-BASE = "E:/projects/signal_pop"
-
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # 展示顺序与中文章节标签（精确对应 20260925 期用户指定顺序）
 ORDER = [
     ("breaking", "特别报道·Claude5.5"),

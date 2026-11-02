@@ -4,7 +4,7 @@ import os, sys, json, io, time, html, re
 import requests
 import feedparser
 
-OUTPUT_DIR = "E:/projects/signal_pop/output"
+OUTPUT_DIR = "G:/projects/signal_pop/output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # 以综合 / 科技 / 财经 / 民生类媒体为主，规避政治重源（BBC中文、路透、联合国等）

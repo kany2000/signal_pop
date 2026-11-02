@@ -11,7 +11,7 @@ PUB_DATE = PUB_DT.strftime("%Y%m%d")
 PUB_DATE_FMT = f"{PUB_DATE[:4]}年{PUB_DATE[4:6]}月{PUB_DATE[6:8]}日"
 PUB_DATE_SHORT = f"{PUB_DATE[:4]}.{PUB_DATE[4:6]}.{PUB_DATE[6:8]}"
 
-OUT_DIR = f"E:/projects/signal_pop/output/daily/{DATE}"
+OUT_DIR = f"G:/projects/signal_pop/output/daily/{DATE}"
 CACHE = os.path.join(OUT_DIR, ".cache")
 os.makedirs(CACHE, exist_ok=True)
 
@@ -62,7 +62,7 @@ FACE_SHAPES = [
 NO_TEXT_SUFFIX = ", no text, no words, no letters, no numbers, no characters, no typography, no signage, no labels, no captions, no UI, no writing, no screens with text, no charts, no data displays, no any text whatsoever, completely text-free image, no monitors with text, no screens showing data"
 NO_TEXT_SUFFIX_AV = ", no text, no words, no letters, no numbers, no characters, no typography, no signage, no labels, no captions, no UI, no writing, no screens with text, no charts, no data displays, no any text whatsoever, completely text-free image"
 
-USED_STYLES_FILE = "E:/projects/signal_pop/output/used_anchor_styles.json"
+USED_STYLES_FILE = "G:/projects/signal_pop/output/used_anchor_styles.json"
 
 
 def _load_used_styles():
@@ -139,7 +139,7 @@ WHITE = (255, 255, 255)
 
 # ===== 封面主题池（2026-09-04）：背景/配色/装饰随期轮换，主播形象池不受影响 =====
 DAILY_THEMES = ["hud", "aurora", "neon", "minimal", "retro"]
-USED_DAILY_THEME_FILE = "E:/projects/signal_pop/output/used_daily_cover_styles.json"
+USED_DAILY_THEME_FILE = "G:/projects/signal_pop/output/used_daily_cover_styles.json"
 
 THEME_DEFS = {
     #        accent(主强调)      glow(标题辉光)      sub(副标)          dim(页脚)
@@ -564,7 +564,7 @@ def main():
         PUB_DATE = PUB_DT.strftime("%Y%m%d")
         PUB_DATE_FMT = f"{PUB_DATE[:4]}年{PUB_DATE[4:6]}月{PUB_DATE[6:8]}日"
         PUB_DATE_SHORT = f"{PUB_DATE[:4]}.{PUB_DATE[4:6]}.{PUB_DATE[6:8]}"
-        OUT_DIR = f"E:/projects/signal_pop/output/daily/{DATE}"
+        OUT_DIR = f"G:/projects/signal_pop/output/daily/{DATE}"
         CACHE = os.path.join(OUT_DIR, ".cache")
         os.makedirs(CACHE, exist_ok=True)
         ANCHOR_PROMPT, AVATAR_PROMPT, _ = build_anchor_prompts()

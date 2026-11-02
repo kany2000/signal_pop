@@ -2,7 +2,7 @@
 """每次做新视频前运行：旧输出移到 output_old，保持 output 干净"""
 import os, shutil, datetime
 
-BASE = "E:/projects/signal_pop"
+BASE = "G:/projects/signal_pop"
 OUTPUT = os.path.join(BASE, "output")
 OLD = os.path.join(BASE, "output_old")
 

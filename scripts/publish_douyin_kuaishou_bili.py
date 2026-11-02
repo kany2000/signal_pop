@@ -9,7 +9,7 @@ if sys.stdout.encoding and sys.stdout.encoding.lower().startswith("gbk"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 DATE = "20260806"
-OUT_DIR = f"E:/projects/signal_pop/output/daily_{DATE}"
+OUT_DIR = f"G:/projects/signal_pop/output/daily_{DATE}"
 SAU = ["sau"]
 ACCOUNT = "her2home"
 SCHEDULE = "2026-08-07 08:00"

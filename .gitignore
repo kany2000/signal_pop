@@ -81,3 +81,10 @@ tools/_t_probe_now.py
 tools/_test_volc_tts.py
 tools/_translate_weekly.sh
 scripts/retry_publish_20260823.py
+
+# E→G 盘迁移备份（2026-11-01 一次性产物，勿入库）
+.patch_backup_e2g_20261101/
+
+# 临时探针/测试脚本（下划线前缀，与 tools/_*.py 废弃脚本同族）
+_patch_*/
+_tmp_*/

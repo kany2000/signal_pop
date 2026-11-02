@@ -3,9 +3,9 @@
 import json, os
 from datetime import datetime, timedelta
 
-PARSED = "E:/projects/signal_pop/output/parsed_weekly_20260807.json"
-SEGMENTS = "E:/projects/signal_pop/output/daily_20260808/audio/tts_segments.json"
-OUT_DIR = "E:/projects/signal_pop/output/daily_20260808"
+PARSED = "G:/projects/signal_pop/output/parsed_weekly_20260807.json"
+SEGMENTS = "G:/projects/signal_pop/output/daily_20260808/audio/tts_segments.json"
+OUT_DIR = "G:/projects/signal_pop/output/daily_20260808"
 
 DATE = "20260807"
 PUB_DT = datetime.strptime(DATE, "%Y%m%d") + timedelta(days=1)
