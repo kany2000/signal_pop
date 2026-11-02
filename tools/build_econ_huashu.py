@@ -361,10 +361,12 @@ def build_specs():
 
 
 def render_all(spec_files):
+    # ⚠️ Windows 子进程 PATH 陷阱（2026-11-02 实测）：传 env={"PATH": ...} 无效，
+    #    进程查找可执行文件读的是**进程级**环境块 → 必须改 os.environ。
+    os.environ["PATH"] = FFMPEG_BIN + os.pathsep + os.environ.get("PATH", "")
     env = os.environ.copy()
-    env["PATH"] = FFMPEG_BIN + os.pathsep + env.get("PATH", "")
-    env["HTTPS_PROXY"] = "http://127.0.0.1:10808"
-    env["HTTP_PROXY"] = "http://127.0.0.1:10808"
+    env.setdefault("HTTPS_PROXY", "http://127.0.0.1:10808")
+    env.setdefault("HTTP_PROXY", "http://127.0.0.1:10808")
     render_py = os.path.join(HUASHU_ENGINE, "render.py")
 
     clip_paths = []
@@ -375,7 +377,9 @@ def render_all(spec_files):
             print(f"  [{idx}/{len(spec_files)}] 复用已存在 {sid}.mp4 ({dur:.2f}s)", flush=True)
             continue
         print(f"  [{idx}/{len(spec_files)}] 渲染 {sid} ({dur:.2f}s) ...", flush=True)
-        cmd = ["uv", "run", "--offline", "--with", "playwright", "python", render_py, "--spec", sp_path, "--out", out_mp4]
+        # ⚠️ 本机 uv 已不存在（2026-11-02 实测），改为直接用当前解释器跑引擎 render.py
+        #    引擎只依赖 playwright + 标准库，无需 uv 环境
+        cmd = [sys.executable, render_py, "--spec", sp_path, "--out", out_mp4]
         subprocess.run(cmd, cwd=HUASHU_ENGINE, env=env, check=True)
 
     # 拼接全部镜头为一条完整动画底片
