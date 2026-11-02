@@ -56,6 +56,14 @@ KOKORO_VOICE_WEEKDAY = "zf_xiaoxiao" # 平日女声
 KOKORO_VOICE_WEEKEND = "zm_yunyang"  # 周末男声·阿信
 KOKORO_VOICE_WEEKEND_F = "zf_xiaoni" # 周末女声·小蓝
 
+# VoxCPM 本地离线备用（2026-10-22 接入，OpenBMB，Apache-2.0 可商用）
+#   音色用「声音设计」描述而非固定 ID：
+#     阿信 = 沉稳中年男声（小蓝 = 明亮年轻女声）
+#   权重路径：external/voxcpm/models/VoxCPM1.5（0.6B，44.1kHz）
+VOXCPM_VOICE_WEEKDAY = "A young woman, bright and friendly voice, standard Mandarin"
+VOXCPM_VOICE_WEEKEND = "A mature man, calm and steady voice, standard Mandarin"
+VOXCPM_VOICE_WEEKEND_F = "A young woman, lively and cheerful voice, standard Mandarin"
+
 # 与 win_pipeline_tts 一致的音色选择规则
 def select_voice(pub_weekday="星期六", lang="zh", speaker=None):
     """speaker 参数用于周末双人：'阿信'=男声 / '小蓝'=周末女声；其余按发布日自动。"""
@@ -86,6 +94,12 @@ def select_voice(pub_weekday="星期六", lang="zh", speaker=None):
         if speaker == "小蓝":
             return KOKORO_VOICE_WEEKEND_F
         return KOKORO_VOICE_WEEKEND if is_weekend else KOKORO_VOICE_WEEKDAY
+    if BACKEND == "voxcpm":
+        if speaker == "阿信":
+            return VOXCPM_VOICE_WEEKEND
+        if speaker == "小蓝":
+            return VOXCPM_VOICE_WEEKEND_F
+        return VOXCPM_VOICE_WEEKEND if is_weekend else VOXCPM_VOICE_WEEKDAY
     # edge 兜底
     return ("zh-CN-YunyangNeural" if is_weekend else "zh-CN-XiaoxiaoNeural")
 
@@ -350,6 +364,64 @@ def kokoro_synthesize(text, voice, out_mp3, lang_code="z"):
     return out_mp3
 
 
+# ---------- VoxCPM 本地合成（OpenBMB，离线灾备，44.1kHz） ----------
+_VOXCPM_MODEL = None
+_VOXCPM_ROOT = os.path.join(PROJECT_ROOT, "external", "voxcpm")
+_VOXCPM_REPO = os.path.join(_VOXCPM_ROOT, "src_repo")
+_VOXCPM_MODEL_DIR = os.path.join(_VOXCPM_ROOT, "models", "VoxCPM1.5")
+# VoxCPM 用独立 venv（torch 2.10 + bfloat16），主解释器没装 torch
+_VOXCPM_PY = os.path.join(_VOXCPM_ROOT, ".venv", "Scripts", "python.exe")
+
+
+def _voxcpm_python_available():
+    return os.path.exists(_VOXCPM_PY) and os.path.exists(_VOXCPM_MODEL_DIR)
+
+
+def voxcpm_synthesize(text, voice_desc, out_mp3, cfg_value=2.0, timesteps=10, seed=42):
+    """本地 VoxCPM 合成（开源离线兜底，44.1kHz）。
+
+    走独立子进程调用 external/voxcpm/.venv，避免与主解释器的 torch 依赖冲突。
+    voice_desc 为自然语言音色描述（Voice Design 模式）。
+    """
+    global _VOXCPM_MODEL
+    if not _voxcpm_python_available():
+        raise RuntimeError(
+            f"VoxCPM 未就绪：缺少 {_VOXCPM_PY} 或权重 {_VOXCPM_MODEL_DIR}"
+        )
+
+    # 比分发音纠正：7-5 -> 7比5，防止读成「减」
+    text_clean = re.sub(r"(\d+)-(\d+)", r"\1比\2", text).strip()
+
+    # 音色描述放在文本括号内（VoxCPM Voice Design 约定）
+    payload = f"({voice_desc}){text_clean}"
+
+    worker = os.path.join(_VOXCPM_ROOT, "_worker.py")
+    tmp_wav = out_mp3.replace(".mp3", ".voxcpm.wav")
+    cmd = [
+        _VOXCPM_PY, worker,
+        "--text", payload,
+        "--out", tmp_wav,
+        "--cfg", str(cfg_value),
+        "--timesteps", str(timesteps),
+        "--seed", str(seed),
+    ]
+    res = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
+    if res.returncode != 0 or not os.path.exists(tmp_wav):
+        tail = (res.stderr or "")[-300:]
+        raise RuntimeError(f"VoxCPM 合成失败(rc={res.returncode}): {tail}")
+
+    if out_mp3.endswith(".mp3"):
+        subprocess.run(
+            [FFMPEG, "-y", "-i", tmp_wav, "-acodec", "libmp3lame", "-b:a", "192k", out_mp3],
+            check=True, capture_output=True)
+        _safe_remove(tmp_wav)
+    else:
+        if os.path.exists(out_mp3):
+            _safe_remove(out_mp3)
+        os.rename(tmp_wav, out_mp3)
+    return out_mp3
+
+
 # ================= 统一合成 + 时长 =================
 def _safe_remove(path):
     """删除文件（兼容 Windows 沙箱回收站不可用场景：ctypes 直调 DeleteFileW）。"""
@@ -377,6 +449,8 @@ def synthesize_one(idx, label, text, voice, audio_dir):
                 qwen_synthesize(text, voice, mp3)
             elif BACKEND == "kokoro":
                 kokoro_synthesize(text, voice, mp3)
+            elif BACKEND == "voxcpm":
+                voxcpm_synthesize(text, voice, mp3)
             else:
                 raise RuntimeError(f"未知后端: {BACKEND}")
             if os.path.getsize(mp3) > 500:

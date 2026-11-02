@@ -14,7 +14,7 @@ import subprocess
 import wave
 import struct
 
-PROJECT_ROOT = "E:/projects/signal_pop"
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PREP_DATE = sys.argv[1] if len(sys.argv) > 1 else "20260814"
 OUT_DIR = os.path.join(PROJECT_ROOT, "output", "weekly", PREP_DATE)
 # 优先读当期 dialogue_script.txt，不存在再回退 archive
@@ -27,7 +27,7 @@ AUDIO_DIR = os.path.join(OUT_DIR, "audio")
 AUDIO_PATH = os.path.join(AUDIO_DIR, "tts.wav")
 SEGMENTS_PATH = os.path.join(AUDIO_DIR, "tts_segments.json")
 TALK_PATH = os.path.join(OUT_DIR, "talk_segments.json")
-FFMPEG = "E:/projects/signal_pop/bin/ffmpeg-9.0.1-essentials_build/bin/ffmpeg.exe"
+FFMPEG = os.path.join(PROJECT_ROOT, "bin", "ffmpeg-9.0.1-essentials_build\bin\ffmpeg.exe")
 sys.path.insert(0, os.path.join(PROJECT_ROOT, "tools"))
 sys.path.insert(0, os.path.join(PROJECT_ROOT, "scripts"))
 
@@ -47,9 +47,10 @@ BACKEND = os.environ.get("SIGNAL_POP_TTS_BACKEND", "qwen")
 # 豆包语音双人音色（2026-08-16 用户认可）：阿信=云舟男 / 小蓝=爽快思思女；edge/讯飞/Qwen 兜底保留
 # 第 4 元 = Qwen-TTS 音色（阿信=Ethan 晨煦男 / 小蓝=Cherry 芊悦女）
 # 第 5 元 = Kokoro-82M 本地音色（阿信=zm_yunyang 浑厚男 / 小蓝=zf_xiaoni 清亮女，纯离线备用）
+# 第 6 元 = VoxCPM 本地音色（自然语言描述：阿信=沉稳中年男 / 小蓝=明亮年轻女，纯离线备用）
 VOICES = {
-    "阿信": ("zh_male_m191_uranus_bigtts", "zh-CN-YunyangNeural", "x4_qianmo", "Ethan", "zm_yunyang"),  # 云舟 2.0 / edge / 讯飞 / Qwen / Kokoro
-    "小蓝": ("zh_female_shuangkuaisisi_uranus_bigtts", "zh-CN-XiaoxiaoNeural", "x4_yezi", "Cherry", "zf_xiaoni"),  # 爽快思思 2.0 / edge / 讯飞 / Qwen / Kokoro
+    "阿信": ("zh_male_m191_uranus_bigtts", "zh-CN-YunyangNeural", "x4_qianmo", "Ethan", "zm_yunyang", "A mature man, calm and steady voice, standard Mandarin"),
+    "小蓝": ("zh_female_shuangkuaisisi_uranus_bigtts", "zh-CN-XiaoxiaoNeural", "x4_yezi", "Cherry", "zf_xiaoni", "A young woman, lively and cheerful voice, standard Mandarin"),
 }
 
 
@@ -73,6 +74,8 @@ def parse_talk(text):
                     voice = voices[3]
                 elif BACKEND == "kokoro":
                     voice = voices[4]
+                elif BACKEND == "voxcpm":
+                    voice = voices[5]
                 else:
                     voice = voices[1]  # edge
                 segs.append({"speaker": name, "voice": voice, "text": content.strip()})
@@ -82,7 +85,7 @@ def parse_talk(text):
 
 async def gen_one(idx, seg, sem, audio_dir):
     """单句合成（豆包语音 volc_synthesize，带重试；讯飞/Qwen/Kokoro/edge 兜底）。返回 mp3 路径。"""
-    from gen_cloud_tts import volc_synthesize, xunfei_synthesize, qwen_synthesize, kokoro_synthesize
+    from gen_cloud_tts import volc_synthesize, xunfei_synthesize, qwen_synthesize, kokoro_synthesize, voxcpm_synthesize
     async with sem:
         mp3 = os.path.join(audio_dir, f"_s{idx:03d}.mp3")
         meta_file = os.path.join(audio_dir, f"_s{idx:03d}.txt")
@@ -105,6 +108,8 @@ async def gen_one(idx, seg, sem, audio_dir):
                     qwen_synthesize(seg["text"], seg["voice"], mp3)
                 elif BACKEND == "kokoro":
                     kokoro_synthesize(seg["text"], seg["voice"], mp3)
+                elif BACKEND == "voxcpm":
+                    voxcpm_synthesize(seg["text"], seg["voice"], mp3)
                 else:
                     import edge_tts, aiohttp
                     conn = aiohttp.TCPConnector(resolver=aiohttp.resolver.ThreadedResolver())
