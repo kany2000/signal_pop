@@ -4,7 +4,9 @@
 
 Signal Pop 目前有两条独立产线，面向不同节奏与形态：
 
-| 维度 | 平日版（每周三播出，周二制作） | 周末特别版 · 信蓝组合（每周六播出，周五制作） |
+> ⚠️ **产线状态（2026-11-02）**：**平日版暂停制作**（用户决定「等有需要再开」），当前**唯一活跃产线 = 周末特别版·信蓝组合**。平日版的代码与素材完整保留，恢复时按「关键约定 → 平日版改造待办」清单执行即可。
+
+| 维度 | 平日版（每周三播出，周二制作）⏸️ | 周末特别版 · 信蓝组合（每周六播出，周五制作）✅ |
 |------|----------------|----------------------|
 | 形态 | AI 新闻简报（女主播播报） | 双人对话脱口秀（阿信 + 小蓝） |
 | 选题 | 10 条（经济2/文旅1/科技3/民生2/体育1/新质生产力1 + 末条固定「AI 使用指南/电脑 AI 新应用」） | 突发置顶 + 本周要闻(无排名) + 本周之最 + 下周看点 + 双主播观点 + 互动话题 |
@@ -34,6 +36,8 @@ signal_pop/
 ├── tools/                    # 工具与脚本（每日版 + 周末版）
 │   ├── weekend_pipeline.py        # 周末版主驱动（导出分镜→配图→对话稿→TTS→渲染→封面/文案/质检）
 │   ├── weekly_images.py           # 周末版配图（真实网图 + AI 图混合来源）
+│   ├── fetch_real_images.py       # 真实网图抓取（urllib 静态页，og:image/img 提取 + 下载 1920 宽落地）
+│   ├── fetch_real_images_moli.py  # 真实网图探测 Moli 渲染版（JS/懒加载页专用，产原图 URL 清单，下载交给前者）
 │   ├── build_weekly_dialogue.py   # 周末版新闻→阿信/小蓝对话稿
 │   ├── gen_dual_tts.py            # 周末版双人 TTS（逐段峰值归一化，阿信 0.95 / 小蓝 0.72）
 │   ├── gen_weekly_talk_cover.py   # 周末版封面（六风格 + auto 每期轮换 + all 全套模式 + opening 同开场动画风格）
@@ -107,7 +111,7 @@ cp .env.example .env
 |---------|------|--------|
 | `SIGNAL_POP_PREP_DATE` | 准备日期 (YYYYMMDD) | 昨天 |
 | `SENSENOVA_API_KEY` | 商汤 SenseNova 配图密钥 | 必须设置 |
-| `SIGNAL_POP_TTS_BACKEND` | TTS 后端：`doubao` / `edge` | doubao |
+| `SIGNAL_POP_TTS_BACKEND` | TTS 后端：`qwen` / `volcengine` / `xunfei` / `kokoro` / `voxcpm` / `edge` | qwen |
 | `FFMPEG_PATH` | ffmpeg 可执行文件路径 | bin/ffmpeg-9.0.1 |
 | `SIGNAL_POP_LOG_LEVEL` | 日志级别 | INFO |
 
@@ -216,6 +220,40 @@ python tools/remotion_weekly_build.py 20260821
 - **快手标题硬上限 28 字**（2026-09-12 实测）：封面标题输入框限制 28 字以内，创作指南建议 15–30 字；描述（`--desc`）只取文案 md 的「简介」字段（≈75 字，500 字以内不触限）。标题务必压在 28 字内留余量（本期已缩至 22 字）。
 - **发布前质检**：`python tools/check_publish_ready.py {制作日}` —— 校验视频大小、封面、8 平台文案非空、标题简介、parsed_news 条目数、英文字幕；全部通过方可发布。
 
+### 「大家一起聊经济」收尾环节（huashu-art-motion 代码动画）
+
+周末版正片收尾压轴环节。用户给出经济话题讲义 → AI 浓缩改写为阿信/小蓝双播对话稿（约 600 字 / 2~3 分钟）→ 用户审稿定稿 → 三步产出带动画的成片：
+
+```bash
+# 1) 双播音频 + 帧账本
+python tools/gen_econ_tts.py {制作日}
+# 2) 分镜 spec + huashu 引擎渲染拼接底片
+python tools/build_econ_huashu.py {制作日}
+# 3) 叠加 V2.1 双主播 HUD + 音轨
+python tools/compose_econ_video.py {制作日}
+# → output/weekly/{制作日}/econ_talk_{制作日}_huashu.mp4
+```
+
+- **动画引擎**：`huashu-art-motion`（`G:/projects/_dl/huashu/huashu-art-motion-main/scripts/engine`），按真实 TTS 分段帧数拆 5~10s 多镜头，交替 `t1_3b1b`（公式/曲线）、`y3_whiteboard`（白板手绘）、`t3_finance_chart`（财经图表）、`y5_kinetic_type`（动态大字），统一色板 `"theme": "ink"`（深墨底），注入安全边距 `{"top":76,"bottom":128,"left":148,"right":148}`。
+- **V2.1 HUD 规格**：左下阿信 / 右下小蓝 `136×136` 贴边圆头像（名牌内嵌在圆头像**下沿**胶囊，严禁放头顶以免遮挡图表来源行），说话者 100% 不透明 + 彩色发光外环，听讲者 45% 半透明暗化；底部中央字幕框单页 ≤25 字，主字号 `42px` 微软雅黑粗体 + `2px` 黑色描边，说话人标签 `36px`。
+- **⚠️ `y5_kinetic_type` 排版三铁律**（引擎只告警不报错，须自检）：① 主词 `text` ≤4 汉字（字号固定 300px，5 字以上占满 86% 画宽会撞左上角标签）；② `data.label` ≤3 字（标签固定画在 x=140，是主词的水平避让位）；③ `highlight.data.word` 必须出现在**当前页主词**里（荧光笔只刷主词，辅句词用 `data.key` 着色），否则整下高亮**静默失效**。
+- **⚠️ 文稿红线**：① 禁「为什么 XX 集体抛售」式给观众预设概念的设问；② 全稿零操作指引（禁 T+1/逆回购/加减仓/持股/抄底/止盈止损等操作词），只做描述性机制探讨；③ 结尾互动提问纯认知向；④ 必含「不构成任何投资建议，市场有风险，决策需谨慎」合规句。
+
+---
+
+## 平日版改造待办（2026-11-02 调研成型，暂停期间存档）
+
+平日版暂停中，恢复时按此清单执行，无需重新调研：
+
+| # | 改造项 | 现状 → 目标 | 成本 |
+|---|--------|--------------|------|
+| 1 | **启用 `opinion` 字段** | `parsed_news.json` 每条已预留该字段，`gen_cloud_tts.py:141` 已会播「主播观点：xxx」，但实际条目全为空 → 审稿阶段让 AI 每条填一句「这事跟你有什么关系」，播报从「念新闻」变「有人帮你解读」 | 最低，优先做 |
+| 2 | **分档编排破同质** | 15 条全是同一个 `NewsSlide`（约 20s/条）无节奏 → 章节卡（复用周末版 `ChapterOverlay`）+ 头条深挖 1 条（启用闲置的 `EvidenceCard`）+ 快讯 ×10 + 观点金句，总长不变 | 中 |
+| 3 | **补 BGM** | 平日版无配乐（周末版有 `mix_sidechain_bgm.py` 侧链闪避），5 分钟干声播报在抖音/小红书掉完播 | 低 |
+| 4 | **9:16 竖版常态化** | 仅 20260908 试过一次（`make_vertical.py`/`reframe.py` 现成），抖音/快手/Shorts 主场 | 低 |
+| 5 | **历史条改对照式** | 「历史上的今天」改「当年 vs 今天」对照结构（信源零成本，仅改文案结构） | 低 |
+| 6 | **数据角标** | 每条标题旁挂 `StatRoll` 滚动数字卡（组件现成），把埋在正文里的数字提出来 | 低 |
+
 ---
 
 ## 关键约定（长期规则）
@@ -223,6 +261,7 @@ python tools/remotion_weekly_build.py 20260821
 - 选题配额与媒体多样性、地域配比（国内/国际）按各产线既定约束执行。
 - 「历史上的今天」只用国内事件（科技/文化/民生），且**日期必须与发布日对齐**（= 制作日 + 1），不是制作日。
 - 配图：汽车/电子产品优先真实网络图；OS/科技类突出软件系统主题。
+- **真实网图探测双工具（2026-10-17 新增）**：静态页用 `python tools/fetch_real_images.py <url> <out.jpg>`（urllib + 正则，自带 CDN 白名单，直接下载 1920 宽落地）；JS 渲染页 / 懒加载页（如百度新闻，urllib 拿不到注入图）用 `python tools/fetch_real_images_moli.py <url>`（Moli 无头浏览器完整渲染，产原图 URL 清单 + 真实尺寸，下载落地交给前者或 curl）。批量：`--input urls.txt` 或 stdin 管道；`--flat --output ...` 合并落盘。反爬挑战页会标记 `challenge_suspected`，选源时排雷。依赖 Moli（`%LOCALAPPDATA%\Moli\bin\moli.exe`）。
 - **配图水印铁律**：SenseNova 配图右下角带「日日新 sensenova」水印，**生成后保留原始带水印原图，由用户用工具自行清除**；管线不在配图阶段做任何水印模糊/inpaint 处理。用户清完并确认后，才进入 TTS/视频渲染；视频中用主播头像遮水印位。
 - **🔴 渲染前置硬门禁（2026-09-01 固化）**：配图生成后 AI 必须 `present_files` 交用户审图；**在用户明确回「水印已清、可以渲染」之前，禁止调用任何 render 脚本**。TTS 可先跑，但合成视频必须等确认。本期曾因 AI 提前渲染带水印旧图而触发此门禁。
 - **每日版视觉规范（12b，2026-09-01 固化）**：`DailyNews.tsx` 字号/头像——新闻标题 `46px`（固定不动）、新闻内容 `36px`、历史内容 `42px`、主播头像直径 `150px`。再微调只改这几处数值，无需重跑 `export_daily_remotion.py`。
@@ -236,6 +275,9 @@ python tools/remotion_weekly_build.py 20260821
 - **生图后端约定（2026-09-21 最终固化）**：配图及单张/批量生图任务，默认首选 WorkBuddy 内置生图工具（ImageGen / 混元大模型），免外部网络依赖，严格遵守无文字后缀定律与 1536x1024 宽屏（16:9 适配）高画质规格。
 - **🧹 发布前清理门禁（2026-09-13 固化）**：每期视频审查通过后、发布各平台前，AI 必须扫描制作留下的系统缓存与不需要文件（渲染中间产物 / remotion_poc/node_modules/.cache / 已发布历史期 output 大视频 / pip·npm 缓存与 %TEMP% / *.bak·*.log 杂散文件），给出「路径+大小+可删理由」清单**经用户确认后才删**，并汇报实际释放空间；当期成片/封面/文案/SRT/分镜 JSON/public 素材/两个指纹 JSON 永不清理。详见发布 skill「第 0 步」。
 - 密钥只走 `.env`，禁止硬编码；`output/` 产物与 `*.mp4/*.wav/*.png/*.jpg/*.srt` 按 `.gitignore` 不入库（仅 `remotion_poc/public/` 素材例外放行）。
+- **📁 路径动态化铁律（2026-11-02 固化）**：项目已于 2026-11-01 从 `E:/projects/signal_pop` 迁至 `G:/projects/signal_pop`，**所有脚本禁止硬编码盘符**。`tools/` 下统一用 `PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))` 动态推导；`huashu` 引擎等外部依赖用 `os.path.join(dirname(PROJECT_ROOT), "_dl", ...)` 向上回溯定位。**新增脚本一律照此写法**，避免再次迁盘时全线崩溃。
+- **🐍 本机 Python 环境（2026-11-02 实测）**：可用解释器为 WorkBuddy 托管 Python 3.13（`C:\Users\Administrator\.workbuddy\binaries\python\versions\3.13.12\python.exe`），已装 `requests` / `Pillow` / `playwright` + Chromium。`external/voxcpm/.venv` 指向已卸载的 Python311（不可用）；`uv` 命令在本机**已不存在**，故 huashu 引擎渲染改为直接用当前解释器跑 `render.py`（只依赖 playwright + 标准库），Chromium 下载走 `PLAYWRIGHT_DOWNLOAD_HOST=https://cdn.npmmirror.com/binaries/playwright`。
+- **Windows 子进程 PATH 陷阱（2026-11-02 固化）**：`subprocess` 传 `env={"PATH": ...}` **无效**——Windows 查找可执行文件读的是**进程级**环境块；正解是改 `os.environ["PATH"]`（触发 `SetEnvironmentVariable`）。Git Bash 的 `PATH=xxx:$PATH` 前缀写法会被转成 `G;G:\...` 坏条目，不可用。
 - 代码规范：`black --line-length=120`、`flake8`；改动前先完整重读项目（README/scripts/tools/历史）再动手。
 
 ---
@@ -374,6 +416,41 @@ python tools/analytics_postmortem.py 20260908 --snapshot     # 拉数（需登�
 #### D. 标准化 Agent Skills 封装（沉淀至 `~/.workbuddy/skills/`）
 - **`signal-pop-econ-huashu`**：「大家一起聊经济」全流程工具链（红线校验 → 真实双播 TTS → huashu 代码动画渲染 → V2.1 贴边头像字幕 HUD 合成）；
 - **`signal-pop-weekly-render`**：周末版整片自动化装配、分段并发渲染、滤镜时基归一化拼接、双遍 -14 LUFS 响度混音与发布前硬门禁质检全流程管线。
+
+### 10. 本地离线灾备 TTS 引擎（2026-10-22 新增）
+
+云端 API 欠费 / 限流 / 断网时的**零成本本地保底**，与主产线（Gemini 3.8 Flash TTS / 豆包 / Qwen-TTS）并存，互不替代。
+
+| 后端 | 上游 | 许可 | 采样率 | 定位 |
+|---|---|---|---|---|
+| `kokoro` | hexgrad/kokoro (82M) | Apache-2.0 | 24kHz | 轻量离线灾备 + 英文出海配音 |
+| `voxcpm` | OpenBMB/VoxCPM (1.5, 0.6B) | **Apache-2.0（可商用）** | 44.1kHz | 高保真离线灾备 + 声音克隆/音色设计 |
+
+**VoxCPM 接入要点**
+- 独立 venv：`external/voxcpm/.venv`（Python 3.11 + torch 2.10.0+cpu），主解释器不装 torch，通过子进程调用 `external/voxcpm/_worker.py`；
+- 权重：`external/voxcpm/models/VoxCPM1.5`（1.95GB，已 sha256 校验），来源 ModelScope 直连（13MB/s）；
+- 音色走 **Voice Design** 自然语言描述（阿信=沉稳中年男 / 小蓝=明亮年轻女），无需参考音频；
+- 比分发音同样走 `7-5 → 7比5` 正则纠偏。
+
+**踩坑与根因（已固化）**
+- **Windows access violation 真凶 = 页面文件被固定为 2424MB**：fp32 建模 2B 参数会把提交内存（RAM+pagefile≈28GB）耗尽，分配器拿不到地址空间即报段错误而非 `MemoryError`。修复：`AutomaticManagedPagefile=$true`（系统托管）+ `torch.set_default_dtype(torch.bfloat16)` 建模前切 bf16（内存减半）；
+- `optimize=False` 必须传（源码 `torch.compile` 仅支持 CUDA，CPU 上直接抛错）；
+- torch 版本对齐上游 `uv.lock` 的 **2.10.0**（pip 默认装到的 2.14.1 未适配）；
+- `load_denoiser=False` 跳过降噪器模型下载（省 200MB+ 依赖与一次网络往返）。
+
+**实测性能（本机 i7-8750H / GTX 1050 4GB，CPU 推理）**
+
+| 用例 | 音频 | 耗时 | RTF |
+|---|---|---|---|
+| 中文新闻句 | 5.60s | 217.7s | 38.87 |
+| 中文比分句 | 4.80s | 189.4s | 39.47 |
+| 英文句 | 5.92s | 209.1s | 35.33 |
+
+> ⚠️ RTF 35~40 意味着生成整期 12 分钟音频需 7~8 小时，**仅适合应急补条**，不适合整期批量生产。提速路线：换 llama.cpp-omni + GGUF Q8_0，或升级到 12GB+ 显存显卡走 GPU（RTF 可至 0.3）。
+>
+> 双主播音色区分度客观验证：阿信 vs 小蓝 ZCR 差 45.7%、频谱质心差 17.0%（男声明显更低沉）。
+
+完整部署与踩坑记录见 `docs/voxcpm_local_deploy.md`。
 
 ---
 
