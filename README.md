@@ -472,18 +472,22 @@ python tools/analytics_postmortem.py 20260908 --snapshot     # 拉数（需登�
 
 > 三项均为**导出层 / 后处理层**修复，不动 TTS 与字幕时间轴：换背景图或修画中画只需重渲突发段所在的 part（本期 part00 / part01），片头配乐与 CTA 在最终编码一次生效。
 
-### 11.1 当期专项清理（2026-11-05 终审后新增）
+### 11.1 制作遗物清理（2026-11-05 21:10 用户定：默认全期次清、保持清爽）
 
-`tools/clean_artifacts.py` 支持可选日期参数，**只在该期成片已终审通过、确认不再微调片头/片尾时使用**：
+`tools/clean_artifacts.py` **默认清理全部期次的所有制作遗物**，不再需要传日期：
 
 ```bash
-python tools/clean_artifacts.py             # 通用清理，不动任何期次的审图拼图 / 合并中间件
-python tools/clean_artifacts.py 20261106    # 额外清该期 contact_sheet*.png 与 signal_pop_weekly_*_merged*.mp4
+python tools/clean_artifacts.py             # 推荐：全期次清理
+python tools/clean_artifacts.py 20261106    # 兼容旧调用，行为完全一致（日期参数已废弃）
 ```
 
-`signal_pop_weekly_{DATE}_merged_final.mp4` 是「只重跑最终编码约 4 分钟」的输入（换片头曲 / 换片尾动画 / 修响度）：**终审通过前保留，终审通过后随专项清理删除**；删掉后若要再改片头/片尾，需重跑全流程约 21 分钟。`contact_sheet` 可用 `tools/gen_contact_sheet_weekly.py` 一条命令再生。不传日期时历史期次的同类文件一律保留，避免超出清理范围。
+清理范围（全部期次）：`contact_sheet*.png/jpg`（审图拼图）、`signal_pop_weekly_*_merged*.mp4`（concat 中间件）、`part*.mp4`、`_*.mp4/.wav`、`*_norm*.mp4`、调试视频、`split_build` / `frames_exact` 等缓存目录、`audio/_tmp` 与 `econ_audio/_tmp`（TTS 分句 mp3/wav/txt）、`*.log` / `*.tmp`、**有同名正式文件在旁的** `*.bak`。`output/weekly/shared/` 整体保护，只清其中的 `*.log`。
 
-`econ_talk_*_huashu.mp4` 属于经济环节素材（文件名可能带旧期日期、放在本期目录留给下期用），脚本已显式跳过，任何清理规则都不得误删。20261106 期终审后按此规则清掉 4 个中件，释放 340.83 MB。
+**永不清理**：各期成片与 9:16 竖版、封面、8 平台文案 md、SRT、账本 JSON、`audio/tts.wav`（成片音轨真源）、`output/mp3`（BGM 入库位）、`output/video`（用户原视频）、`output/weekly/shared/` 素材、`remotion_poc/public/`、`econ_talk_*_huashu.mp4`（下期经济素材）、三个 `used_*_styles.json` 指纹。`.bak` 只在同名正式文件存在时才删，避免丢掉唯一副本。
+
+⚠️ 只在**成片终审通过后**运行；审图 checkpoint 期间跑会删掉当期审图拼图（`tools/gen_contact_sheet_weekly.py` 一条命令可重生）。删掉 `merged_final.mp4` 后若要再改片头/片尾，需重跑全流程约 21 分钟（保留时仅约 4 分钟）——用户 21:10 已确认本期及以后一律不保留。
+
+2026-11-05 21:10 首轮按新规则清理：3 张历史审图拼图（20260814 / 20260925 / 20261002）+ 全库 `_tmp` 分句 + 各期渲染日志/旧备份，释放 99.08 MB；幂等复跑 0 条目。此前 20:26 与 21:00 两轮分别释放 743.58 MB / 340.83 MB。
 
 ---
 
