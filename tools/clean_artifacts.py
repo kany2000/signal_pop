@@ -9,9 +9,18 @@ Signal Pop 项目缓存与制作残留安全清理脚本
 4. 清理 output/daily 与 output/weekly 下各期分段切片中间件 (split_build, frames_exact, part*.mp4)
 5. 严格白名单保护：成片mp4、封面图、8平台md、srt、json账本、used_*_styles.json指纹、
    channel_art、output/shared、output/weekly/shared（片头配乐/片尾动画/板块模板图）、
-   output/video（用户提供的原始视频素材）、output/mp3（BGM 正式素材）。
+   output/video（用户提供的原始视频素材）、output/mp3（BGM 正式素材）、
+   econ_talk_*_huashu.mp4（经济环节素材，文件名可能带旧期日期，留给下期复用）。
    ⚠️ 2026-11-05 修正：原第 3 步把 'mp3' / 'video' 当临时目录整个删除，
    会误删用户原素材与将来入库的 BGM，已从删除名单移除。
+
+用法：
+  python tools/clean_artifacts.py            # 通用清理，不动任何期次的审图拼图/合并中间件
+  python tools/clean_artifacts.py 20261106   # 额外清「当期已终审」的 contact_sheet*.png
+                                            # 与 signal_pop_weekly_*_merged*.mp4
+  ⚠️ 传日期只在「该期成片已终审通过、确认不再微调片头/片尾」后使用：
+     merged_final.mp4 是「只重跑最终编码约 4 分钟」的输入，删掉后须重跑全流程约 21 分钟。
+     contact_sheet 可用 gen_contact_sheet_weekly.py 一条命令再生。
 """
 
 import os
@@ -53,8 +62,13 @@ def remove_path(path):
     return cnt, sz
 
 def main():
+    # 可选：传入「已终审期次」的日期，额外清该期的审图拼图与合并中间件。
+    # 不传参时保持原行为，历史期次的同类文件一律不动（2026-11-05 用户点名清理范围后定）。
+    target_date = sys.argv[1] if len(sys.argv) > 1 else None
     print(f"=== 开始执行 Signal Pop 项目清理 [{ROOT}] ===")
-    
+    if target_date:
+        print(f"=== 当期专项清理: {target_date}（contact_sheet / merged 中间件）===")
+
     total_cnt = 0
     total_sz = 0
     
@@ -158,6 +172,11 @@ def main():
                     total_sz += s
                     print(f"  - 已清理: output/weekly/{d}/{sub} ({c} 文件, {fmt_size(s)})")
                 elif os.path.isfile(sp):
+                    # 🔴 2026-11-05：经济环节学习视频属于「留给下期的素材」，文件名常带
+                    #    旧期日期（如 econ_talk_20261102_huashu.mp4 放在 20261106 目录里），
+                    #    绝不能被任何清理规则误删，包括以后新增的 part/_ 通配扩展。
+                    if sub.startswith('econ_talk_') and sub.endswith('.mp4'):
+                        continue
                     # 分段 mp4 零件 (如 part00.mp4)
                     if sub.startswith('part') and sub.endswith('.mp4'):
                         c, s = remove_path(sp)
@@ -176,6 +195,16 @@ def main():
                         total_cnt += c
                         total_sz += s
                         print(f"  - 已清理中间版视频: output/weekly/{d}/{sub} ({fmt_size(s)})")
+                    # 2026-11-05 用户定：已终审期次的审图拼图与 concat 合并中间件无用，
+                    # 但只在「显式传入该期日期」时清，避免误删历史期次的审图记录。
+                    elif target_date and d == target_date and (
+                        (sub.startswith('contact_sheet') and sub.endswith(('.png', '.jpg'))) or
+                        (sub.startswith('signal_pop_weekly_') and '_merged' in sub and sub.endswith('.mp4'))
+                    ):
+                        c, s = remove_path(sp)
+                        total_cnt += c
+                        total_sz += s
+                        print(f"  - 已清理当期审图/合并中间件: output/weekly/{d}/{sub} ({fmt_size(s)})")
 
     print("\n==========================================")
     print(f"✅ 清理完成！")

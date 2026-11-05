@@ -472,6 +472,19 @@ python tools/analytics_postmortem.py 20260908 --snapshot     # 拉数（需登�
 
 > 三项均为**导出层 / 后处理层**修复，不动 TTS 与字幕时间轴：换背景图或修画中画只需重渲突发段所在的 part（本期 part00 / part01），片头配乐与 CTA 在最终编码一次生效。
 
+### 11.1 当期专项清理（2026-11-05 终审后新增）
+
+`tools/clean_artifacts.py` 支持可选日期参数，**只在该期成片已终审通过、确认不再微调片头/片尾时使用**：
+
+```bash
+python tools/clean_artifacts.py             # 通用清理，不动任何期次的审图拼图 / 合并中间件
+python tools/clean_artifacts.py 20261106    # 额外清该期 contact_sheet*.png 与 signal_pop_weekly_*_merged*.mp4
+```
+
+`signal_pop_weekly_{DATE}_merged_final.mp4` 是「只重跑最终编码约 4 分钟」的输入（换片头曲 / 换片尾动画 / 修响度）：**终审通过前保留，终审通过后随专项清理删除**；删掉后若要再改片头/片尾，需重跑全流程约 21 分钟。`contact_sheet` 可用 `tools/gen_contact_sheet_weekly.py` 一条命令再生。不传日期时历史期次的同类文件一律保留，避免超出清理范围。
+
+`econ_talk_*_huashu.mp4` 属于经济环节素材（文件名可能带旧期日期、放在本期目录留给下期用），脚本已显式跳过，任何清理规则都不得误删。20261106 期终审后按此规则清掉 4 个中件，释放 340.83 MB。
+
 ---
 
 ## 许可
