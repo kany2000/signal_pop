@@ -489,6 +489,37 @@ python tools/clean_artifacts.py 20261106    # 兼容旧调用，行为完全一�
 
 2026-11-05 21:10 首轮按新规则清理：3 张历史审图拼图（20260814 / 20260925 / 20261002）+ 全库 `_tmp` 分句 + 各期渲染日志/旧备份，释放 99.08 MB；幂等复跑 0 条目。此前 20:26 与 21:00 两轮分别释放 743.58 MB / 340.83 MB。
 
+### 11.2 whisperX 逐字高亮字幕可行性测试（2026-11-05，下期正式接入）
+
+用户要求「下期用 whisperX 跑一期真实的逐字高亮字幕，先做测试」。本轮**只做测试**：未动 20261106 成片、未改正式产线。全部脚本与报告在 `experiments/whisperx_karaoke/`，完整实测见 `TEST_REPORT.md`。
+
+**核心结论：可行，且不需要 GPU、不需要 ASR。** 周末版 TTS 文稿 100% 已知，因此不让 whisperX 猜字，只借 `wav2vec2-large-xlsr-53-chinese-zh-cn` 做强制对齐，把每个字钉到时间轴上；词表外的标点、数字、`℃`、拉丁字母保留原文并插值补时间，字幕零错字。
+
+| 实测项（20261106 主片 `audio/tts.wav` 0–41.693s / 3 段 / 214 字） | 结果 |
+|---|---|
+| 环境 | 隔离 venv `G:\temp\signal_pop_whisperx_venv`，whisperX 3.8.6 + torch 2.8.0+cpu |
+| 模型加载 | 47.8s（一次性，本地离线） |
+| 对齐耗时 | **22.0s / 实时率 0.53×**；外推全片 708.9s ≈ 6.3 分钟 |
+| 字级时间戳 | 214 个单字，与原文 1:1；直接命中 189 字（88.3%），25 字插值 |
+| 质量 | 全局单调 True，字时长中位数 0.160s，无 >1s 异常；段首偏差 +0.02～+0.06s |
+| 词表覆盖 | 全片 733 个不同汉字，仅 10 个在词表外 |
+
+复跑（模型已离线缓存，无需再联网）：
+
+```bash
+VENV="G:/temp/signal_pop_whisperx_venv/Scripts/python.exe"
+E="experiments/whisperx_karaoke"
+"$VENV" "$E/prep_sample.py" --date 20261106 --start 0 --end 41.693   # 切 16k 单声道样本
+"$VENV" "$E/align_test.py"                                            # 强制对齐 → words.json
+python "$E/make_demo.py"                                              # HTML + 两份 ASS
+python "$E/burn_demo.py" --duration 41.693 --background output/weekly/shared/cta_outro_bg.jpg
+python "$E/analyze_words.py"                                          # 时间戳质检
+```
+
+`karaoke_demo.html` 自包含（真实人声已内嵌 base64）：逐字三态高亮（未读灰 / 已读金 / 当前字放大发光）、可切「整句对照」、可拖动与变速；`karaoke_stage_demo.mp4` 是 ASS 卡拉OK 烧录的 41.693s / 1920×1080 演示片。按 `.gitignore` 约定 `*.mp4` / `*.wav` 不入库，故 demo MP4 与 `sample_16k.wav` 只留本机、脚本可一键重跑；入库的是脚本、自包含 HTML、两份 ASS、`words.json` / `align_raw.json` 与报告。1.2GB 中文对齐模型与 venv 均在 `G:\temp\`，不入库（HF 需 10808 代理）。
+
+**下期接入三铁律**：① 逐字高亮必须**替换** `WeeklyTalk.tsx:958` 的 `PagedDialogue` 气泡文字渲染，叠在成片上会出现双层字幕；② 长段按 ≤16 字 + 标点分页（181 字整行会溢出）；③ 段内相对时间对齐 `localT` 不加 9s，只有烧 ASS/SRT 到成片才加片头偏移。接入链路：新增 `tools/gen_word_timestamps.py` → `audio/word_timestamps.json` → `export_weekly_remotion.py:202` 的 `segs.append()` 写入 `words` → `WeeklyTalk.tsx` 新增 `KaraokeDialogue`。
+
 ---
 
 ## 许可

@@ -1,0 +1,40 @@
+{
+  "date": "20261106",
+  "source_start": 0.0,
+  "source_end": 41.693,
+  "duration": 41.693,
+  "total_audio_duration": 708.9164999999999,
+  "sample_wav": "G:\\projects\\signal_pop\\experiments\\whisperx_karaoke\\sample_16k.wav",
+  "segments": [
+    {
+      "index": 0,
+      "start": 0.0,
+      "end": 2.528,
+      "seg_full_start": 0.0,
+      "seg_full_end": 2.528,
+      "speaker": "阿信",
+      "text": "阿信这边信号就位，咱们直接开聊。",
+      "clipped": false
+    },
+    {
+      "index": 1,
+      "start": 2.528,
+      "end": 6.2281,
+      "seg_full_start": 2.528,
+      "seg_full_end": 6.2281,
+      "speaker": "小蓝",
+      "text": "小蓝举手发言，先说结论：这周有料。",
+      "clipped": false
+    },
+    {
+      "index": 2,
+      "start": 6.2281,
+      "end": 41.693,
+      "seg_full_start": 6.2281,
+      "seg_full_end": 41.693,
+      "speaker": "阿信",
+      "text": "先来看今天的特别报道。超强厄尔尼诺正式形成，或成有记录以来最强。国家气候中心10月9日确认，超强厄尔尼诺事件已于9月正式形成。今年5月赤道中东太平洋进入厄尔尼诺状态后海温快速攀升，9月部分指数已经突破3℃。预计峰值出现在11月前后，达3.2到3.5℃，超过2015年那次的2.8℃，将成为有系统性监测以来最强的一次。今年夏天南北两条多雨带、台风偏强，都和它有关。",
+      "clipped": true
+    }
+  ]
+}

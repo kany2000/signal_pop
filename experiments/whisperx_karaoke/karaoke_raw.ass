@@ -1,0 +1,38 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Microsoft YaHei,58,&H00FFFFFF,&H00FFD24A,&H00101010,&H80000000,-1,0,0,0,100,100,0,0,1,3,0,2,80,80,150,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.02,0:00:01.32,Default,,0,0,0,,{\kf18}阿{\kf14}信{\kf12}这{\kf18}边{\kf16}信{\kf18}号{\kf14}就{\kf14}位{\kf2}，
+Dialogue: 0,0:00:01.34,0:00:02.74,Default,,0,0,0,,{\kf14}咱{\kf8}们{\kf10}直{\kf12}接{\kf10}开{\kf60}聊{\kf2}。
+Dialogue: 0,0:00:02.59,0:00:03.83,Default,,0,0,0,,{\kf14}小{\kf22}蓝{\kf14}举{\kf18}手{\kf14}发{\kf20}言{\kf2}，
+Dialogue: 0,0:00:03.85,0:00:04.85,Default,,0,0,0,,{\kf20}先{\kf18}说{\kf16}结{\kf20}论{\kf2}：
+Dialogue: 0,0:00:04.98,0:00:06.44,Default,,0,0,0,,{\kf20}这{\kf20}周{\kf14}有{\kf66}料{\kf2}。
+Dialogue: 0,0:00:06.29,0:00:07.84,Default,,0,0,0,,{\kf16}先{\kf12}来{\kf14}看{\kf12}今{\kf12}天{\kf10}的{\kf10}特{\kf10}别{\kf18}报{\kf16}道{\kf2}。
+Dialogue: 0,0:00:07.97,0:00:10.12,Default,,0,0,0,,{\kf30}超{\kf26}强{\kf10}厄{\kf14}尔{\kf12}尼{\kf20}诺{\kf20}正{\kf14}式{\kf22}形{\kf22}成{\kf2}，
+Dialogue: 0,0:00:10.17,0:00:11.66,Default,,0,0,0,,{\kf14}或{\kf18}成{\kf18}有{\kf14}记{\kf12}录{\kf10}以{\kf18}来{\kf18}最{\kf2}强{\kf2}。
+Dialogue: 0,0:00:12.07,0:00:14.30,Default,,0,0,0,,{\kf16}国{\kf20}家{\kf12}气{\kf14}候{\kf18}中{\kf26}心{\kf14}1{\kf2}0{\kf14}月{\kf18}9{\kf10}日{\kf16}确{\kf18}认{\kf2}，
+Dialogue: 0,0:00:14.47,0:00:17.07,Default,,0,0,0,,{\kf24}超{\kf16}强{\kf12}厄{\kf14}尔{\kf12}尼{\kf16}诺{\kf12}事{\kf18}件{\kf6}已{\kf22}于{\kf20}9{\kf16}月{\kf18}正{\kf12}式{\kf20}形{\kf20}成
+Dialogue: 0,0:00:17.06,0:00:17.31,Default,,0,0,0,,{\kf2}。
+Dialogue: 0,0:00:17.68,0:00:20.47,Default,,0,0,0,,{\kf14}今{\kf18}年{\kf16}5{\kf32}月{\kf16}赤{\kf20}道{\kf14}中{\kf14}东{\kf14}太{\kf16}平{\kf28}洋{\kf16}进{\kf22}入{\kf12}厄{\kf12}尔{\kf14}尼
+Dialogue: 0,0:00:20.46,0:00:22.85,Default,,0,0,0,,{\kf18}诺{\kf14}状{\kf16}态{\kf58}后{\kf22}海{\kf20}温{\kf16}快{\kf12}速{\kf18}攀{\kf20}升{\kf2}，
+Dialogue: 0,0:00:22.94,0:00:25.49,Default,,0,0,0,,{\kf28}9{\kf18}月{\kf12}部{\kf16}分{\kf18}指{\kf46}数{\kf10}已{\kf20}经{\kf16}突{\kf14}破{\kf32}3{\kf2}℃{\kf2}。
+Dialogue: 0,0:00:26.02,0:00:28.31,Default,,0,0,0,,{\kf16}预{\kf16}计{\kf20}峰{\kf20}值{\kf14}出{\kf14}现{\kf20}在{\kf18}1{\kf10}1{\kf16}月{\kf20}前{\kf20}后{\kf2}，
+Dialogue: 0,0:00:28.44,0:00:29.06,Default,,0,0,0,,{\kf24}达{\kf20}3{\kf2}.
+Dialogue: 0,0:00:29.08,0:00:29.82,Default,,0,0,0,,{\kf22}2{\kf18}到{\kf18}3{\kf2}.
+Dialogue: 0,0:00:29.84,0:00:30.41,Default,,0,0,0,,{\kf32}5{\kf2}℃{\kf2}，
+Dialogue: 0,0:00:31.03,0:00:32.87,Default,,0,0,0,,{\kf20}超{\kf12}过{\kf10}2{\kf28}0{\kf10}1{\kf2}5{\kf18}年{\kf16}那{\kf12}次{\kf12}的{\kf28}2{\kf2}.
+Dialogue: 0,0:00:32.89,0:00:33.26,Default,,0,0,0,,{\kf12}8{\kf2}℃{\kf2}，
+Dialogue: 0,0:00:33.63,0:00:36.44,Default,,0,0,0,,{\kf20}将{\kf16}成{\kf16}为{\kf22}有{\kf18}系{\kf16}统{\kf18}性{\kf18}监{\kf14}测{\kf12}以{\kf22}来{\kf24}最{\kf24}强{\kf12}的{\kf14}一{\kf14}次
+Dialogue: 0,0:00:36.43,0:00:36.68,Default,,0,0,0,,{\kf2}。
+Dialogue: 0,0:00:36.93,0:00:39.36,Default,,0,0,0,,{\kf14}今{\kf12}年{\kf20}夏{\kf50}天{\kf22}南{\kf14}北{\kf22}两{\kf20}条{\kf14}多{\kf12}雨{\kf18}带{\kf2}、
+Dialogue: 0,0:00:39.41,0:00:40.44,Default,,0,0,0,,{\kf18}台{\kf16}风{\kf20}偏{\kf24}强{\kf2}，
+Dialogue: 0,0:00:40.49,0:00:41.50,Default,,0,0,0,,{\kf18}都{\kf12}和{\kf14}它{\kf16}有{\kf16}关{\kf2}。

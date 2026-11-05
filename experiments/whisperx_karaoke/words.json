@@ -1,0 +1,1763 @@
+{
+  "meta": {
+    "date": "20261106",
+    "start": 0.0,
+    "end": 41.693,
+    "model": "wav2vec2-zh-cn",
+    "device": "cpu",
+    "note": "已知 TTS 文稿 + whisperX wav2vec2 强制对齐；不经 ASR"
+  },
+  "stats": {
+    "对齐模型": "wav2vec2-zh-cn",
+    "设备": "cpu",
+    "样本时长": "41.69s",
+    "对齐耗时": "22.0s",
+    "实时率": "0.53×",
+    "原文字数": 214,
+    "模型给出字数": 214,
+    "直接命中字数": 189,
+    "命中率": "88.3%",
+    "插值补齐": 25
+  },
+  "segments": [
+    {
+      "index": 0,
+      "speaker": "阿信",
+      "start": 0.0,
+      "end": 2.528,
+      "text": "阿信这边信号就位，咱们直接开聊。",
+      "words": [
+        {
+          "w": "阿",
+          "start": 0.02,
+          "end": 0.201,
+          "score": 0.939,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "信",
+          "start": 0.201,
+          "end": 0.341,
+          "score": 0.896,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "这",
+          "start": 0.341,
+          "end": 0.461,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "边",
+          "start": 0.461,
+          "end": 0.642,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "信",
+          "start": 0.642,
+          "end": 0.803,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "号",
+          "start": 0.803,
+          "end": 0.983,
+          "score": 0.998,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "就",
+          "start": 0.983,
+          "end": 1.124,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "位",
+          "start": 1.124,
+          "end": 1.264,
+          "score": 0.882,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "，",
+          "start": 1.264,
+          "end": 1.264,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "咱",
+          "start": 1.344,
+          "end": 1.485,
+          "score": 0.861,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "们",
+          "start": 1.485,
+          "end": 1.565,
+          "score": 0.751,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "直",
+          "start": 1.565,
+          "end": 1.665,
+          "score": 1.0,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "接",
+          "start": 1.665,
+          "end": 1.786,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "开",
+          "start": 1.786,
+          "end": 1.886,
+          "score": 1.0,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "聊",
+          "start": 1.886,
+          "end": 2.488,
+          "score": 0.98,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "。",
+          "start": 2.488,
+          "end": 2.488,
+          "score": null,
+          "punct": true,
+          "interp": true
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "speaker": "小蓝",
+      "start": 2.528,
+      "end": 6.2281,
+      "text": "小蓝举手发言，先说结论：这周有料。",
+      "words": [
+        {
+          "w": "小",
+          "start": 2.588,
+          "end": 2.729,
+          "score": 0.99,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "蓝",
+          "start": 2.729,
+          "end": 2.95,
+          "score": 0.953,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "举",
+          "start": 2.95,
+          "end": 3.091,
+          "score": 0.857,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "手",
+          "start": 3.091,
+          "end": 3.272,
+          "score": 0.914,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "发",
+          "start": 3.272,
+          "end": 3.413,
+          "score": 1.0,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "言",
+          "start": 3.413,
+          "end": 3.614,
+          "score": 0.975,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "，",
+          "start": 3.614,
+          "end": 3.614,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "先",
+          "start": 3.855,
+          "end": 4.056,
+          "score": 0.997,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "说",
+          "start": 4.056,
+          "end": 4.237,
+          "score": 0.993,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "结",
+          "start": 4.237,
+          "end": 4.398,
+          "score": 0.893,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "论",
+          "start": 4.398,
+          "end": 4.599,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "：",
+          "start": 4.599,
+          "end": 4.599,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "这",
+          "start": 4.981,
+          "end": 5.182,
+          "score": 0.982,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "周",
+          "start": 5.182,
+          "end": 5.384,
+          "score": 0.906,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "有",
+          "start": 5.384,
+          "end": 5.524,
+          "score": 1.0,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "料",
+          "start": 5.524,
+          "end": 6.188,
+          "score": 0.97,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "。",
+          "start": 6.188,
+          "end": 6.188,
+          "score": null,
+          "punct": true,
+          "interp": true
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "speaker": "阿信",
+      "start": 6.2281,
+      "end": 41.693,
+      "text": "先来看今天的特别报道。超强厄尔尼诺正式形成，或成有记录以来最强。国家气候中心10月9日确认，超强厄尔尼诺事件已于9月正式形成。今年5月赤道中东太平洋进入厄尔尼诺状态后海温快速攀升，9月部分指数已经突破3℃。预计峰值出现在11月前后，达3.2到3.5℃，超过2015年那次的2.8℃，将成为有系统性监测以来最强的一次。今年夏天南北两条多雨带、台风偏强，都和它有关。",
+      "words": [
+        {
+          "w": "先",
+          "start": 6.288,
+          "end": 6.448,
+          "score": 0.915,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "来",
+          "start": 6.448,
+          "end": 6.568,
+          "score": 0.998,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "看",
+          "start": 6.568,
+          "end": 6.708,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "今",
+          "start": 6.708,
+          "end": 6.829,
+          "score": 0.996,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "天",
+          "start": 6.829,
+          "end": 6.949,
+          "score": 0.97,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "的",
+          "start": 6.949,
+          "end": 7.049,
+          "score": 0.998,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "特",
+          "start": 7.049,
+          "end": 7.149,
+          "score": 0.997,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "别",
+          "start": 7.149,
+          "end": 7.249,
+          "score": 0.802,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "报",
+          "start": 7.249,
+          "end": 7.429,
+          "score": 0.995,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "道",
+          "start": 7.429,
+          "end": 7.589,
+          "score": 0.997,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "。",
+          "start": 7.589,
+          "end": 7.589,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "超",
+          "start": 7.969,
+          "end": 8.27,
+          "score": 0.933,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "强",
+          "start": 8.27,
+          "end": 8.53,
+          "score": 0.987,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "厄",
+          "start": 8.53,
+          "end": 8.63,
+          "score": 0.88,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "尔",
+          "start": 8.63,
+          "end": 8.77,
+          "score": 0.994,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "尼",
+          "start": 8.77,
+          "end": 8.89,
+          "score": 0.957,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "诺",
+          "start": 8.89,
+          "end": 9.09,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "正",
+          "start": 9.09,
+          "end": 9.29,
+          "score": 0.994,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "式",
+          "start": 9.29,
+          "end": 9.43,
+          "score": 0.989,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "形",
+          "start": 9.43,
+          "end": 9.651,
+          "score": 0.996,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "成",
+          "start": 9.651,
+          "end": 9.871,
+          "score": 0.992,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "，",
+          "start": 9.871,
+          "end": 9.871,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "或",
+          "start": 10.171,
+          "end": 10.311,
+          "score": 0.871,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "成",
+          "start": 10.311,
+          "end": 10.491,
+          "score": 0.996,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "有",
+          "start": 10.491,
+          "end": 10.671,
+          "score": 0.969,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "记",
+          "start": 10.671,
+          "end": 10.811,
+          "score": 0.943,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "录",
+          "start": 10.811,
+          "end": 10.931,
+          "score": 0.993,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "以",
+          "start": 10.931,
+          "end": 11.031,
+          "score": 0.987,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "来",
+          "start": 11.031,
+          "end": 11.212,
+          "score": 0.998,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "最",
+          "start": 11.212,
+          "end": 11.392,
+          "score": 0.997,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "强",
+          "start": 11.392,
+          "end": 11.412,
+          "score": 0.052,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "。",
+          "start": 11.412,
+          "end": 11.412,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "国",
+          "start": 12.072,
+          "end": 12.232,
+          "score": 0.995,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "家",
+          "start": 12.232,
+          "end": 12.432,
+          "score": 0.992,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "气",
+          "start": 12.432,
+          "end": 12.553,
+          "score": 0.958,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "候",
+          "start": 12.553,
+          "end": 12.693,
+          "score": 0.981,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "中",
+          "start": 12.693,
+          "end": 12.873,
+          "score": 0.982,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "心",
+          "start": 12.873,
+          "end": 13.133,
+          "score": 0.996,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "1",
+          "start": 13.133,
+          "end": 13.273,
+          "score": 0.998,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "0",
+          "start": 13.273,
+          "end": 13.293,
+          "score": 0.061,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "月",
+          "start": 13.293,
+          "end": 13.433,
+          "score": 0.96,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "9",
+          "start": 13.433,
+          "end": 13.613,
+          "score": 0.998,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "日",
+          "start": 13.613,
+          "end": 13.713,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "确",
+          "start": 13.713,
+          "end": 13.873,
+          "score": 0.976,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "认",
+          "start": 13.873,
+          "end": 14.054,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "，",
+          "start": 14.054,
+          "end": 14.054,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "超",
+          "start": 14.474,
+          "end": 14.714,
+          "score": 0.996,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "强",
+          "start": 14.714,
+          "end": 14.874,
+          "score": 0.988,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "厄",
+          "start": 14.874,
+          "end": 14.994,
+          "score": 0.832,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "尔",
+          "start": 14.994,
+          "end": 15.134,
+          "score": 0.983,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "尼",
+          "start": 15.134,
+          "end": 15.254,
+          "score": 0.998,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "诺",
+          "start": 15.254,
+          "end": 15.415,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "事",
+          "start": 15.415,
+          "end": 15.535,
+          "score": 0.979,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "件",
+          "start": 15.535,
+          "end": 15.715,
+          "score": 0.876,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "已",
+          "start": 15.715,
+          "end": 15.775,
+          "score": 0.667,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "于",
+          "start": 15.775,
+          "end": 15.995,
+          "score": 0.914,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "9",
+          "start": 15.995,
+          "end": 16.195,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "月",
+          "start": 16.195,
+          "end": 16.355,
+          "score": 0.979,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "正",
+          "start": 16.355,
+          "end": 16.535,
+          "score": 0.993,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "式",
+          "start": 16.535,
+          "end": 16.655,
+          "score": 0.994,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "形",
+          "start": 16.655,
+          "end": 16.856,
+          "score": 0.997,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "成",
+          "start": 16.856,
+          "end": 17.056,
+          "score": 0.997,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "。",
+          "start": 17.056,
+          "end": 17.056,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "今",
+          "start": 17.676,
+          "end": 17.816,
+          "score": 0.97,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "年",
+          "start": 17.816,
+          "end": 17.996,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "5",
+          "start": 17.996,
+          "end": 18.156,
+          "score": 0.995,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "月",
+          "start": 18.156,
+          "end": 18.477,
+          "score": 0.983,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "赤",
+          "start": 18.477,
+          "end": 18.637,
+          "score": 0.995,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "道",
+          "start": 18.637,
+          "end": 18.837,
+          "score": 0.908,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "中",
+          "start": 18.837,
+          "end": 18.977,
+          "score": 0.987,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "东",
+          "start": 18.977,
+          "end": 19.117,
+          "score": 0.977,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "太",
+          "start": 19.117,
+          "end": 19.257,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "平",
+          "start": 19.257,
+          "end": 19.417,
+          "score": 0.993,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "洋",
+          "start": 19.417,
+          "end": 19.698,
+          "score": 0.987,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "进",
+          "start": 19.698,
+          "end": 19.858,
+          "score": 0.99,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "入",
+          "start": 19.858,
+          "end": 20.078,
+          "score": 0.989,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "厄",
+          "start": 20.078,
+          "end": 20.198,
+          "score": 0.9,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "尔",
+          "start": 20.198,
+          "end": 20.318,
+          "score": 0.994,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "尼",
+          "start": 20.318,
+          "end": 20.458,
+          "score": 0.998,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "诺",
+          "start": 20.458,
+          "end": 20.638,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "状",
+          "start": 20.638,
+          "end": 20.778,
+          "score": 0.974,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "态",
+          "start": 20.778,
+          "end": 20.938,
+          "score": 0.904,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "后",
+          "start": 20.938,
+          "end": 21.519,
+          "score": 0.993,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "海",
+          "start": 21.519,
+          "end": 21.739,
+          "score": 1.0,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "温",
+          "start": 21.739,
+          "end": 21.939,
+          "score": 0.982,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "快",
+          "start": 21.939,
+          "end": 22.099,
+          "score": 0.977,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "速",
+          "start": 22.099,
+          "end": 22.219,
+          "score": 0.858,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "攀",
+          "start": 22.219,
+          "end": 22.399,
+          "score": 0.92,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "升",
+          "start": 22.399,
+          "end": 22.6,
+          "score": 0.906,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "，",
+          "start": 22.6,
+          "end": 22.6,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "9",
+          "start": 22.94,
+          "end": 23.22,
+          "score": 0.998,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "月",
+          "start": 23.22,
+          "end": 23.4,
+          "score": 0.977,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "部",
+          "start": 23.4,
+          "end": 23.52,
+          "score": 0.989,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "分",
+          "start": 23.52,
+          "end": 23.68,
+          "score": 0.996,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "指",
+          "start": 23.68,
+          "end": 23.86,
+          "score": 0.951,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "数",
+          "start": 23.86,
+          "end": 24.321,
+          "score": 0.986,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "已",
+          "start": 24.321,
+          "end": 24.421,
+          "score": 0.967,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "经",
+          "start": 24.421,
+          "end": 24.621,
+          "score": 0.991,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "突",
+          "start": 24.621,
+          "end": 24.781,
+          "score": 0.995,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "破",
+          "start": 24.781,
+          "end": 24.921,
+          "score": 0.962,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "3",
+          "start": 24.921,
+          "end": 25.241,
+          "score": 0.936,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "℃",
+          "start": 25.241,
+          "end": 25.241,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "。",
+          "start": 25.241,
+          "end": 25.241,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "预",
+          "start": 26.022,
+          "end": 26.182,
+          "score": 0.891,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "计",
+          "start": 26.182,
+          "end": 26.342,
+          "score": 0.893,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "峰",
+          "start": 26.342,
+          "end": 26.542,
+          "score": 0.904,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "值",
+          "start": 26.542,
+          "end": 26.743,
+          "score": 0.91,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "出",
+          "start": 26.743,
+          "end": 26.883,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "现",
+          "start": 26.883,
+          "end": 27.023,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "在",
+          "start": 27.023,
+          "end": 27.223,
+          "score": 0.991,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "1",
+          "start": 27.223,
+          "end": 27.403,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "1",
+          "start": 27.403,
+          "end": 27.503,
+          "score": 0.997,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "月",
+          "start": 27.503,
+          "end": 27.663,
+          "score": 0.892,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "前",
+          "start": 27.663,
+          "end": 27.863,
+          "score": 0.985,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "后",
+          "start": 27.863,
+          "end": 28.063,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "，",
+          "start": 28.063,
+          "end": 28.063,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "达",
+          "start": 28.444,
+          "end": 28.684,
+          "score": 0.943,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "3",
+          "start": 28.684,
+          "end": 28.884,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": ".",
+          "start": 28.884,
+          "end": 28.884,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "2",
+          "start": 29.084,
+          "end": 29.304,
+          "score": 0.954,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "到",
+          "start": 29.304,
+          "end": 29.484,
+          "score": 0.991,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "3",
+          "start": 29.484,
+          "end": 29.665,
+          "score": 0.996,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": ".",
+          "start": 29.665,
+          "end": 29.665,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "5",
+          "start": 29.845,
+          "end": 30.165,
+          "score": 0.851,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "℃",
+          "start": 30.165,
+          "end": 30.165,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "，",
+          "start": 30.165,
+          "end": 30.165,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "超",
+          "start": 31.026,
+          "end": 31.226,
+          "score": 0.998,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "过",
+          "start": 31.226,
+          "end": 31.346,
+          "score": 0.966,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "2",
+          "start": 31.346,
+          "end": 31.446,
+          "score": 0.995,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "0",
+          "start": 31.446,
+          "end": 31.726,
+          "score": 0.916,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "1",
+          "start": 31.726,
+          "end": 31.826,
+          "score": 0.997,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "5",
+          "start": 31.826,
+          "end": 31.846,
+          "score": 0.998,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "年",
+          "start": 31.846,
+          "end": 32.026,
+          "score": 0.994,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "那",
+          "start": 32.026,
+          "end": 32.186,
+          "score": 0.875,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "次",
+          "start": 32.186,
+          "end": 32.306,
+          "score": 0.974,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "的",
+          "start": 32.306,
+          "end": 32.426,
+          "score": 0.993,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "2",
+          "start": 32.426,
+          "end": 32.707,
+          "score": 0.918,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": ".",
+          "start": 32.707,
+          "end": 32.707,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "8",
+          "start": 32.887,
+          "end": 33.007,
+          "score": 0.901,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "℃",
+          "start": 33.007,
+          "end": 33.007,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "，",
+          "start": 33.007,
+          "end": 33.007,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "将",
+          "start": 33.627,
+          "end": 33.827,
+          "score": 0.997,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "成",
+          "start": 33.827,
+          "end": 33.988,
+          "score": 0.998,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "为",
+          "start": 33.988,
+          "end": 34.148,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "有",
+          "start": 34.148,
+          "end": 34.368,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "系",
+          "start": 34.368,
+          "end": 34.548,
+          "score": 0.963,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "统",
+          "start": 34.548,
+          "end": 34.708,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "性",
+          "start": 34.708,
+          "end": 34.888,
+          "score": 0.889,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "监",
+          "start": 34.888,
+          "end": 35.068,
+          "score": 0.928,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "测",
+          "start": 35.068,
+          "end": 35.208,
+          "score": 0.954,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "以",
+          "start": 35.208,
+          "end": 35.329,
+          "score": 0.996,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "来",
+          "start": 35.329,
+          "end": 35.549,
+          "score": 1.0,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "最",
+          "start": 35.549,
+          "end": 35.789,
+          "score": 0.998,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "强",
+          "start": 35.789,
+          "end": 36.029,
+          "score": 0.996,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "的",
+          "start": 36.029,
+          "end": 36.149,
+          "score": 0.976,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "一",
+          "start": 36.149,
+          "end": 36.289,
+          "score": 0.999,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "次",
+          "start": 36.289,
+          "end": 36.429,
+          "score": 1.0,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "。",
+          "start": 36.429,
+          "end": 36.429,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "今",
+          "start": 36.93,
+          "end": 37.07,
+          "score": 0.973,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "年",
+          "start": 37.07,
+          "end": 37.19,
+          "score": 0.994,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "夏",
+          "start": 37.19,
+          "end": 37.39,
+          "score": 0.982,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "天",
+          "start": 37.39,
+          "end": 37.89,
+          "score": 0.995,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "南",
+          "start": 37.89,
+          "end": 38.11,
+          "score": 0.992,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "北",
+          "start": 38.11,
+          "end": 38.251,
+          "score": 0.986,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "两",
+          "start": 38.251,
+          "end": 38.471,
+          "score": 0.911,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "条",
+          "start": 38.471,
+          "end": 38.671,
+          "score": 0.997,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "多",
+          "start": 38.671,
+          "end": 38.811,
+          "score": 0.872,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "雨",
+          "start": 38.811,
+          "end": 38.931,
+          "score": 0.82,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "带",
+          "start": 38.931,
+          "end": 39.111,
+          "score": 0.991,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "、",
+          "start": 39.111,
+          "end": 39.111,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "台",
+          "start": 39.411,
+          "end": 39.592,
+          "score": 0.996,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "风",
+          "start": 39.592,
+          "end": 39.752,
+          "score": 0.876,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "偏",
+          "start": 39.752,
+          "end": 39.952,
+          "score": 0.991,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "强",
+          "start": 39.952,
+          "end": 40.192,
+          "score": 0.996,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "，",
+          "start": 40.192,
+          "end": 40.192,
+          "score": null,
+          "punct": true,
+          "interp": true
+        },
+        {
+          "w": "都",
+          "start": 40.492,
+          "end": 40.672,
+          "score": 0.993,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "和",
+          "start": 40.672,
+          "end": 40.792,
+          "score": 0.955,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "它",
+          "start": 40.792,
+          "end": 40.932,
+          "score": 0.87,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "有",
+          "start": 40.932,
+          "end": 41.093,
+          "score": 0.956,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "关",
+          "start": 41.093,
+          "end": 41.253,
+          "score": 0.998,
+          "punct": false,
+          "interp": false
+        },
+        {
+          "w": "。",
+          "start": 41.253,
+          "end": 41.253,
+          "score": null,
+          "punct": true,
+          "interp": true
+        }
+      ]
+    }
+  ]
+}
