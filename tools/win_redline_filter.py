@@ -5,7 +5,7 @@
 import os, sys, json, html, re
 from datetime import datetime, timedelta
 
-OUTPUT_DIR = "E:/projects/signal_pop/output"
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output")
 
 # ============ 政治敏感硬黑名单（命中即丢，保守优先） ============
 POLITICAL_BLOCKLIST = [

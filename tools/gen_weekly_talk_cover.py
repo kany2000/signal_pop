@@ -51,7 +51,10 @@ try:
     import json as _json
     _pn = _json.load(open(os.path.join(OUT_DIR, "parsed_news.json"), encoding="utf-8"))
     _items = _pn if isinstance(_pn, list) else _pn.get("items", [])
-    ITEM_COUNT = len(_items) or 17
+    # 2026-11-03 修正：新闻条目数不含 summary/interactive/pick 三个板块栏目
+    # （此前 len(_items) 把三板块一起计入，20261106 期会误报 13 条）
+    _news_n = sum(1 for _it in _items if _it.get("type") in ("breaking", "news"))
+    ITEM_COUNT = _news_n or len(_items) or 17
 except Exception:
     ITEM_COUNT = 17
 CN_COUNT = f"本周{ITEM_COUNT}条"  # 例：本周17条

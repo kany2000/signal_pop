@@ -12,14 +12,19 @@ IDX="${2:?need part index}"
 CHUNK="${3:-1000}"
 CRF="${CRF:-26}"
 
-ROOT="E:/projects/signal_pop"
+# 2026-11-02 修复：原为 E:/projects/signal_pop 硬编码（迁 G 盘后必崩）→ 动态推导。
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -W)"
 POC="$ROOT/remotion_poc"
 OUT="$ROOT/output/weekly/$DATE"
 FF="$ROOT/bin/ffmpeg-9.0.1-essentials_build/bin/ffmpeg.exe"
 FP="$ROOT/bin/ffmpeg-9.0.1-essentials_build/bin/ffprobe.exe"
 CHROME="C:/Program Files/Google/Chrome/Application/chrome.exe"
-REMIX="$POC/node_modules/.bin/remotion"
-PY="C:/Users/Administrator/AppData/Local/Programs/Python/Python311/python.exe"
+# 2026-11-02 修复：原指向 C:/.../Python311/python.exe —— 该解释器已卸载，本机跑必崩。
+PY="C:/Users/Administrator/.workbuddy/binaries/python/versions/3.13.12/python.exe"
+# 2026-11-02 修复：原用 $POC/node_modules/.bin/remotion（shell shim，Git Bash 下报
+# SyntaxError: Invalid or unexpected token）→ 改直调 CLI 的 JS 入口（同 segmented 脚本铁律）。
+NODE="C:/Users/Administrator/.workbuddy/binaries/node/versions/22.22.2-6/node.exe"
+REMIX="$NODE $POC/node_modules/@remotion/cli/remotion-cli.js"
 LOG="$OUT/render.log"
 
 mkdir -p "$OUT"

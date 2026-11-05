@@ -11,7 +11,9 @@ PoC 阶段使用；本期新生成时 gen_dual_tts.py 已自带 +10%。
 import sys, os, json, subprocess, wave, struct, shutil
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FFMPEG = os.path.join(PROJECT_ROOT, "bin", "ffmpeg-9.0.1-essentials_build\bin\ffmpeg.exe")
+# 2026-11-06 修复：同 gen_dual_tts.py —— 单反斜杠 "\bin\ffmpeg.exe" 里的 \b/\f 会被 Python
+# 当成退格/换页转义，路径损坏。改为分段 join。
+FFMPEG = os.path.join(PROJECT_ROOT, "bin", "ffmpeg-9.0.1-essentials_build", "bin", "ffmpeg.exe")
 GAIN = 1.30  # 阿信 +30%（2026-08-21 用户反馈；接近小蓝音量）
 
 

@@ -302,6 +302,34 @@ def split_agenda(body):
     return [r for r in rows if r]
 
 
+def load_external_comments(parsed_path):
+    """读取期次目录下的 weekly_comments.json，覆盖内置 COMMENTS / BRK_COMMENTS。
+
+    2026-11-06 新增：原先 COMMENTS 是模块级硬编码字典，每期改评论都要改代码。
+    现在改为「同目录 JSON 优先、内置兜底」，每期只改配置不动代码。
+    文件格式：
+      {
+        "breaking": {"xiaolan": "...", "axin": "..."},
+        "comments": {"news_01.jpg": {"xiaolan": "...", "axin": "..."}, ...}
+      }
+    返回 (comments_dict, breaking_dict)，文件不存在时返回 ({}, {})。
+    """
+    p = os.path.join(os.path.dirname(os.path.abspath(parsed_path)), "weekly_comments.json")
+    if not os.path.exists(p):
+        return {}, {}
+    try:
+        with open(p, encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"  ⚠️ weekly_comments.json 解析失败，忽略外置评论: {e}")
+        return {}, {}
+    comments = dict(data.get("comments") or {})
+    breaking = dict(data.get("breaking") or {})
+    if comments or breaking:
+        print(f"  ✍️ 载入外置评论: {len(comments)} 条目 + breaking {len(breaking)} 字段")
+    return comments, breaking
+
+
 def build(parsed_path, out_dlg, out_seg=None):
     items = json.load(open(parsed_path, encoding="utf-8"))
     lines = []
@@ -309,6 +337,8 @@ def build(parsed_path, out_dlg, out_seg=None):
     used = set()
     prep_date = _prep_date_from_path(parsed_path)
     st = [int(hashlib.md5(prep_date.encode()).hexdigest(), 16) % 9973]
+    # 外置评论优先，内置 COMMENTS 兜底（2026-11-06 新增）
+    ext_comments, ext_breaking = load_external_comments(parsed_path)
 
     def add(speaker, text, bg=""):
         # 清理选题稿残留的配额标记，如「（八卦×1）」「（科技×4）」
@@ -327,7 +357,8 @@ def build(parsed_path, out_dlg, out_seg=None):
     brk = next((it for it in items if it["type"] == "breaking"), None)
     if brk:
         add("阿信", f"{BRK_AXIN}{brk['title']}。{brk.get('brief') or brk['body']}", "breaking.jpg")
-        bc = BRK_COMMENTS.get("breaking.jpg", {})
+        bc = dict(BRK_COMMENTS.get("breaking.jpg", {}))
+        bc.update(ext_breaking)  # 外置评论优先
         bx = bc.get("xiaolan")
         if not bx:
             bx = _variant(BRK_XIAOLAN_POOL, used, st, phase=2); used.add(bx)
@@ -336,7 +367,7 @@ def build(parsed_path, out_dlg, out_seg=None):
     news_items = [x for x in items if x["type"] == "news"]
     for idx, it in enumerate(news_items):
         img = it["img"]
-        c = COMMENTS.get(img, {})
+        c = ext_comments.get(img) or COMMENTS.get(img, {})
         lead = "进入本周要闻" if idx == 0 and not brk else ("接着聊本周要闻" if idx == 0 else f"接着聊{it['section']}")
         # brief = 口播摘要（控制在 80~140 字）；缺失时回退整段 body。
         # 2026-10-16 起铁律：正文 body 只进字幕/画面，不再整段上口播——
@@ -379,6 +410,17 @@ def build(parsed_path, out_dlg, out_seg=None):
     iv = next((it for it in items if it["type"] == "interactive"), None)
     if iv:
         add("阿信", f"最后给大家留一个互动话题。{iv['body']}", "interactive.jpg")
+        # 2026-11-02 修复（AgendaCard 入库四个月来一次都没在片子里出现过）：
+        #   原实现里 agenda **只**挂在 watch（下周看点）段，而该板块自 20260912 已取消
+        #   → AgendaCard 组件永远拿不到数据，成为死代码。
+        #   修法：互动话题段也支持 agenda —— 用户显式给 agenda 优先（给空数组=明确不显示）；
+        #   未给则按分号自动拆正文。不恢复已取消的 watch 板块。
+        if "agenda" in iv:
+            _agenda = iv["agenda"]
+        else:
+            _agenda = split_agenda(iv["body"])
+        if _agenda:
+            segs[-1]["agenda"] = _agenda
         ix = _variant(INTERACTIVE_XIAOLAN_POOL, used, st, phase=7); used.add(ix)
         add("小蓝", ix, "interactive.jpg")
 
@@ -398,9 +440,12 @@ def build(parsed_path, out_dlg, out_seg=None):
         # 提取对白行 **小蓝**：... / **阿信**：...
         dialogue_pattern = re.compile(r"\*\*(阿信|小蓝)\*\*：([^\n]+)")
         matches = dialogue_pattern.findall(econ_text)
-        # 幻灯映射：1-3句->slide_1, 4-5句->slide_2, 6-7句->slide_3, 8-11句->slide_4
+        # 幻灯映射：多段双播按原分组；≤5 段的单播纯新闻稿（20261106 起）按段均分 4 张
+        n_econ = len(matches)
         for idx, (spk, txt) in enumerate(matches):
-            if idx < 3:
+            if n_econ <= 5:
+                bg_img = f"econ_slide_{min(idx + 1, 4)}.jpg"
+            elif idx < 3:
                 bg_img = "econ_slide_1.jpg"
             elif idx < 5:
                 bg_img = "econ_slide_2.jpg"

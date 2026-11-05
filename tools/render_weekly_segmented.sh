@@ -30,7 +30,9 @@ DATE="${1:?用法: bash tools/render_weekly_segmented.sh <制作日> [CHUNK]}"
 CHUNK="${2:-1000}"
 CRF="${CRF:-26}"
 
-ROOT="E:/projects/signal_pop"
+# 2026-11-02 修复：原为 E:/projects/signal_pop 硬编码（迁 G 盘后必崩）→ 脚本自身位置动态推导。
+# Git Bash 下 pwd -W 输出 Windows 风格路径（如 G:/projects/signal_pop），可直接喂给 ffmpeg.exe。
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -W)"
 POC="$ROOT/remotion_poc"
 OUT="$ROOT/output/weekly/$DATE"
 FF="$ROOT/bin/ffmpeg-9.0.1-essentials_build/bin/ffmpeg.exe"
@@ -51,7 +53,9 @@ REMIX="$NODE $POC/node_modules/@remotion/cli/remotion-cli.js"
 OPENING_OUT="$OUT/opening_anim.mp4"
 PIANO="$ROOT/output/mp3/Romeo - Winds of Hope - Creative Cut - Piano.mp3"
 OPEN_FRAMES=270
-PY="C:/Users/Administrator/AppData/Local/Programs/Python/Python311/python.exe"
+# 2026-11-02 修复：原指向 C:/.../Python311/python.exe —— 该解释器已卸载，本机跑必崩。
+# 改用 WorkBuddy 托管 Python 3.13（已装 requests/Pillow/playwright）。
+PY="C:/Users/Administrator/.workbuddy/binaries/python/versions/3.13.12/python.exe"
 # 片头 Composition id + 片头配乐在钢琴曲里的起点（秒）
 # 2026-10-12：MARK哥定版 V4「新闻联播式过场」为**每期标配**，替换原 OpeningAnimation（纸卡 3D）。
 # V4 零人物/零 Logo，换成宋体 Noto Serif SC + 地球弧线 + 横向光带。

@@ -25,10 +25,24 @@
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+# 2026-11-05 修复：Git Bash 的 `PATH="$FFBIN:$PATH"` 前缀在 Windows 下会生成坏条目，
+# 导致 shutil.which("ffmpeg") 找不到本地 ffmpeg。按项目铁律改为进程级注入
+# os.environ["PATH"] + 绝对路径调用（用 os.path.join 分段避免 \b/\f 转义毁路径）。
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+_FFBIN = _PROJECT_ROOT / "bin" / "ffmpeg-9.0.1-essentials_build" / "bin"
+if _FFBIN.is_dir():
+    if str(_FFBIN) not in os.environ.get("PATH", ""):
+        os.environ["PATH"] = str(_FFBIN) + os.pathsep + os.environ.get("PATH", "")
+    FFMPEG = str(_FFBIN / ("ffmpeg.exe" if os.name == "nt" else "ffmpeg"))
+    FFPROBE = str(_FFBIN / ("ffprobe.exe" if os.name == "nt" else "ffprobe"))
+else:
+    FFMPEG, FFPROBE = "ffmpeg", "ffprobe"
 
 _RATIOS = {"9:16", "16:9", "1:1", "4:5", "3:4", "4:3", "21:9"}
 
@@ -39,9 +53,12 @@ def _die(msg: str, code: int = 1) -> None:
 
 
 def _check_ffmpeg() -> None:
-    for t in ("ffmpeg", "ffprobe"):
-        if shutil.which(t) is None:
-            _die(f"未找到 {t}，请先安装 ffmpeg（含 ffprobe）。", 3)
+    for name, exe in (("ffmpeg", FFMPEG), ("ffprobe", FFPROBE)):
+        if os.path.isabs(exe):
+            if not os.path.isfile(exe):
+                _die(f"未找到 {name}: {exe}", 3)
+        elif shutil.which(exe) is None:
+            _die(f"未找到 {name}，请先安装 ffmpeg（含 ffprobe）。", 3)
 
 
 def _require_input(path: str) -> Path:
@@ -66,7 +83,7 @@ def _run(cmd: list[str]) -> None:
 
 def _probe_wh(path: Path) -> tuple[int, int]:
     proc = subprocess.run(
-        ["ffprobe", "-v", "error", "-select_streams", "v:0",
+        [FFPROBE, "-v", "error", "-select_streams", "v:0",
          "-show_entries", "stream=width,height", "-of", "csv=s=x:p=0", str(path)],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     try:
@@ -79,7 +96,7 @@ def _probe_wh(path: Path) -> tuple[int, int]:
 
 def _has_audio(path: Path) -> bool:
     proc = subprocess.run(
-        ["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries",
+        [FFPROBE, "-v", "error", "-select_streams", "a", "-show_entries",
          "stream=index", "-of", "csv=p=0", str(path)],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     return bool((proc.stdout or "").strip())
@@ -200,7 +217,7 @@ def cmd_reframe(a) -> int:
             info = f"焦点裁切(fx={fx:.2f})"
         vf = _vf_crop(ow, oh, sw, sh, fx, fy)
 
-    cmd = ["ffmpeg", "-y", "-i", str(src), "-vf", vf,
+    cmd = [FFMPEG, "-y", "-i", str(src), "-vf", vf,
            "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "20", "-preset", "medium"]
     cmd += (["-c:a", "copy"] if _has_audio(src) else ["-an"])
     cmd += [str(out)]
@@ -217,7 +234,7 @@ def cmd_selftest(_a) -> int:
         d = Path(td_)
         src = d / "src.mp4"
         # 16:9 横版测试源（带音轨）
-        _run(["ffmpeg", "-y", "-f", "lavfi", "-i", "testsrc=s=1280x720:d=2",
+        _run([FFMPEG, "-y", "-f", "lavfi", "-i", "testsrc=s=1280x720:d=2",
               "-f", "lavfi", "-i", "sine=frequency=440:d=2",
               "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac",
               "-shortest", str(src)])

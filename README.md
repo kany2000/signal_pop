@@ -457,6 +457,21 @@ python tools/analytics_postmortem.py 20260908 --snapshot     # 拉数（需登�
 
 完整部署与踩坑记录见 `docs/voxcpm_local_deploy.md`。
 
+### 11. 2026-11-05 成片硬伤修复（片头静音 / 画中画震动 / 片尾 CTA 消失 → 动画化）
+
+| 问题 | 根因 | 修复 |
+|---|---|---|
+| 开场 9s 动画无声 | `render_weekly_py.py` 写死 `output/mp3/Romeo...mp3`，该文件从未入库；`opening_anim.mp4` 自带音轨实测 -91dB 静音。历史成片前 9s 的「有声音」经三期互相关验证（corr≈0）是各期不同的 TTS 人声，属旧版口播压片头 bug，不可复用 | `tools/gen_opening_theme.py` 离线合成 9s 新闻片头配乐 → `output/weekly/shared/opening_theme.wav`；可用 `SIGNAL_POP_OPENING_BGM` / `SIGNAL_POP_OPENING_BGM_START` 覆盖为正式 BGM；配乐分支 `volume=1.5` 抵消 `amix` 默认 normalize 的 -6dB |
+| 热点画中画严重震动 | 源短视频带硬转场 + 末尾黑帧 + B 帧，Remotion `<Video loop>` 在 headless Chromium 逐帧 seek 时帧定位不稳，叠加循环点闪黑 | `export_weekly_remotion.py` 新增 `build_stable_frames()`：按 `parsed_news.json` 的 `videoTrim` 取稳定段 → `deshake` → 中心裁 4% → 30fps / 372×660 JPEG 序列；`WeeklyTalk.tsx` 改用 `<Img>` 按 `videoLt` 算帧号显示（每帧完全确定），旧期无帧序列自动回退 `<Video>` |
+| 片尾「一键三连」消失 → 复审要求动画化 | CTA 只挂在末段，而本期末段落在被 huashu 经济动画整体替换的 577.76~708.92s 区间，Remotion 侧三连图标随画面一起被覆盖；第一版补的静态 PNG 收场卡又被复审指出「没有背景图、不是动画」 | 先在最终编码阶段 `overlay` 收场卡救回画面；再由 `tools/gen_cta_outro.py` 生成 6s / 180 帧动画短片 `cta_outro.mp4`（夜景城市背景缓慢推近 + 三按钮 stagger 弹入点亮 + 点击涟漪 + 三连光波 + 呼吸光晕 + 金粒子 + 文字分层淡入）；`render_weekly_py.py` 优先叠加该短片，`cta_sanlian.png` 仅作兜底，`CTA_DUR` 必须与短片 `DUR` 一致 |
+
+新增配置：`parsed_news.json` 的 breaking 项支持 `videoTrim: [start, end]`（秒）与 `videoLoops`。
+新增共享素材（位于清理门禁白名单 `output/weekly/shared/`）：`opening_theme.wav`、`cta_sanlian.png`、`cta_outro.mp4`、`cta_outro_bg.jpg`。
+
+**片尾动画短片**：`python tools/gen_cta_outro.py` → 1920×1080 / 30fps / 6.00s / 无音轨，PIL 逐帧绘制经 rawvideo 管道直喂 ffmpeg（不落 180 张中间 PNG）。背景默认取平日版通用片尾夜景 `remotion_poc/public/base_ending_bg.jpg` 并归档到 `shared/cta_outro_bg.jpg`，可用 `SIGNAL_POP_CTA_BG` 指向任意图覆盖。`render_weekly_py.py` 对视频 CTA 用 `-t CTA_DUR`（**不能** `-loop 1`）+ `format=rgba,setpts` 平移 + 0.45s alpha 淡入。
+
+> 三项均为**导出层 / 后处理层**修复，不动 TTS 与字幕时间轴：换背景图或修画中画只需重渲突发段所在的 part（本期 part00 / part01），片头配乐与 CTA 在最终编码一次生效。
+
 ---
 
 ## 许可

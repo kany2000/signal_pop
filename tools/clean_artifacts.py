@@ -7,7 +7,11 @@ Signal Pop 项目缓存与制作残留安全清理脚本
 2. 清理 Remotion 可再生编译缓存 (node_modules/.cache, remotion_poc/out)
 3. 清理 output 根目录下遗留调试音频与对比目录
 4. 清理 output/daily 与 output/weekly 下各期分段切片中间件 (split_build, frames_exact, part*.mp4)
-5. 严格白名单保护：成片mp4、封面图、8平台md、srt、json账本、used_*_styles.json指纹、channel_art
+5. 严格白名单保护：成片mp4、封面图、8平台md、srt、json账本、used_*_styles.json指纹、
+   channel_art、output/shared、output/weekly/shared（片头配乐/片尾动画/板块模板图）、
+   output/video（用户提供的原始视频素材）、output/mp3（BGM 正式素材）。
+   ⚠️ 2026-11-05 修正：原第 3 步把 'mp3' / 'video' 当临时目录整个删除，
+   会误删用户原素材与将来入库的 BGM，已从删除名单移除。
 """
 
 import os
@@ -107,7 +111,10 @@ def main():
                     total_sz += s
                     print(f"  - 已删除调试文件: output/{item} ({fmt_size(s)})")
             elif os.path.isdir(p):
-                if item in ['_theme_preview_daily', '_ab_响度对比', 'mp3', 'video']:
+                # ⚠️ 'mp3' / 'video' 是用户素材目录（BGM、原始短视频），禁止清理。
+                # 2026-11-05 修正：原先当临时目录整个删除，会误删用户提供的
+                # 厄尔尼诺原视频 output/video/20261106_breaking.mp4。
+                if item in ['_theme_preview_daily', '_ab_响度对比']:
                     c, s = remove_path(p)
                     total_cnt += c
                     total_sz += s
@@ -140,6 +147,9 @@ def main():
         for d in sorted(os.listdir(weekly_dir)):
             dp = os.path.join(weekly_dir, d)
             if not os.path.isdir(dp): continue
+            # 共享素材目录：片头配乐、片尾三连动画、板块模板图，永不清理
+            if d == 'shared':
+                continue
             for sub in list(os.listdir(dp)):
                 sp = os.path.join(dp, sub)
                 if os.path.isdir(sp) and sub in ['split_build', '_quota_test', 'audit_frames', '_vertical_test_30s', 'tts_probe']:

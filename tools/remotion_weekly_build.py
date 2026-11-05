@@ -11,8 +11,8 @@
 """
 import sys, os, json, subprocess
 
-PROJECT_ROOT = "E:/projects/signal_pop"
-FFMPEG = "E:/projects/signal_pop/bin/ffmpeg-9.0.1-essentials_build/bin/ffmpeg.exe"
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FFMPEG = os.path.join(PROJECT_ROOT, "bin", "ffmpeg-9.0.1-essentials_build", "bin", "ffmpeg.exe")
 
 def merge_audio(video_path, audio_path, output_path, crf=26):
     """视频轨 + 音频 合并（视频 libx264 CRF 压缩，音频保持原始时长）

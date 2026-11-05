@@ -27,7 +27,10 @@ AUDIO_DIR = os.path.join(OUT_DIR, "audio")
 AUDIO_PATH = os.path.join(AUDIO_DIR, "tts.wav")
 SEGMENTS_PATH = os.path.join(AUDIO_DIR, "tts_segments.json")
 TALK_PATH = os.path.join(OUT_DIR, "talk_segments.json")
-FFMPEG = os.path.join(PROJECT_ROOT, "bin", "ffmpeg-9.0.1-essentials_build\bin\ffmpeg.exe")
+# 2026-11-06 修复：原写成 "ffmpeg-9.0.1-essentials_build\bin\ffmpeg.exe" 单反斜杠字符串，
+# Python 会把 \b 解析成退格(U+0008)、\f 解析成换页(U+000C) → 实际路径损坏，
+# subprocess 调用直接 FileNotFoundError。改为分段 join，与 remotion_weekly_build.py 等保持一致。
+FFMPEG = os.path.join(PROJECT_ROOT, "bin", "ffmpeg-9.0.1-essentials_build", "bin", "ffmpeg.exe")
 sys.path.insert(0, os.path.join(PROJECT_ROOT, "tools"))
 sys.path.insert(0, os.path.join(PROJECT_ROOT, "scripts"))
 

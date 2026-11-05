@@ -24,7 +24,7 @@ if _TOOLS_DIR not in sys.path:
 
 from subtitle_layout import wrap_srt_text  # noqa: E402
 
-PROJECT_ROOT = "E:/projects/signal_pop"
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PREP_DATE = sys.argv[1] if len(sys.argv) > 1 else "20260828"
 OUT = os.path.join(PROJECT_ROOT, "output", "weekly", PREP_DATE)
 

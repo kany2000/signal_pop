@@ -21,7 +21,7 @@ import subprocess
 import sys
 import time
 
-ROOT = "E:/projects/signal_pop"
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 POC = os.path.join(ROOT, "remotion_poc")
 NODE = "C:/Users/Administrator/.workbuddy/binaries/node/versions/22.22.2-6/node.exe"
 REMX = os.path.join(POC, "node_modules", "@remotion", "cli", "remotion-cli.js")
@@ -37,10 +37,24 @@ OPENING_ID = "OpeningV4"
 OPEN_FRAMES = 270
 OPENING_TITLE = "AI语播·信号弹每周精选"
 OPENING_OUT = "opening_anim.mp4"
-PIANO = os.path.join(ROOT, "output", "mp3", "Romeo - Winds of Hope - Creative Cut - Piano.mp3")
-PIANO_START = 34          # 片头配乐在钢琴曲里的起点（秒）
+# 🔴 2026-11-05 修「开场动画无声」：原写死的 output/mp3/Romeo...mp3 从未入库，
+# 片头 9s 实际是 -91dB 静音（历史成片前 9s 的「有声音」经互相关验证是各期不同的
+# TTS 人声，是旧版口播压片头的 bug，不可复用）。改为共享离线合成配乐，
+# 可用 SIGNAL_POP_OPENING_BGM / SIGNAL_POP_OPENING_BGM_START 覆盖为正式 BGM。
+PIANO = os.environ.get(
+    "SIGNAL_POP_OPENING_BGM",
+    os.path.join(ROOT, "output", "weekly", "shared", "opening_theme.wav"))
+PIANO_START = float(os.environ.get("SIGNAL_POP_OPENING_BGM_START", "0"))
+# 片尾「一键三连」收场：末段 CTA 常落在被 huashu 动画替换的经济段里，
+# Remotion 侧画的三连图标会被整体覆盖，故在最终编码阶段叠加到片尾最后 N 秒。
+# 2026-11-05 v2：用户复审要求「带背景图的动画效果，而非一张静态背景」，
+# 改为优先叠加 gen_cta_outro.py 产出的 6s 动画短片，静态 PNG 仅作兜底。
+CTA_MP4 = os.path.join(ROOT, "output", "weekly", "shared", "cta_outro.mp4")
+CTA_PNG = os.path.join(ROOT, "output", "weekly", "shared", "cta_sanlian.png")
+# ⚠️ 必须与 tools/gen_cta_outro.py 的 DUR 保持一致
+CTA_DUR = 6.0
 OPENING_WEEKDAY = "星期六"
-OPENING_DATE = "2026年10月17日"
+OPENING_DATE = "2026年11月7日"
 
 
 def log_line(log_path, msg):
@@ -269,52 +283,87 @@ def main():
     wav = os.path.join(out_dir, "audio", "tts.wav")
     final = os.path.join(out_dir, f"signal_pop_weekly_{date}.mp4")
 
-    # 视频侧：片头黑场淡入 + 片尾黑场淡出（只动 alpha，安全）
+    # 视频侧：片头黑场淡入 + 片尾黑场淡出 + 片尾「一键三连」收场卡叠加
+    # 2026-11-05：CTA 卡放到最终编码阶段叠加，因为末段 CTA 常被 huashu 经济动画
+    # 整体替换，Remotion 里画的三连图标根本进不了成片。
     open_dur = OPEN_FRAMES / FPS          # 9.0s
     total_dur = probe_duration(merged)
     fade_out_start = max(0.0, total_dur - 1.0)
-    vf = (f"[0:v]fade=t=in:st=0:d=1.2:alpha=0:color=black,"
-          f"fade=t=out:st={fade_out_start:.2f}:d=1.0:alpha=0:color=black[v]")
+    cta_start = max(0.0, total_dur - CTA_DUR)
+    has_tts = os.path.exists(wav)
+    # 动画短片优先；短片自带 CTA_DUR 秒时间轴，绝不能加 -loop 1（会无限循环）。
+    cta_is_video = os.path.exists(CTA_MP4)
+    has_cta = cta_is_video or os.path.exists(CTA_PNG)
 
-    if not os.path.exists(wav):
-        # 无 TTS：只做视频重编码
-        cmd = [FF, "-y", "-i", merged, "-vf", vf, "-map", "[v]",
-               "-c:v", "libx264", "-preset", "medium", "-crf", CRF,
-               "-pix_fmt", "yuv420p", "-r", str(FPS), "-movflags", "+faststart", final]
+    # 输入索引动态分配：0=merged(v)，其后依次 wav / CTA 短片或 png / BGM
+    inputs = [FF, "-y", "-i", merged]
+    idx = 1
+    wav_idx = cta_idx = piano_idx = None
+    if has_tts:
+        inputs += ["-i", wav]
+        wav_idx = idx
+        idx += 1
+    if cta_is_video:
+        inputs += ["-t", f"{CTA_DUR:.3f}", "-i", CTA_MP4]
+        cta_idx = idx
+        idx += 1
+    elif has_cta:
+        inputs += ["-loop", "1", "-framerate", str(FPS), "-t", f"{CTA_DUR:.3f}",
+                   "-i", CTA_PNG]
+        cta_idx = idx
+        idx += 1
+    if has_tts and os.path.exists(PIANO):
+        inputs += ["-stream_loop", "-1", "-i", PIANO]
+        piano_idx = idx
+        idx += 1
+
+    vparts = ["[0:v]fade=t=in:st=0:d=1.2:alpha=0:color=black[vbase]"]
+    if has_cta:
+        # setpts 把 CTA 流时间轴对齐主视频，fade 的 st 才与全局时间同步；
+        # eof_action=pass + repeatlast=0 保证 CTA 结束后不残留最后一帧。
+        # 动画短片自带逐帧动效，只需 0.45s 交叉淡入；静态 PNG 用 0.6s。
+        cta_fade = 0.45 if cta_is_video else 0.60
+        vparts.append(
+            f"[{cta_idx}:v]format=rgba,setpts=PTS-STARTPTS+{cta_start:.3f}/TB,"
+            f"fade=t=in:st={cta_start:.3f}:d={cta_fade:.2f}:alpha=1[cta]")
+        vparts.append(
+            f"[vbase][cta]overlay=0:0:eof_action=pass:repeatlast=0,"
+            f"fade=t=out:st={fade_out_start:.2f}:d=1.0:alpha=0:color=black[v]")
     else:
-        # 🔴 2026-10-16 修致命 bug：片头 opening_anim.mp4 **只有视频轨、零音频**，
-        # 而 merged 的时间轴是「片头 9s + 正文 752.7s」。原实现把 TTS 从第 0 秒
-        # 直接铺上去 → 阿信「大家好」压在片头动画上，**开场就错**。
-        # 修法：`adelay` 把 TTS 整体延后片头时长，与正文对齐；
-        # 片头 9s 铺钢琴曲（PIANO_START 起 9s），并做首尾淡入淡出。
-        piano_in = []
-        afc = []
-        if os.path.exists(PIANO):
-            piano_in = ["-stream_loop", "-1", "-i", PIANO]
-            afc.append(f"[2:a]atrim=start={PIANO_START}:duration={open_dur:.2f},"
-                       f"asetpts=PTS-STARTPTS,"
-                       f"afade=t=in:st=0:d=1.2:curve=esin,"
-                       f"afade=t=out:st={open_dur - 1.0:.2f}:d=1.0:curve=esin,"
-                       f"volume=0.75,aresample=48000[piano]")
-        # TTS 延迟 open_dur 秒，与正文严格对齐
-        afc.append(f"[1:a]adelay={int(open_dur * 1000)}|{int(open_dur * 1000)},"
+        vparts.append(
+            f"[vbase]fade=t=out:st={fade_out_start:.2f}:d=1.0:alpha=0:color=black[v]")
+    vf = ";".join(vparts)
+
+    afc = []
+    if has_tts:
+        # 🔴 2026-10-16 修致命 bug：片头 opening_anim.mp4 只有静音轨，而 merged
+        # 时间轴是「片头 9s + 正文」。TTS 必须 adelay 9s 才不会压在片头动画上。
+        afc.append(f"[{wav_idx}:a]adelay={int(open_dur * 1000)}|{int(open_dur * 1000)},"
                    f"afade=t=in:st={open_dur:.2f}:d=0.6:curve=esin,"
                    f"afade=t=out:st={fade_out_start:.2f}:d=1.0:curve=esin,"
                    f"loudnorm=I=-14:TP=-1.5:LRA=11[tts]")
-        if piano_in:
-            # 片头钢琴（9s）与延后后的 TTS 并列，总长取长的那个
-            afc.append(f"[piano][tts]amix=inputs=2:duration=longest:dropout_transition=0,"
-                       f"alimiter=limit=0.95[aout]")
+        if piano_idx is not None:
+            afc.append(f"[{piano_idx}:a]atrim=start={PIANO_START}:duration={open_dur:.2f},"
+                       f"asetpts=PTS-STARTPTS,"
+                       f"afade=t=in:st=0:d=1.2:curve=esin,"
+                       f"afade=t=out:st={open_dur - 1.0:.2f}:d=1.0:curve=esin,"
+                       # amix 默认 normalize=1，会把每个输入各压 -6dB；
+                       # 片头 9s 只有配乐有信号，故这里预补 +6dB，避免配乐轻得听不见。
+                       f"volume=1.5,aresample=48000[piano]")
+            afc.append("[piano][tts]amix=inputs=2:duration=longest:dropout_transition=0,"
+                       "alimiter=limit=0.95[aout]")
         else:
             afc.append("[tts]anull[aout]")
 
-        cmd = [FF, "-y", "-i", merged, "-i", wav, *piano_in,
-               "-filter_complex", f"{vf};" + ";".join(afc),
-               "-map", "[v]", "-map", "[aout]",
-               "-c:v", "libx264", "-preset", "medium", "-crf", CRF,
-               "-pix_fmt", "yuv420p", "-r", str(FPS),
-               "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
-               "-movflags", "+faststart", final]
+    fc = vf + ((";" + ";".join(afc)) if afc else "")
+    cmd = inputs + ["-filter_complex", fc, "-map", "[v]"]
+    if has_tts:
+        cmd += ["-map", "[aout]"]
+    cmd += ["-c:v", "libx264", "-preset", "medium", "-crf", CRF,
+            "-pix_fmt", "yuv420p", "-r", str(FPS)]
+    if has_tts:
+        cmd += ["-c:a", "aac", "-b:a", "192k", "-ar", "48000"]
+    cmd += ["-movflags", "+faststart", final]
 
     log_line(log_path, f"final encode -> {os.path.basename(final)}")
     run(cmd, log_path=log_path)

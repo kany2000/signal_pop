@@ -26,7 +26,8 @@ DATE="${1:?用法: bash tools/reframe_weekly_vertical.sh <制作日> [smart|blur
 MODE="${2:-blur}"
 FORCE="${3:-0}"
 
-ROOT="E:/projects/signal_pop"
+# 2026-11-02 修复：原为 E:/projects/signal_pop 硬编码（迁 G 盘后必崩）→ 动态推导。
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -W)"
 OUT="$ROOT/output/weekly/$DATE"
 SRC="$OUT/signal_pop_weekly_$DATE.mp4"
 VDIR="$OUT/vertical"

@@ -25,6 +25,15 @@ export interface TalkSegment {
   bg: string;
   video?: string;
   videoDur?: number;
+  /** 突发素材原始宽高（导出脚本 ffprobe 写入），决定画中画窗横竖版式 */
+  videoW?: number;
+  videoH?: number;
+  /** 单遍素材时长（不含循环），供进度类动效使用 */
+  videoClipDur?: number;
+  /** 2026-11-05：确定性帧序列（绕开 <Video> 逐帧 seek 抖动） */
+  videoFrames?: number;
+  videoFps?: number;
+  videoFrameDir?: string;
   isBreaking?: boolean;
   isInteractive?: boolean;
   cta?: boolean;
@@ -696,59 +705,85 @@ export const WeeklyTalk: React.FC<{ segs: TalkSegment[]; pickUrl?: string }> = (
         </div>
       )}
 
-      {/* 特别报道现场视频窗（两主播中间偏上；锚定首个突发段起点播一次，末尾淡出消失；无文件不渲染） */}
-      {videoSeg && videoStart >= 0 && videoDur > 0 && (
-        <Sequence
-          from={Math.round(videoStart * fps)}
-          durationInFrames={Math.round((videoDur + 1.2) * fps)}
-        >
-          <AbsoluteFill style={{ opacity: videoFade, pointerEvents: "none" }}>
-            <div
-              style={{
-                position: "absolute",
-                left: 640,
-                top: 150,
-                width: 640,
-                height: 360,
-                borderRadius: 18,
-                overflow: "hidden",
-                border: "3px solid rgba(255,255,255,0.85)",
-                boxShadow: "0 10px 34px rgba(0,0,0,0.6)",
-                background: "#000",
-              }}
-            >
-              {/* 2026-10-17：`objectFit` 从 cover 改 contain。
-                  cover 在比例不匹配时（如 8:5 素材放进 16:9 窗口）会逐帧重算裁切，
-                  Chromium 亚像素误差表现为画面上下「震动」。contain + 素材已转标准
-                  16:9 双重保险：不再裁切 → 不再抖。
-                  contain 出现空隙时用父容器黑底兜住（下方 background 已设）。 */}
-              <Video
-                src={staticFile(videoSeg.video)}
-                muted
-                startFrom={0}
-                style={{ width: "100%", height: "100%", objectFit: "contain" }}
-              />
-            </div>
-            <div
-              style={{
-                position: "absolute",
-                left: 640,
-                top: 108,
-                fontSize: 24,
-                fontWeight: "bold",
-                color: "#fff",
-                fontFamily: "Noto Sans SC, sans-serif",
-                background: "rgba(226,59,59,0.92)",
-                padding: "5px 18px",
-                borderRadius: 8,
-                letterSpacing: 1,
-              }}
-            >
-              现场画面
-            </div>
-          </AbsoluteFill>
-        </Sequence>
-      )}
+      {/* 特别报道现场视频窗（两主播中间偏上；锚定首个突发段起点播一次，末尾淡出消失；无文件不渲染）
+          2026-11-03：支持横竖屏自适应——videoH > videoW 时用竖版手机卡窗（居中 372x660），
+          否则保持原 640x360 横版窗；<Video loop> 循环播放（videoDur 已含循环总时长） */}
+      {videoSeg && videoStart >= 0 && videoDur > 0 && (() => {
+        // 2026-11-05：有稳定帧序列就用 <Img> 按帧号显示，每帧完全确定，
+        // 不再依赖 Chromium 对 <Video loop> 的逐帧 seek（那是震动/闪黑的根源）。
+        const frameCount = videoSeg.videoFrames || 0;
+        const frameFps = videoSeg.videoFps || fps;
+        const frameDir = videoSeg.videoFrameDir || "breaking_frames";
+        const frameIdx = frameCount > 0
+          ? ((Math.floor(Math.max(0, videoLt) * frameFps) % frameCount) + frameCount) % frameCount
+          : 0;
+        const frameName = `f${String(frameIdx + 1).padStart(4, "0")}.jpg`;
+        const isVertical = (videoSeg.videoH || 0) > (videoSeg.videoW || 0);
+        const win = isVertical
+          ? { left: 774, top: 118, width: 372, height: 660 }   // 竖版：608x1080 等比 → 372x660
+          : { left: 640, top: 150, width: 640, height: 360 };  // 横版：维持原布局
+        const labelTop = isVertical ? 76 : 108;
+        return (
+          <Sequence
+            from={Math.round(videoStart * fps)}
+            durationInFrames={Math.round((videoDur + 1.2) * fps)}
+          >
+            <AbsoluteFill style={{ opacity: videoFade, pointerEvents: "none" }}>
+              <div
+                style={{
+                  position: "absolute",
+                  left: win.left,
+                  top: win.top,
+                  width: win.width,
+                  height: win.height,
+                  borderRadius: 18,
+                  overflow: "hidden",
+                  border: "3px solid rgba(255,255,255,0.85)",
+                  boxShadow: "0 10px 34px rgba(0,0,0,0.6)",
+                  background: "#000",
+                }}
+              >
+                {/* 2026-11-05 修「严重震动」：源短视频带硬转场 + 末尾黑帧 + B 帧，
+                    Remotion <Video loop> 在 headless Chromium 逐帧 seek 时帧定位
+                    不稳，表现为上下抖动 / 循环点闪黑。现优先用 export 脚本生成的
+                    去抖 JPEG 帧序列，按 videoLt 算帧号用 <Img> 显示（完全确定）。
+                    仅当帧序列缺失（旧期数据）才回退 <Video> + contain。 */}
+                {frameCount > 0 ? (
+                  <Img
+                    src={staticFile(`${frameDir}/${frameName}`)}
+                    style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                  />
+                ) : (
+                  <Video
+                    src={staticFile(videoSeg.video)}
+                    muted
+                    loop
+                    startFrom={0}
+                    style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                  />
+                )}
+              </div>
+              <div
+                style={{
+                  position: "absolute",
+                  left: win.left,
+                  top: labelTop,
+                  fontSize: 24,
+                  fontWeight: "bold",
+                  color: "#fff",
+                  fontFamily: "Noto Sans SC, sans-serif",
+                  background: "rgba(226,59,59,0.92)",
+                  padding: "5px 18px",
+                  borderRadius: 8,
+                  letterSpacing: 1,
+                }}
+              >
+                现场画面
+              </div>
+            </AbsoluteFill>
+          </Sequence>
+        );
+      })()}
 
       {/* 左阿信（聊经济模式下 136x136 贴左下角标，名牌下置防遮挡） */}
       {isEconMode ? (

@@ -17,7 +17,11 @@ breaking_footage.mp4 复制到 remotion_poc/public，并用 ffprobe 探测真实
 import sys, os, json, shutil, subprocess
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FFPROBE = os.path.join(PROJECT_ROOT, "bin", "ffmpeg-9.0.1-essentials_build", "bin", "ffprobe.exe")
+_BIN = os.path.join(PROJECT_ROOT, "bin", "ffmpeg-9.0.1-essentials_build", "bin")
+FFPROBE = os.path.join(_BIN, "ffprobe.exe")
+FFMPEG = os.path.join(_BIN, "ffmpeg.exe")
+FRAME_FPS = 30
+FRAME_DIR = "breaking_frames"
 
 
 def probe_duration(path):
@@ -42,6 +46,81 @@ def probe_duration(path):
     except Exception as e:
         print(f"⚠️ ffprobe 探测时长失败: {e}")
         return 0.0
+
+
+def probe_dimensions(path):
+    """返回视频 (width, height)，失败返回 (0, 0)"""
+    try:
+        out = subprocess.run(
+            [
+                FFPROBE,
+                "-v",
+                "error",
+                "-select_streams",
+                "v:0",
+                "-show_entries",
+                "stream=width,height",
+                "-of",
+                "default=noprint_wrappers=1:nokey=1",
+                path,
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        lines = [x.strip() for x in out.stdout.strip().splitlines() if x.strip()]
+        return int(lines[0]), int(lines[1])
+    except Exception as e:
+        print(f"⚠️ ffprobe 探测宽高失败: {e}")
+        return 0, 0
+
+
+def build_stable_frames(video_src, pub, trim=None):
+    """把突发现场短视频预处理成「确定性 JPEG 帧序列」。
+
+    🔴 2026-11-05 修「画中画严重震动」：源素材是带硬转场 + 末尾黑帧 + B 帧的
+    竖屏短视频，Remotion 的 <Video loop> 在 headless Chromium 里逐帧 seek 时
+    帧定位不稳定，表现为画面上下抖动 / 循环点闪黑。改为把画面抽成静态 JPEG
+    序列，由 WeeklyTalk 用 <Img> 按帧号显示 —— 每帧完全确定，零解码抖动。
+
+    预处理：按 videoTrim 截取稳定段（避开转场与黑帧）→ deshake 去抖 →
+    中心裁切 4% 消除边缘黑块 → 统一 30fps → 缩放到画中画窗 372x660。
+    返回 (帧数, fps)；失败返回 (0, FRAME_FPS) 由调用方回退 <Video>。
+    """
+    dst = os.path.join(pub, FRAME_DIR)
+    os.makedirs(dst, exist_ok=True)
+    for f in os.listdir(dst):
+        if f.lower().endswith((".jpg", ".jpeg", ".png")):
+            try:
+                os.remove(os.path.join(dst, f))
+            except OSError:
+                pass
+
+    dur = probe_duration(video_src)
+    if trim and len(trim) == 2:
+        t0, t1 = float(trim[0]), float(trim[1])
+    else:
+        t0 = min(0.6, dur * 0.12)
+        t1 = max(t0 + 1.2, dur - min(0.5, dur * 0.10))
+    t0 = max(0.0, min(t0, max(0.0, dur - 0.5)))
+    t1 = max(t0 + 0.6, min(t1, dur))
+
+    vf = (f"trim=start={t0:.3f}:end={t1:.3f},setpts=PTS-STARTPTS,"
+          f"deshake=rx=32:ry=32:edge=clamp,"
+          f"crop=iw*0.94:ih*0.94,scale=372:660:flags=lanczos,"
+          f"fps={FRAME_FPS}")
+    out_pattern = os.path.join(dst, "f%04d.jpg")
+    r = subprocess.run(
+        [FFMPEG, "-y", "-v", "error", "-i", video_src, "-vf", vf,
+         "-q:v", "3", out_pattern],
+        capture_output=True, text=True, timeout=300)
+    n = len([f for f in os.listdir(dst) if f.lower().endswith(".jpg")])
+    if n == 0:
+        print(f"⚠️ 帧序列生成失败，回退 <Video>: {r.stderr[-400:]}")
+        return 0, FRAME_FPS
+    print(f"✅ 画中画稳定帧序列: {n} 帧 / {FRAME_FPS}fps "
+          f"(源 {dur:.2f}s 取 {t0:.2f}~{t1:.2f}s, 去抖+裁边+缩放)")
+    return n, FRAME_FPS
 
 
 def main(date):
@@ -129,6 +208,12 @@ def main(date):
                 "bg": bg,
                 "video": "",
                 "videoDur": 0,
+                "videoW": 0,
+                "videoH": 0,
+                "videoClipDur": 0,
+                "videoFrames": 0,
+                "videoFps": 0,
+                "videoFrameDir": "",
                 "isBreaking": bg == "breaking.jpg",
                 "isInteractive": bg == "interactive.jpg",
                 "cta": (i == n - 1),  # 末段触发结尾「一键三连」CTA
@@ -208,13 +293,36 @@ def main(date):
         dst_name = "breaking_footage.mp4"
         shutil.copy(video_src, os.path.join(pub, dst_name))
         vdur = probe_duration(video_src)
+        vw, vh = probe_dimensions(video_src)
+        # 循环次数：稳定段通常只有 2~5s，播一遍在 40~60s 的突发段里太短；
+        # videoLoops / videoTrim 由 parsed_news.json breaking 项配置。
+        try:
+            pn2 = json.load(open(os.path.join(out_dir, "parsed_news.json"), encoding="utf-8"))
+            brk2 = next((it for it in pn2 if it.get("type") == "breaking"), None)
+            loops = max(1, int(brk2.get("videoLoops", 1))) if brk2 else 1
+            trim = brk2.get("videoTrim") if brk2 else None
+        except Exception:
+            loops, trim = 1, None
+
+        # 2026-11-05：优先输出确定性帧序列（<Img>），失败才回退 <Video>
+        n_frames, frame_fps = build_stable_frames(video_src, pub, trim)
+        clip_dur = round(n_frames / frame_fps, 3) if n_frames else round(vdur, 3)
+        vdur_total = round(clip_dur * loops, 3)
         for s in segs:
             if s["isBreaking"]:
                 s["video"] = dst_name
-                s["videoDur"] = round(vdur, 3)
+                s["videoDur"] = vdur_total
+                s["videoW"] = vw
+                s["videoH"] = vh
+                s["videoClipDur"] = clip_dur
+                s["videoFrames"] = n_frames
+                s["videoFps"] = frame_fps
+                s["videoFrameDir"] = FRAME_DIR
+        orient = "竖屏" if vh > vw else "横屏"
         print(
             f"✅ 特别报道视频窗已挂载: {os.path.basename(video_src)} → {dst_name} "
-            f"（{os.path.getsize(video_src)} bytes, 时长 {vdur:.2f}s）"
+            f"（{vw}x{vh} {orient}, 单遍 {clip_dur:.2f}s × {loops} = {vdur_total:.2f}s, "
+            f"渲染方式={'帧序列 <Img>' if n_frames else '视频 <Video>'}）"
         )
     else:
         print(f"ℹ️ 未找到特别报道视频（output/video/ 与 {VIDEO_DIR}/ 均无 mp4），突发段不挂视频窗。")
@@ -228,7 +336,11 @@ def main(date):
     print(f"   配图 {len(uniq_bg)} 种: {uniq_bg}")
 
     # 复制素材到 remotion_poc/public
-    imgs = os.path.join(out_dir, "images")
+    # 2026-11-05：配图版本可用环境变量切换（默认 images = 带标原图；
+    # images_nomark = 底部裁切无标版）。argv[2] 已被 pick_url 占用，故用环境变量。
+    img_sub = os.environ.get("SIGNAL_POP_IMG_SUBDIR", "images")
+    imgs = os.path.join(out_dir, img_sub)
+    print(f"   配图版本: {img_sub}")
     srcs = [os.path.join(imgs, "anchor_axin.jpg"), os.path.join(imgs, "anchor_xiaolan.jpg")]
     srcs += [os.path.join(imgs, b) for b in uniq_bg]
     copied = []
