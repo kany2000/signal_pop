@@ -76,4 +76,34 @@ if ! has_audio "$DST"; then
   echo "!! 竖版音轨丢失"; exit 1
 fi
 
-echo "[$(date +%H:%M:%S)] 完成: $DST（1080x1920，音轨保留，模式 $MODE）"
+# ---------- 前 OPENING_DUR 秒替换为原生 9:16 共享片头 ----------
+# 🔴 2026-11-13 用户定：每期新闻开场统一使用自制品牌动画，横版 16:9 / 竖版 9:16。
+# reframe 出来的片头只是横版画面的 blur 延展，不是竖版原生构图，故在此替换。
+# ⚠️ 只替换视频：音轨沿用竖版成片原音轨（横版最终编码已把片头自带配乐混好），
+#    -c:a copy 避免二次有损重编码。仅「本轮新生成」的竖版会走到这里；
+#    幂等跳过的旧期成片（含已终审的 20261106）保持原样，不被回写。
+INTRO_9X16="${SIGNAL_POP_INTRO_9X16:-$ROOT/output/weekly/shared/signal-news-intro-9x16-1080p.mp4}"
+if [ -f "$INTRO_9X16" ]; then
+  OPENING_DUR="$("$FP" -v error -show_entries format=duration \
+      -of default=noprint_wrappers=1:nokey=1 "$INTRO_9X16" 2>/dev/null | tr -d '[:space:]\r')"
+  case "$OPENING_DUR" in
+    ''|*[!0-9.]* ) OPENING_DUR="10.000000" ;;
+  esac
+  STAGE="$VDIR/.stage_intro_9x16.mp4"
+  echo "[$(date +%H:%M:%S)] 替换竖版片头 ${OPENING_DUR}s -> 原生 9:16 共享动画"
+  "$FFBIN/ffmpeg.exe" -y -v error \
+    -i "$INTRO_9X16" -i "$DST" \
+    -filter_complex \
+    "[0:v]fps=30,scale=1080:1920,setsar=1,format=yuv420p,trim=start=0:end=${OPENING_DUR},setpts=PTS-STARTPTS[iv];\
+     [1:v]trim=start=${OPENING_DUR},setpts=PTS-STARTPTS,fps=30,scale=1080:1920,setsar=1,format=yuv420p[mv];\
+     [iv][mv]concat=n=2:v=1:a=0[v]" \
+    -map "[v]" -map "1:a" \
+    -c:v libx264 -preset fast -crf 26 -pix_fmt yuv420p -r 30 \
+    -c:a copy -movflags +faststart "$STAGE" || {
+      echo "!! 竖版片头替换失败"; exit 1; }
+  mv -f "$STAGE" "$DST" || { echo "!! 竖版片头替换后写回失败"; exit 1; }
+else
+  echo "!! 共享 9:16 片头缺失，保留 reframe 片头: $INTRO_9X16" >&2
+fi
+
+echo "[$(date +%H:%M:%S)] 完成: $DST（1080x1920，原生 9:16 片头，音轨保留，模式 $MODE）"

@@ -2,9 +2,13 @@
 # -*- coding: utf-8 -*-
 """给 SRT 整体加时间偏移（用于对齐片头）
 
-背景：成片结构是「片头 9s + 正文」，而 `gen_weekly_en_srt.py` / `gen_en_srt.py`
+背景：成片结构是「共享片头 + 正文」，而 `gen_weekly_en_srt.py` / `gen_en_srt.py`
 生成的时间轴是**从 0 开始**的正文相对时间（0 = 第一句台词）。
 于是字幕会压在片头动画上 —— 与 TTS 音频同一个毛病。
+
+🔴 2026-11-13 起默认偏移不再是写死的 9.0s，而是由 `tools/opening_config.py`
+   实时探测共享片头时长（当前 10.000s）。换片头不需要改这里，
+   仍可用第二个命令行参数显式覆盖。
 
 用法：python tools/offset_srt.py <srt 文件> [偏移秒数] [输出路径]
       不给输出路径则原地修改（先写 .bak 备份）
@@ -12,6 +16,9 @@
 import os
 import re
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import opening_config as intro
 
 TC = re.compile(r"(\d{2}):(\d{2}):(\d{2}),(\d{3})")
 
@@ -60,7 +67,7 @@ def main():
         print("用法: python tools/offset_srt.py <srt 文件> [偏移秒数] [输出路径]")
         return 1
     path = sys.argv[1]
-    offset = float(sys.argv[2]) if len(sys.argv) > 2 else 9.0
+    offset = float(sys.argv[2]) if len(sys.argv) > 2 else intro.opening_duration()
     out = sys.argv[3] if len(sys.argv) > 3 else None
     if not os.path.exists(path):
         print(f"❌ 找不到 {path}")

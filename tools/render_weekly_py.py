@@ -21,6 +21,9 @@ import subprocess
 import sys
 import time
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import opening_config as intro
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 POC = os.path.join(ROOT, "remotion_poc")
 NODE = "C:/Users/Administrator/.workbuddy/binaries/node/versions/22.22.2-6/node.exe"
@@ -32,19 +35,17 @@ CHROME_FLAGS = "--disable-accelerated-video-decode --disable-gpu"
 CRF = "26"
 FPS = 30
 
-# 片头（2026-10-12 定版 V4「新闻联播式过场」为每期标配）
-OPENING_ID = "OpeningV4"
-OPEN_FRAMES = 270
-OPENING_TITLE = "AI语播·信号弹每周精选"
-OPENING_OUT = "opening_anim.mp4"
-# 🔴 2026-11-05 修「开场动画无声」：原写死的 output/mp3/Romeo...mp3 从未入库，
-# 片头 9s 实际是 -91dB 静音（历史成片前 9s 的「有声音」经互相关验证是各期不同的
-# TTS 人声，是旧版口播压片头的 bug，不可复用）。改为共享离线合成配乐，
-# 可用 SIGNAL_POP_OPENING_BGM / SIGNAL_POP_OPENING_BGM_START 覆盖为正式 BGM。
-PIANO = os.environ.get(
-    "SIGNAL_POP_OPENING_BGM",
-    os.path.join(ROOT, "output", "weekly", "shared", "opening_theme.wav"))
-PIANO_START = float(os.environ.get("SIGNAL_POP_OPENING_BGM_START", "0"))
+# 🔴 2026-11-13 用户定：以后每期新闻开场统一使用自制品牌动画，横版 16:9 / 竖版 9:16。
+# 不再用 Remotion OpeningV4 每期渲染（旧片头带日期、9s、音轨静音）。
+# 两份共享 MP4 自带 AAC 配乐，画面无日期无期号；时长由 ffprobe 实时读取，
+# OPENING_DUR / OPEN_FRAMES 是全链路唯一真源，换片头只换文件、不改代码。
+# 片头音轨用动画自带配乐；合成 opening_theme.wav 已停用（避免双音乐叠加）。
+INTRO_16X9 = intro.INTRO_16X9
+INTRO_9X16 = intro.INTRO_9X16
+OPENING_DUR = intro.opening_duration()        # 10.000s
+OPEN_FRAMES = intro.opening_frames(FPS)       # 300 帧 @30fps
+INTRO_GAIN = intro.INTRO_GAIN
+OPENING_TITLE = "信号弹新闻"
 # 片尾「一键三连」收场：末段 CTA 常落在被 huashu 动画替换的经济段里，
 # Remotion 侧画的三连图标会被整体覆盖，故在最终编码阶段叠加到片尾最后 N 秒。
 # 2026-11-05 v2：用户复审要求「带背景图的动画效果，而非一张静态背景」，
@@ -53,8 +54,6 @@ CTA_MP4 = os.path.join(ROOT, "output", "weekly", "shared", "cta_outro.mp4")
 CTA_PNG = os.path.join(ROOT, "output", "weekly", "shared", "cta_sanlian.png")
 # ⚠️ 必须与 tools/gen_cta_outro.py 的 DUR 保持一致
 CTA_DUR = 6.0
-OPENING_WEEKDAY = "星期六"
-OPENING_DATE = "2026年11月7日"
 
 
 def log_line(log_path, msg):
@@ -133,23 +132,17 @@ def main():
     log_line(log_path, f"PY-RENDER {date}  TOTAL_FRAMES={total_frames} "
                        f"OPEN_FRAMES={OPEN_FRAMES} FULL_TOTAL={full_total} CHUNK={chunk} CRF={CRF}")
 
-    # ---------- 1) 片头 ----------
-    opening_out = os.path.join(out_dir, OPENING_OUT)
-    props_path = os.path.join(out_dir, "opening_props.json")
-    json.dump({"title": OPENING_TITLE, "date": OPENING_DATE, "weekday": OPENING_WEEKDAY},
-              open(props_path, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-    sig = f"OPENING DONE {OPENING_ID}|{OPENING_TITLE}|{OPENING_DATE}|{OPENING_WEEKDAY}"
-    if (os.path.exists(opening_out) and probe_frames(opening_out) == OPEN_FRAMES
-            and sig in open(log_path, encoding="utf-8", errors="ignore").read()):
-        log_line(log_path, f"skip opening (same version+text, {OPEN_FRAMES} frames ok)")
+    # ---------- 1) 片头（共享品牌动画，不再每期渲染）----------
+    # ⚠️ 绝不在这里删除/覆盖共享素材：opening_out 直接指向 output/weekly/shared/，
+    #    concat 滤镜会把它从 24fps 统一成 30fps 并缩放到 1920x1080。
+    opening_out = intro.require_intro()
+    sig = f"SHARED INTRO {os.path.basename(opening_out)}|{OPENING_DUR:.3f}s"
+    if sig in open(log_path, encoding="utf-8", errors="ignore").read():
+        log_line(log_path, f"skip shared intro ({OPENING_DUR:.3f}s / {OPEN_FRAMES} frames @30fps)")
     else:
-        log_line(log_path, f"render {OPENING_ID} {OPEN_FRAMES} frames  "
-                           f"[title={OPENING_TITLE} | {OPENING_DATE} {OPENING_WEEKDAY}]")
-        remotion_render(OPENING_ID, opening_out, props=props_path)
-        if probe_frames(opening_out) != OPEN_FRAMES:
-            log_line(log_path, f"!! {OPENING_ID} 渲染失败或帧数不足（期望 {OPEN_FRAMES}）")
-            print(f"ERROR: {OPENING_ID} 渲染失败", file=sys.stderr)
-            return 1
+        log_line(log_path, f"use shared intro {os.path.basename(opening_out)} "
+                           f"{OPENING_DUR:.3f}s -> {OPEN_FRAMES} frames @30fps "
+                           f"[audio=self-contained]")
         log_line(log_path, sig)
 
     # ---------- 2) 逐段渲染 WeeklyTalk（幂等可续）----------
@@ -286,7 +279,7 @@ def main():
     # 视频侧：片头黑场淡入 + 片尾黑场淡出 + 片尾「一键三连」收场卡叠加
     # 2026-11-05：CTA 卡放到最终编码阶段叠加，因为末段 CTA 常被 huashu 经济动画
     # 整体替换，Remotion 里画的三连图标根本进不了成片。
-    open_dur = OPEN_FRAMES / FPS          # 9.0s
+    open_dur = OPENING_DUR                # 共享片头实测时长（当前 10.000s）
     total_dur = probe_duration(merged)
     fade_out_start = max(0.0, total_dur - 1.0)
     cta_start = max(0.0, total_dur - CTA_DUR)
@@ -295,10 +288,10 @@ def main():
     cta_is_video = os.path.exists(CTA_MP4)
     has_cta = cta_is_video or os.path.exists(CTA_PNG)
 
-    # 输入索引动态分配：0=merged(v)，其后依次 wav / CTA 短片或 png / BGM
+    # 输入索引动态分配：0=merged(v)，其后依次 wav / CTA 短片或 png / 共享片头(取音轨)
     inputs = [FF, "-y", "-i", merged]
     idx = 1
-    wav_idx = cta_idx = piano_idx = None
+    wav_idx = cta_idx = intro_idx = None
     if has_tts:
         inputs += ["-i", wav]
         wav_idx = idx
@@ -312,9 +305,11 @@ def main():
                    "-i", CTA_PNG]
         cta_idx = idx
         idx += 1
-    if has_tts and os.path.exists(PIANO):
-        inputs += ["-stream_loop", "-1", "-i", PIANO]
-        piano_idx = idx
+    if has_tts and os.path.exists(INTRO_16X9):
+        # 片头 MP4 自带 AAC 配乐；concat 阶段已 -an 丢弃音轨，这里单独取回。
+        # 不能加 -stream_loop（片头音轨时长正好等于 OPENING_DUR）。
+        inputs += ["-i", INTRO_16X9]
+        intro_idx = idx
         idx += 1
 
     vparts = ["[0:v]fade=t=in:st=0:d=1.2:alpha=0:color=black[vbase]"]
@@ -336,21 +331,21 @@ def main():
 
     afc = []
     if has_tts:
-        # 🔴 2026-10-16 修致命 bug：片头 opening_anim.mp4 只有静音轨，而 merged
-        # 时间轴是「片头 9s + 正文」。TTS 必须 adelay 9s 才不会压在片头动画上。
+        # 🔴 时间轴是「共享片头 OPENING_DUR + 正文」。TTS 必须 adelay 同样秒数，
+        #    否则人声压在片头动画尾部；外挂 SRT 也用同一偏移（offset_srt.py）。
         afc.append(f"[{wav_idx}:a]adelay={int(open_dur * 1000)}|{int(open_dur * 1000)},"
                    f"afade=t=in:st={open_dur:.2f}:d=0.6:curve=esin,"
                    f"afade=t=out:st={fade_out_start:.2f}:d=1.0:curve=esin,"
                    f"loudnorm=I=-14:TP=-1.5:LRA=11[tts]")
-        if piano_idx is not None:
-            afc.append(f"[{piano_idx}:a]atrim=start={PIANO_START}:duration={open_dur:.2f},"
+        if intro_idx is not None:
+            # 片头只取自带配乐的前 OPENING_DUR 秒；24kHz mono -> 48kHz。
+            # amix 默认 normalize=1 会把每路各压一档，故按共享配置的增益预补。
+            afc.append(f"[{intro_idx}:a]atrim=start=0:duration={open_dur:.3f},"
                        f"asetpts=PTS-STARTPTS,"
                        f"afade=t=in:st=0:d=1.2:curve=esin,"
                        f"afade=t=out:st={open_dur - 1.0:.2f}:d=1.0:curve=esin,"
-                       # amix 默认 normalize=1，会把每个输入各压 -6dB；
-                       # 片头 9s 只有配乐有信号，故这里预补 +6dB，避免配乐轻得听不见。
-                       f"volume=1.5,aresample=48000[piano]")
-            afc.append("[piano][tts]amix=inputs=2:duration=longest:dropout_transition=0,"
+                       f"volume={INTRO_GAIN},aresample=48000[intro]")
+            afc.append("[intro][tts]amix=inputs=2:duration=longest:dropout_transition=0,"
                        "alimiter=limit=0.95[aout]")
         else:
             afc.append("[tts]anull[aout]")

@@ -2,6 +2,12 @@
 # -*- coding: utf-8 -*-
 """生成 9 秒「新闻片头」器乐配乐（离线合成、免版权、零外部素材）
 
+🛑 DEPRECATED（2026-11-13）：用户重新制作了自带 AAC 配乐的品牌开场动画，
+   并拍板「以后每期新闻开场统一使用」。render_weekly_py.py 已改为直接取
+   共享片头 MP4 的音轨，不再调用本脚本产出的 opening_theme.wav。
+   文件保留仅供历史期复现 / 比对，正式产线请勿再依赖它。
+   详见 tools/opening_config.py 与 README 11.3 节。
+
 背景：render_weekly_py.py 原写死 PIANO = output/mp3/Romeo - Winds of Hope ...mp3，
 该文件从未入库 → 片头 9s 只有 -91dB 静音。历史成片前 9s 的「有声音」经互相关
 验证是各期不同的 TTS 人声（旧版口播压片头的 bug），不是配乐，不可复用。

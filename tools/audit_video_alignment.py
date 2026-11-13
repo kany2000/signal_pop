@@ -16,6 +16,9 @@ import sys
 import json
 import subprocess
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import opening_config as intro
+
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FFMPEG = os.path.join(PROJECT_ROOT, "bin", "ffmpeg-9.0.1-essentials_build", "bin", "ffmpeg.exe")
 FFPROBE = os.path.join(PROJECT_ROOT, "bin", "ffmpeg-9.0.1-essentials_build", "bin", "ffprobe.exe")
@@ -46,7 +49,9 @@ def main(date="20260925"):
     print(f"成片文件: {video_path} (时长: {vid_dur:.2f}s)")
 
     # 建立每段的时间轴
-    t = 9.0  # 9s 片头
+    # 2026-11-13 起新期片头为共享动画（默认 10.000s）；审计 20261106 及更早
+    # 的历史成片时旧片头是 9s，用 SIGNAL_POP_AUDIT_OPENING=9 覆盖即可。
+    t = float(os.environ.get("SIGNAL_POP_AUDIT_OPENING", intro.opening_duration()))
     timeline = []
     for i, s in enumerate(segs):
         st = t

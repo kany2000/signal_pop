@@ -88,3 +88,15 @@ scripts/retry_publish_20260823.py
 # 临时探针/测试脚本（下划线前缀，与 tools/_*.py 废弃脚本同族）
 _patch_*/
 _tmp_*/
+
+# 共享新闻片头（2026-11-13 用户定：每期复用、纳入版本控制）
+# 注意：output/ 整个目录被忽略时，父目录不解除忽略则子文件的 ! 例外无效。
+# 故逐级放行目录、再重新忽略目录内其它内容，最后只放行两份片头。
+!output/
+output/*
+!output/weekly/
+output/weekly/*
+!output/weekly/shared/
+output/weekly/shared/*
+!output/weekly/shared/signal-news-intro-16x9-1080p.mp4
+!output/weekly/shared/signal-news-intro-9x16-1080p.mp4

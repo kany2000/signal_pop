@@ -518,7 +518,30 @@ python "$E/analyze_words.py"                                          # 时间�
 
 `karaoke_demo.html` 自包含（真实人声已内嵌 base64）：逐字三态高亮（未读灰 / 已读金 / 当前字放大发光）、可切「整句对照」、可拖动与变速；`karaoke_stage_demo.mp4` 是 ASS 卡拉OK 烧录的 41.693s / 1920×1080 演示片。按 `.gitignore` 约定 `*.mp4` / `*.wav` 不入库，故 demo MP4 与 `sample_16k.wav` 只留本机、脚本可一键重跑；入库的是脚本、自包含 HTML、两份 ASS、`words.json` / `align_raw.json` 与报告。1.2GB 中文对齐模型与 venv 均在 `G:\temp\`，不入库（HF 需 10808 代理）。
 
-**下期接入三铁律**：① 逐字高亮必须**替换** `WeeklyTalk.tsx:958` 的 `PagedDialogue` 气泡文字渲染，叠在成片上会出现双层字幕；② 长段按 ≤16 字 + 标点分页（181 字整行会溢出）；③ 段内相对时间对齐 `localT` 不加 9s，只有烧 ASS/SRT 到成片才加片头偏移。接入链路：新增 `tools/gen_word_timestamps.py` → `audio/word_timestamps.json` → `export_weekly_remotion.py:202` 的 `segs.append()` 写入 `words` → `WeeklyTalk.tsx` 新增 `KaraokeDialogue`。
+**下期接入三铁律**：① 逐字高亮必须**替换** `WeeklyTalk.tsx:958` 的 `PagedDialogue` 气泡文字渲染，叠在成片上会出现双层字幕；② 长段按 ≤16 字 + 标点分页（181 字整行会溢出）；③ 段内相对时间对齐 `localT` 不加片头偏移，只有烧 ASS/SRT 到成片才加。接入链路：新增 `tools/gen_word_timestamps.py` → `audio/word_timestamps.json` → `export_weekly_remotion.py:202` 的 `segs.append()` 写入 `words` → `WeeklyTalk.tsx` 新增 `KaraokeDialogue`。
+
+### 11.3 共享品牌片头（2026-11-13 用户定：以后每期统一使用）
+
+用户重新制作了两份开场动画，横版 / 竖版各一，画面无日期、无期号、自带 AAC 配乐。从下一期起**每期复用**，不再用 Remotion `OpeningV4` 逐期渲染（旧片头 9s / 带日期 / 音轨静音）。
+
+| 文件（`output/weekly/shared/`） | 规格 | 用途 |
+|---|---|---|
+| `signal-news-intro-16x9-1080p.mp4` | 1920×1080 / 24fps / 240 帧 / **10.000s** / AAC 24kHz mono / 17MB | 横版主片 |
+| `signal-news-intro-9x16-1080p.mp4` | 1080×1920 / 24fps / 240 帧 / **10.000s** / AAC / 13MB | 9:16 竖版 |
+
+**两条硬规则**
+
+1. **片头音轨用动画自带配乐**：合成 `opening_theme.wav` 已停用（`tools/gen_opening_theme.py` 保留仅供历史复现）。最终编码阶段把片头 MP4 单独作为音频输入，`atrim` 取前 `OPENING_DUR` 秒，与延迟同秒数的 TTS `amix`；`SIGNAL_POP_INTRO_GAIN`（默认 1.5）抵消 `amix` 归一化衰减。
+2. **片头时长不再硬编码**：`tools/opening_config.py` 用 ffprobe 实时探测，`OPENING_DUR` / `OPEN_FRAMES` 是全链路唯一真源。24fps 素材由 concat 滤镜统一到 30fps（10s → 300 帧）。换片头只替换文件，或用 `SIGNAL_POP_INTRO_16X9` / `SIGNAL_POP_INTRO_9X16` 指向新路径。
+
+**接入点**
+
+- `tools/opening_config.py`：两版路径 + 时长探测 + `require_intro()` 缺失即报错。
+- `tools/render_weekly_py.py`：片头直接指向共享 16:9 MP4（**只读**，绝不删除/覆盖 shared 素材）；TTS `adelay`、`afade`、片头音轨 `atrim` 全部用 `OPENING_DUR`。
+- `tools/reframe_weekly_vertical.sh`：reframe 后把竖版前 `OPENING_DUR` 秒**视频**替换为原生 9:16 片头，音轨 `-c:a copy` 沿用竖版成片（横版最终编码已混好配乐）；仅本轮新生成的竖版替换，幂等跳过的历史成片保持原样。
+- `tools/offset_srt.py` 默认偏移、`tools/audit_video_alignment.py` 起点、`tools/render_weekly_segmented.sh`（历史应急脚本，已弃用）的 `OPEN_FRAMES` 均改为同一真源。审计 20261106 及更早成片时用 `SIGNAL_POP_AUDIT_OPENING=9` 覆盖。
+
+**影响与版本控制**：新期成片 = 10s 片头 + 正文，比 20261106 基线（717.93s）多 1s；外挂 SRT 首条从 `00:00:10,000` 起。20261106 已终审成片与竖版**不改、不重渲**。`.gitignore` 原本忽略整个 `output/`，父目录不解除忽略时子文件 `!` 例外无效 → 已逐级放行 `output/` → `weekly/` → `shared/` 再重新忽略目录内其它内容，只放行这两份片头（共约 30MB）；清理脚本对 `weekly/shared/` 整体保护，不会被误删。
 
 ---
 

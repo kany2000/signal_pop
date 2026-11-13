@@ -23,6 +23,10 @@
 #     码率统一（CRF 见下方 CRF 变量，锁定为 26）。
 #
 # 退出码：某段渲染失败 -> 1（检查 render.log 后重跑即可）；缺 TTS -> 1。
+#
+# ⚠️ 2026-11-13：这是历史应急脚本，正式产线唯一入口是 tools/render_weekly_py.py。
+#    片头已统一改用共享品牌动画（16:9 / 9:16 各一份、自带配乐），
+#    本脚本不再渲染 OpeningV4，也不再依赖从未入库的 Romeo...mp3。
 # =============================================================
 set -u
 
@@ -51,8 +55,14 @@ CHROME="C:/Program Files/Google/Chrome/Application/chrome.exe"
 NODE="C:/Users/Administrator/.workbuddy/binaries/node/versions/22.22.2-6/node.exe"
 REMIX="$NODE $POC/node_modules/@remotion/cli/remotion-cli.js"
 OPENING_OUT="$OUT/opening_anim.mp4"
-PIANO="$ROOT/output/mp3/Romeo - Winds of Hope - Creative Cut - Piano.mp3"
-OPEN_FRAMES=270
+# 🔴 2026-11-13 用户定：每期新闻开场统一使用共享品牌动画（自带 AAC 配乐）。
+#    PIANO 原指向从未入库的 Romeo...mp3（必然 exit 1），现改指共享片头音轨；
+#    OPEN_FRAMES 由片头实测时长折算，不再写死 270（9s 旧片头）。
+INTRO_16X9="$ROOT/output/weekly/shared/signal-news-intro-16x9-1080p.mp4"
+PIANO="$INTRO_16X9"
+OPENING_DUR="$("$FP" -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$INTRO_16X9" 2>/dev/null | tr -d '[:space:]\r')"
+case "$OPENING_DUR" in ''|*[!0-9.]* ) OPENING_DUR="10.000000" ;; esac
+OPEN_FRAMES="$(awk "BEGIN{printf \"%d\", ${OPENING_DUR}*30}")"
 # 2026-11-02 修复：原指向 C:/.../Python311/python.exe —— 该解释器已卸载，本机跑必崩。
 # 改用 WorkBuddy 托管 Python 3.13（已装 requests/Pillow/playwright）。
 PY="C:/Users/Administrator/.workbuddy/binaries/python/versions/3.13.12/python.exe"
@@ -109,40 +119,26 @@ check_part_frames() {
   [ -n "$nb" ] && [ "$nb" -eq "$expected" ]
 }
 
-# 2) 渲染片头（幂等）
-#    ⚠️ 幂等键必须含 OPENING_ID **和文案**：换片头版本后旧的 opening_anim.mp4
-#    帧数也是 270，只看帧数会误判"已完成"而跳过渲染，导致成片里仍是旧片头；
-#    同理改了日期/标题但帧数不变，也会错误跳过 → 日期永远更新不了。
-#    故把「版本 id + 标题 + 日期」一起写进 render.log 作为幂等键。
-OPEN_SIG="$OPENING_ID|$OPENING_TITLE|$OPENING_DATE|$OPENING_WEEKDAY"
+# 2) 片头：直接使用共享品牌动画（2026-11-13 用户定，每期统一）
+#    ⚠️ 不再用 Remotion OpeningV4 渲染（旧片头 9s / 带日期 / 音轨静音）。
+#    共享素材只读：转成 30fps / 1920x1080 后落到**当期目录**，
+#    绝不 rm / 覆盖 output/weekly/shared/ 里的原文件。
+OPEN_SIG="SHARED INTRO ${OPENING_DUR}s|${OPEN_FRAMES}f"
+if [ ! -f "$INTRO_16X9" ]; then
+  echo "!! 共享新闻片头缺失: $INTRO_16X9" >&2
+  exit 1
+fi
 if [ -f "$OPENING_OUT" ] && check_part_frames "$OPENING_OUT" "$OPEN_FRAMES" \
    && grep -qF "OPENING DONE $OPEN_SIG " "$LOG" 2>/dev/null; then
-  echo "[$(date +%H:%M:%S)] skip opening (same version+text, ${OPEN_FRAMES} frames ok)" | tee -a "$LOG"
+  echo "[$(date +%H:%M:%S)] skip shared intro (${OPENING_DUR}s / ${OPEN_FRAMES} frames @30fps)" | tee -a "$LOG"
 else
-  if [ -f "$OPENING_OUT" ] && check_part_frames "$OPENING_OUT" "$OPEN_FRAMES"; then
-    echo "[$(date +%H:%M:%S)] 片头帧数虽完整但日志无匹配 OPENING DONE（版本或文案已变），强制重渲" | tee -a "$LOG"
-  fi
-  echo "[$(date +%H:%M:%S)] render $OPENING_ID ${OPEN_FRAMES} frames  [title=$OPENING_TITLE | $OPENING_DATE $OPENING_WEEKDAY]" | tee -a "$LOG"
-  rm -f "$OPENING_OUT"
-  # 片头文案用 --props 注入（Remotion 读 JSON 文件）。
-  # 这是「每期标配」的前提：日期/标题变了不用改 TSX，只改环境变量。
-  # ⚠️ 本机 Remotion 版本的参数名是 `--props`，**不是** `--input-props`
-  # （新版本文档写的是 --input-props，但本机 --input-props 会被静默忽略，
-  #  渲染照常成功但文案仍是 defaultProps 的硬编码值 —— 不报错，极难发现。
-  #  实测判定法：传一个可辨识标题（如 ZZTEST），渲一帧看画面上有没有出现。）
-  PROPS="$OUT/opening_props.json"
-  "$PY" -c "
-import json, io
-json.dump({'title': '''$OPENING_TITLE''', 'date': '''$OPENING_DATE''', 'weekday': '''$OPENING_WEEKDAY'''},
-          io.open(r'$PROPS','w',encoding='utf-8'), ensure_ascii=False, indent=2)"
-  # ⑤ 2026-10-16：`( cd "$POC" && ... )` 子 shell 包装在 set -u 下会让
-  #    Windows 侧执行失败（报 No such file or directory，而同样命令手动前台跑完全正常）。
-  #    改用 `pushd`/`popd` 或直接 pushd 到 POC 后原地执行，避免子 shell。
-  pushd "$POC" >/dev/null
-  "$REMIX" render "$OPENING_ID" "$OPENING_OUT" --props="$PROPS" --concurrency=2 --browser-executable="$CHROME" --chrome-flags="--disable-accelerated-video-decode --disable-gpu" >> "$LOG" 2>&1
-  popd >/dev/null
+  echo "[$(date +%H:%M:%S)] use shared intro -> opening_anim.mp4 (${OPENING_DUR}s -> ${OPEN_FRAMES} frames)" | tee -a "$LOG"
+  "$FF" -y -v error -i "$INTRO_16X9" \
+    -vf "fps=30,scale=1920:1080,setsar=1,format=yuv420p" \
+    -an -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -r 30 \
+    "$OPENING_OUT" >> "$LOG" 2>&1
   if ! check_part_frames "$OPENING_OUT" "$OPEN_FRAMES"; then
-    echo "!! $OPENING_ID 渲染失败或帧数不足（期望 ${OPEN_FRAMES}）" >&2
+    echo "!! 共享片头转码失败或帧数不足（期望 ${OPEN_FRAMES}）" >&2
     exit 1
   fi
   echo "OPENING DONE $OPEN_SIG $(date +%H:%M:%S)" >> "$LOG"
@@ -224,20 +220,20 @@ if [ ! -f "$AUDIO" ]; then
   exit 1
 fi
 if [ ! -f "$PIANO" ]; then
-  echo "!! 缺少片头钢琴配乐 $PIANO" >&2
+  echo "!! 缺少共享片头（自带配乐）$PIANO" >&2
   exit 1
 fi
 
-# 组装完整音频：前 9s 钢琴配乐 + TTS 整体延后 OPEN_FRAMES 帧
+# 组装完整音频：前 OPENING_DUR 秒共享片头自带配乐 + TTS（concat 天然延后）
 mkdir -p "$OUT/audio"
-echo "[$(date +%H:%M:%S)] build full audio (piano ${PIANO_START}s +9s fade ${PIANO_FADE_IN}/${PIANO_FADE_OUT}s, + tts delayed ${OPEN_FRAMES} frames)" | tee -a "$LOG"
-# 片头钢琴必须淡入淡出：现版是硬切进，与 V4 画面的淡入淡出不同步。
-# afade 的 st/d 作用在该滤镜**输入流**的时间轴上 —— 钢琴已被 -ss 截成 9s 独立流，
-# 所以 st=0/d=$PIANO_FADE_IN 和 st=(9-$PIANO_FADE_OUT)/d=$PIANO_FADE_OUT 才是对的。
+echo "[$(date +%H:%M:%S)] build full audio (shared intro ${OPENING_DUR}s fade ${PIANO_FADE_IN}/${PIANO_FADE_OUT}s, + tts)" | tee -a "$LOG"
+# 片头配乐必须淡入淡出：afade 的 st/d 作用在**输入流**的时间轴上 ——
+# 片头音轨已被 -t 截成 OPENING_DUR 秒独立流，所以 st=0/d=$PIANO_FADE_IN
+# 和 st=(OPENING_DUR-$PIANO_FADE_OUT)/d=$PIANO_FADE_OUT 才是对的。
 # ⚠️ 踩过的坑：若把 afade 放在 concat **之后**（作用在整条 558s 音频上），
 # st=8 会落在 TTS 段落里，淡出的是人声而不是配乐 —— 位置必须在这条链里、
 # 且在 concat 之前。
-"$FF" -y -ss "$PIANO_START" -t 9 -i "$PIANO" -i "$AUDIO" -filter_complex "[0:a]aformat=sample_fmts=fltp:sample_rates=24000:channel_layouts=mono,afade=t=in:st=0:d=${PIANO_FADE_IN}:curve=${PIANO_FADE_CURVE},afade=t=out:st=$(awk "BEGIN{print 9-$PIANO_FADE_OUT}"):d=${PIANO_FADE_OUT}:curve=${PIANO_FADE_CURVE}[head];[1:a]aformat=sample_fmts=fltp:sample_rates=24000:channel_layouts=mono[tail];[head][tail]concat=n=2:v=0:a=1[out]" -map "[out]" -ar 24000 -ac 1 -c:a pcm_s16le "$AUDIO_FULL" >> "$LOG" 2>&1
+"$FF" -y -t "$OPENING_DUR" -i "$PIANO" -i "$AUDIO" -filter_complex "[0:a]aformat=sample_fmts=fltp:sample_rates=24000:channel_layouts=mono,afade=t=in:st=0:d=${PIANO_FADE_IN}:curve=${PIANO_FADE_CURVE},afade=t=out:st=$(awk "BEGIN{print ${OPENING_DUR}-$PIANO_FADE_OUT}"):d=${PIANO_FADE_OUT}:curve=${PIANO_FADE_CURVE}[head];[1:a]aformat=sample_fmts=fltp:sample_rates=24000:channel_layouts=mono[tail];[head][tail]concat=n=2:v=0:a=1[out]" -map "[out]" -ar 24000 -ac 1 -c:a pcm_s16le "$AUDIO_FULL" >> "$LOG" 2>&1
 
 echo "[$(date +%H:%M:%S)] re-encode CRF$CRF + merge audio" | tee -a "$LOG"
 "$FF" -y -i "$SILENT" -i "$AUDIO_FULL" -c:v libx264 -preset fast -crf "$CRF" -pix_fmt yuv420p -c:a aac -b:a 192k -ar 24000 -ac 1 -map 0:v:0 -map 1:a:0 "$FINAL" >> "$LOG" 2>&1
